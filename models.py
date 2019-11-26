@@ -83,6 +83,9 @@ class ShallowODE(torch.nn.Module):
         return self.net(x)
     
 import torchdiffeq
+import copy
+
+
 class ODEBlock(torch.nn.Module):
     """Wraps an ode-model with the odesolve to fit into standard 
     models."""
@@ -102,6 +105,6 @@ class ODEBlock(torch.nn.Module):
         front_net = copy.deepcopy(self.net)
         back_net = copy.deepcopy(self.net)
         return torch.nn.Sequential(
-            ODEBlock(front_net, t_max/2.0),
-            ODEBlock(back_net, t_max/2.0),
+            ODEBlock(front_net, self.t_max/2.0),
+            ODEBlock(back_net,  self.t_max/2.0),
         )
