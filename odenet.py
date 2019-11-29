@@ -1,6 +1,7 @@
 """
 RefineNet
 """
+
 import torch
 import torchdiffeq
 import copy
@@ -18,6 +19,7 @@ def refine(net):
             # Error is for debugging. This makes sense too:
             return net
 
+        
 class LinearODE(torch.nn.Module):
     def __init__(self, time_d, in_features, out_features):
         super(LinearODE,self).__init__()
@@ -46,6 +48,7 @@ class LinearODE(torch.nn.Module):
             new.bias.data[2*t:2*t+2,:] = self.bias.data[t,:]
         return new
 
+    
 class ShallowODE(torch.nn.Module):
     def __init__(self, time_d, in_features, hidden_features, act=torch.nn.functional.relu):
         super(ShallowODE,self).__init__()
@@ -100,6 +103,7 @@ class Conv2DODE(torch.nn.Module):
             new.bias.data[2*t:2*t+2,:] = self.bias.data[t,:]
         return new
 
+    
 class ShallowConv2DODE(torch.nn.Module):
     def __init__(self, time_d, in_features, hidden_features, 
                  width=3, padding=1,
@@ -123,6 +127,7 @@ class ShallowConv2DODE(torch.nn.Module):
         new.L1 = L1
         new.L2 = L2
         return new
+
 
 class ODEify(torch.nn.Module):
     """Throws away the t."""

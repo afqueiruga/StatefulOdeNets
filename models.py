@@ -2,7 +2,6 @@ import torch
 import functools
 
 #
-#
 # Helper functions for making standard networks
 #
 def shallow(in_dim,hidden,out_dim,Act=torch.nn.ReLU):
@@ -81,69 +80,3 @@ class DeepNet(torch.nn.Module):
         self.net = deep(dims,Act=Act)
     def forward(self,x):
         return self.net(x)
-    
-    
-
-#
-# Deprecated. See odenet.py
-# Networks for ODEs. A different call structure
-#
-import torchdiffeq
-import copy
-
-class ShallowODE(torch.nn.Module):
-    """A basic shallow network that takes in a t as well"""
-    def __init__(self, dim, hidden=10, Act=torch.nn.ReLU):
-        super(ShallowODE,self).__init__()
-        self.net = shallow(dim,hidden,dim,Act=Act)
-    def forward(self,t,x):
-        return self.net(x)
-    
-#
-# older RefineNet utilities 
-#
-
-class ODEBlock(torch.nn.Module):
-    """Wraps an ode-model with the odesolve to fit into standard 
-    models."""
-    def __init__(self,net,t_max=1.0,method='euler'):
-        super(ODEBlock,self).__init__()
-        self.t_max = t_max
-        self.method = method
-        self.ts = torch.tensor([0,t_max])
-        self.net = net
-    def forward(self,x):
-        h = torchdiffeq.odeint(self.net, x, self.ts,
-                               method=self.method)[1,:,:]
-        return h
-    def refine(self):
-        """ddCut self.net in half"""
-        front_net = copy.deepcopy(self.net)
-        back_net = copy.deepcopy(self.net)
-        return torch.nn.Sequential(
-            ODEBlock(front_net, self.t_max/2.0),
-            ODEBlock(back_net,  self.t_max/2.0),
-        )
-
-class ODEModel(torch.nn.Module):
-    def __init__(self,i_dim,o_dim,ode_width=4,
-                 inside_width=4,Act=torch.nn.ReLU,
-                method='euler'):
-        super(ODEModel,self).__init__()
-        self.net = torch.nn.Sequential(
-            torch.nn.Linear(i_dim,ode_width),
-            ODEBlock(
-                ShallowODE(ode_width,hidden=inside_width,
-                           Act=Act),
-                method='euler'),
-            torch.nn.Linear(ode_width,o_dim),
-        )
-    def forward(self,x):
-        # Missing sigmoid
-        y = self.net(x)
-        return y
-    def refine(self):
-        new = copy.deepcopy(self)
-        new.net[1] = refine(self.net[1])
-        return new
-    
