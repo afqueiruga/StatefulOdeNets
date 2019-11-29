@@ -1,6 +1,22 @@
+"""
+RefineNet
+"""
 import torch
 import torchdiffeq
 import copy
+
+def refine(net):
+    try:
+        return net.refine()
+    except AttributeError:
+        if type(net) is torch.nn.Sequential:
+            return torch.nn.Sequential(*[
+                refine(m) for m in net
+            ])
+        else:
+            #raise RuntimeError("Hit a network that cannot be refined.")
+            # Error is for debugging. This makes sense too:
+            return net
 
 class LinearODE(torch.nn.Module):
     def __init__(self, time_d, in_features, out_features):
@@ -51,18 +67,17 @@ class ShallowODE(torch.nn.Module):
         return new
     
     
-
 class Conv2DODE(torch.nn.Module):
     def __init__(self, time_d, in_channels, out_channels,
-                width=1, padding=False):
+                width=1, padding=1):
         super(Conv2DODE,self).__init__()
         self.time_d = time_d
         self.out_channels = out_channels
         self.in_channels = in_channels
         self.width = width
         self.padding = padding
-        self.weights = torch.nn.Parameter(torch.randn(time_d, in_channels, out_channels, width , width) / (out_channels)**0.5)
-        self.bias = torch.nn.Parameter(torch.zeros(time_d, out_channels, width, width))
+        self.weights = torch.nn.Parameter(torch.randn(time_d, out_channels,in_channels, width , width) / (out_channels)**0.5)
+        self.bias = torch.nn.Parameter(torch.zeros(time_d, out_channels))
         
     def forward(self, t, x):
         # Use the trick where it's the same as index selection
@@ -82,11 +97,35 @@ class Conv2DODE(torch.nn.Module):
         for t in range(self.time_d):
             new.weights.data[2*t:2*t+2,:,:,:,:] = self.weights.data[t,:,:,:,:]
         for t in range(self.time_d):
-            new.bias.data[2*t:2*t+2,:,:,:] = self.bias.data[t,:,:,:]
+            new.bias.data[2*t:2*t+2,:] = self.bias.data[t,:]
         return new
 
+class ShallowConv2DODE(torch.nn.Module):
+    def __init__(self, time_d, in_features, hidden_features, 
+                 width=3, padding=1,
+                 act=torch.nn.functional.relu):
+        super(ShallowConv2DODE,self).__init__()
+        self.act = act
+        self.L1 = Conv2DODE(time_d,in_features,hidden_features,
+                            width=width, padding=padding)
+        self.L2 = Conv2DODE(time_d,hidden_features,in_features,
+                            width=width, padding=padding)
+    def forward(self, t, x):
+        h = self.L1(t,x)
+        hh = self.act(h)
+        y = self.L2(t,hh)
+        yy = self.act(y)
+        return yy
+    def refine(self):
+        L1 = self.L1.refine()
+        L2 = self.L2.refine()
+        new = copy.deepcopy(self) # TODO Don't like it, it re-allocates the weights that we're gonna throw away
+        new.L1 = L1
+        new.L2 = L2
+        return new
 
 class ODEify(torch.nn.Module):
+    """Throws away the t."""
     def __init__(self, f):
         super().__init__()
         self.f = f
@@ -108,9 +147,10 @@ class ODEBlock(torch.nn.Module):
     def forward(self,x):
         h = torchdiffeq.odeint(self.net, x, self.ts,
                                method=self.method)[1,:,:]
-        #print(h.shape)
         return h
     def refine(self):
         newnet = self.net.refine()
         new = ODEBlock(newnet,self.N_time*2,method=self.method)
         return new
+    
+    

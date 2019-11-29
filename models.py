@@ -2,12 +2,6 @@ import torch
 import functools
 
 #
-# helper functions to examine models
-#
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-#
 #
 # Helper functions for making standard networks
 #
@@ -25,7 +19,16 @@ def deep(widths,Act=torch.nn.ReLU):
         layers.extend([torch.nn.Linear(widths[i],widths[i+1]), Act()])
     layers.append(torch.nn.Linear(widths[-2],widths[-1]))
     return torch.nn.Sequential(*layers)
- 
+
+
+def channel_squish(imgs, sq):
+    """TODO: Only works without channels right now"""
+    W,H = imgs.shape[-2],imgs.shape[-1]
+    C = imgs.shape[1]
+    ii = imgs.reshape(-1, W, H//sq, sq).permute(0,2,1,3).reshape(-1,W//sq, H//sq, sq*sq).permute(0,3,2,1)
+    return ii
+
+
 #
 # Extra Building Blocks
 #
@@ -78,9 +81,16 @@ class DeepNet(torch.nn.Module):
         self.net = deep(dims,Act=Act)
     def forward(self,x):
         return self.net(x)
+    
+    
+
 #
+# Deprecated. See odenet.py
 # Networks for ODEs. A different call structure
 #
+import torchdiffeq
+import copy
+
 class ShallowODE(torch.nn.Module):
     """A basic shallow network that takes in a t as well"""
     def __init__(self, dim, hidden=10, Act=torch.nn.ReLU):
@@ -90,23 +100,8 @@ class ShallowODE(torch.nn.Module):
         return self.net(x)
     
 #
-# RefineNet utilities 
+# older RefineNet utilities 
 #
-import torchdiffeq
-import copy
-
-def refine(net):
-    try:
-        return net.refine()
-    except AttributeError:
-        if type(net) is torch.nn.Sequential:
-            return torch.nn.Sequential(*[
-                refine(m) for m in net
-            ])
-        else:
-            #raise RuntimeError("Hit a network that cannot be refined.")
-            # Error is for debugging. This makes sense too:
-            return net
 
 class ODEBlock(torch.nn.Module):
     """Wraps an ode-model with the odesolve to fit into standard 
@@ -120,10 +115,9 @@ class ODEBlock(torch.nn.Module):
     def forward(self,x):
         h = torchdiffeq.odeint(self.net, x, self.ts,
                                method=self.method)[1,:,:]
-        #print(h.shape)
         return h
     def refine(self):
-        """TODO: Cut self.net in half"""
+        """ddCut self.net in half"""
         front_net = copy.deepcopy(self.net)
         back_net = copy.deepcopy(self.net)
         return torch.nn.Sequential(
@@ -142,7 +136,6 @@ class ODEModel(torch.nn.Module):
                 ShallowODE(ode_width,hidden=inside_width,
                            Act=Act),
                 method='euler'),
-            #ODEBlock(ShallowODE(ode_width,hidden=12,Act=Act)),
             torch.nn.Linear(ode_width,o_dim),
         )
     def forward(self,x):
