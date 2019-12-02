@@ -2,13 +2,6 @@ import torch
 import functools
 
 #
-# helper functions to examine models
-#
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-#
-#
 # Helper functions for making standard networks
 #
 def shallow(in_dim,hidden,out_dim,Act=torch.nn.ReLU):
@@ -25,7 +18,16 @@ def deep(widths,Act=torch.nn.ReLU):
         layers.extend([torch.nn.Linear(widths[i],widths[i+1]), Act()])
     layers.append(torch.nn.Linear(widths[-2],widths[-1]))
     return torch.nn.Sequential(*layers)
- 
+
+
+def channel_squish(imgs, sq):
+    """TODO: Only works without channels right now"""
+    W,H = imgs.shape[-2],imgs.shape[-1]
+    C = imgs.shape[1]
+    ii = imgs.reshape(-1, W, H//sq, sq).permute(0,2,1,3).reshape(-1,W//sq, H//sq, sq*sq).permute(0,3,2,1)
+    return ii
+
+
 #
 # Extra Building Blocks
 #
@@ -78,79 +80,3 @@ class DeepNet(torch.nn.Module):
         self.net = deep(dims,Act=Act)
     def forward(self,x):
         return self.net(x)
-#
-# Networks for ODEs. A different call structure
-#
-class ShallowODE(torch.nn.Module):
-    """A basic shallow network that takes in a t as well"""
-    def __init__(self, dim, hidden=10, Act=torch.nn.ReLU):
-        super(ShallowODE,self).__init__()
-        self.net = shallow(dim,hidden,dim,Act=Act)
-    def forward(self,t,x):
-        return self.net(x)
-    
-#
-# RefineNet utilities 
-#
-import torchdiffeq
-import copy
-
-def refine(net):
-    try:
-        return net.refine()
-    except AttributeError:
-        if type(net) is torch.nn.Sequential:
-            return torch.nn.Sequential(*[
-                refine(m) for m in net
-            ])
-        else:
-            #raise RuntimeError("Hit a network that cannot be refined.")
-            # Error is for debugging. This makes sense too:
-            return net
-
-class ODEBlock(torch.nn.Module):
-    """Wraps an ode-model with the odesolve to fit into standard 
-    models."""
-    def __init__(self,net,t_max=1.0,method='euler'):
-        super(ODEBlock,self).__init__()
-        self.t_max = t_max
-        self.method = method
-        self.ts = torch.tensor([0,t_max])
-        self.net = net
-    def forward(self,x):
-        h = torchdiffeq.odeint(self.net, x, self.ts,
-                               method=self.method)[1,:,:]
-        #print(h.shape)
-        return h
-    def refine(self):
-        """TODO: Cut self.net in half"""
-        front_net = copy.deepcopy(self.net)
-        back_net = copy.deepcopy(self.net)
-        return torch.nn.Sequential(
-            ODEBlock(front_net, self.t_max/2.0),
-            ODEBlock(back_net,  self.t_max/2.0),
-        )
-
-class ODEModel(torch.nn.Module):
-    def __init__(self,i_dim,o_dim,ode_width=4,
-                 inside_width=4,Act=torch.nn.ReLU,
-                method='euler'):
-        super(ODEModel,self).__init__()
-        self.net = torch.nn.Sequential(
-            torch.nn.Linear(i_dim,ode_width),
-            ODEBlock(
-                ShallowODE(ode_width,hidden=inside_width,
-                           Act=Act),
-                method='euler'),
-            #ODEBlock(ShallowODE(ode_width,hidden=12,Act=Act)),
-            torch.nn.Linear(ode_width,o_dim),
-        )
-    def forward(self,x):
-        # Missing sigmoid
-        y = self.net(x)
-        return y
-    def refine(self):
-        new = copy.deepcopy(self)
-        new.net[1] = refine(self.net[1])
-        return new
-    
