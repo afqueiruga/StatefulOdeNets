@@ -1,5 +1,5 @@
 import torch
-from odenet import refine
+from .odenet import refine
 
 #
 # helper functions to examine models
