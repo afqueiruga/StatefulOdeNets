@@ -27,8 +27,6 @@ def train_for_epochs(model, loader,
             losses.append(L.detach().numpy())
             if step_count % N_print == N_print-1:
                 print(L.detach())
-                plot_pred(model)
-                plt.show()
             step_count += 1
     return losses
 
@@ -51,14 +49,27 @@ def train_adapt(model, loader, criterion, N_epochs, N_refine):
     return model_list, losses, refine_steps
 
 
-def plot_weights_over_time(model_list, grab_it):
+from matplotlib import pylab as plt
+def plot_weights_over_time(model_list, grab_w, grab_ts):
     for i,m in enumerate(model_list):
-        w = grab_it(m).detach().numpy()
-        ts =  m.net[1].ts.detach().numpy()
+        w = grab_w(m).detach().numpy()
+        ts =  grab_ts(m).detach().numpy()
         #print(ts.shape, w.shape)
         #plt.imshow(w[:,0,:].T)
         plt.subplot(len(model_list),1,i+1)
         dt = ts[1]-ts[0]
         plt.bar(ts[0:-1]+dt*0.5,w,width=ts[1]-ts[0],edgecolor='k')
         plt.xlabel('t')
+    plt.show()
+
+def plot_layers_over_times(model, img):
+    y = models.channel_squish(img,2)
+    with torch.no_grad():
+        yy = torchdiffeq.odeint(m.net[0].net , y, m.net[0].ts)
+    plt.figure(figsize=(8,20))
+    L = yy.shape[0]
+    for i in range(L):
+        for j in range(4):
+            plt.subplot(L,4,4*i+j+1)
+            plt.imshow(yy[i,2,j,:,:])
     plt.show()

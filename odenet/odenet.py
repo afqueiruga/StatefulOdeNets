@@ -50,7 +50,8 @@ class LinearODE(torch.nn.Module):
 
     
 class ShallowODE(torch.nn.Module):
-    def __init__(self, time_d, in_features, hidden_features, act=torch.nn.functional.relu):
+    def __init__(self, time_d, in_features, hidden_features, 
+                 act=torch.nn.functional.relu):
         super(ShallowODE,self).__init__()
         self.act = act
         self.L1 = LinearODE(time_d,in_features,hidden_features)
@@ -151,11 +152,14 @@ class ODEBlock(torch.nn.Module):
         self.net = net
     def forward(self,x):
         h = torchdiffeq.odeint(self.net, x, self.ts,
-                               method=self.method)[1,:,:]
+                               method=self.method)[-1,:,:]
         return h
     def refine(self):
         newnet = self.net.refine()
         new = ODEBlock(newnet,self.N_time*2,method=self.method)
         return new
     
-    
+    def diffeq(self,x):
+        hs = torchdiffeq.odeint(self.net, x, self.ts,
+                               method=self.method)
+        return hs
