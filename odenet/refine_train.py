@@ -10,7 +10,9 @@ def count_parameters(model):
 
 def train_for_epochs(model, loader,
                      criterion,
-                     N_epochs, losses = None, lr=1.0e-3,N_print=1000):
+                     N_epochs, losses = None, 
+                     lr=1.0e-3, lr_decay=0.2,
+                     N_print=1000):
     "Works for normal models too"
     if losses is None:
         losses = []
@@ -31,20 +33,23 @@ def train_for_epochs(model, loader,
     return losses
 
 
-def train_adapt(model, loader, criterion, N_epochs, N_refine):
+def train_adapt(model, loader, criterion, N_epochs, N_refine,
+               lr=1.0e-3, lr_decay=0.2):
     """I don't know how to control the learning rate"""
     losses = []
     refine_steps = []
     model_list = [model]
     N_print= 10000
     for i in range(N_refine):
-        lr =  10.0**(-1-i//2)
+        # Adapt the learning rate as the network gets deeper
+        gen_lr =  lr * 10.0**(-i//2)
         if i > 0:
             model_list.append(model_list[-1].refine())
-            print("Adapting to ", count_parameters(model_list[-1]), "with lr = ",lr)
+            print("Adapting to ", count_parameters(model_list[-1]), "with lr = ",gen_lr)
         else:
-            print("Starting with ",count_parameters(model_list[-1]), "with lr = ",lr)
-        losses = train_for_epochs(model_list[-1],loader, criterion,N_epochs,losses, lr = lr)
+            print("Starting with ",count_parameters(model_list[-1]), "with lr = ",gen_lr)
+        losses = train_for_epochs(model_list[-1],loader, criterion,N_epochs,losses,
+                                  lr = gen_lr, lr_decay)
         refine_steps.append(len(losses))
     return model_list, losses, refine_steps
 

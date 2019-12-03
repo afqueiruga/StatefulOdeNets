@@ -1,7 +1,7 @@
 import torch
 import torchvision
 
-def get_dataset(name='FMNIST'):
+def get_dataset(name='FMNIST', batch_size=128):
     if name=='CIFAR10':
         transform_train = torchvision.transforms.Compose([
         torchvision.transforms.RandomCrop(32, padding=4),
@@ -16,11 +16,11 @@ def get_dataset(name='FMNIST'):
         trainset = torchvision.datasets.CIFAR10(root='./CIFAR10_data', 
                     train=True, download=True, transform=transform_train)
         trainloader = torch.utils.data.DataLoader(trainset, 
-                    batch_size=128, shuffle=True, num_workers=2)
+                    batch_size=batch_size, shuffle=True, num_workers=2)
         testset = torchvision.datasets.CIFAR10(root='./CIFAR10_data', 
                     train=False, download=True, transform=transform_train)
         testloader = torch.utils.data.DataLoader(trainset, 
-                    batch_size=128, shuffle=True, num_workers=2)
+                    batch_size=batch_size, shuffle=True, num_workers=2)
         
     
     elif name=='FMNIST':
@@ -34,11 +34,11 @@ def get_dataset(name='FMNIST'):
         trainset = torchvision.datasets.FashionMNIST('F_MNIST_data/', 
                 download=True, train=True, transform=transform)
         trainloader = torch.utils.data.DataLoader(trainset, 
-                batch_size=64, shuffle=True)
+                batch_size=batch_size, shuffle=True)
         testset = torchvision.datasets.FashionMNIST('F_MNIST_data/', 
                 download=True, train=False, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, 
-                batch_size=64, shuffle=True)
+                batch_size=batch_size, shuffle=True)
         
     else:
         raise RunetimeError('Unknown dataset')
