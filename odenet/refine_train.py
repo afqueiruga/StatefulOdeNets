@@ -1,6 +1,6 @@
 import torch
 from .odenet import refine
-from .helper import get_device
+from .helper import get_device, which_device
 #
 # helper functions to examine models
 #
@@ -59,7 +59,33 @@ def train_adapt(model, loader, criterion, N_epochs, N_refine,
         refine_steps.append(len(losses))
     return model_list, losses, refine_steps
 
+#
+# Evaluation tools
+#
+def acc(y,labels):
+    return torch.sum(torch.argmax(y,dim=-1) == labels)*1.0/len(labels)
+def model_acc(model,loader):
+    imgs,labels = next(iter(loader))
+    y = model(imgs.to(which_device(model)))
+    return acc(y.cpu(),labels)
+def plot_accuracy(model,loader):
+    imgs,labels = next(iter(loader))
+    y = model(imgs.to(which_device(model)))
+    print(acc(y.cpu(),labels).item())
+    bars = torch.nn.Softmax(dim=-1)(y[:10])
+    size = len(bars)
+    plt.figure(figsize=(10,10))
+    for i,(pred,img,label) in enumerate(zip(bars,imgs,labels)):
+        plt.subplot(size//2+1,4,1+2*i)
+        plt.imshow(img[0,:,:].detach().numpy(),cmap='Greys')
+        plt.subplot(size//2+1,4,2+2*i)
+        plt.bar(range(10),[1 if y==label else 0 for y in range(10)])
+        plt.bar(range(10),pred.cpu().detach().numpy())
+    plt.show()
 
+#
+# Plotting tools
+#
 from matplotlib import pylab as plt
 def plot_weights_over_time(model_list, grab_w, grab_ts):
     for i,m in enumerate(model_list):
@@ -84,3 +110,5 @@ def plot_layers_over_times(model, img):
             plt.subplot(L,4,4*i+j+1)
             plt.imshow(yy[i,2,j,:,:])
     plt.show()
+    
+    
