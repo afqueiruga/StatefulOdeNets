@@ -1,7 +1,9 @@
 import torch
 import torchvision
 
-def get_dataset(name='FMNIST', batch_size=128):
+
+
+def get_dataset(name='FMNIST', batch_size=128, root='.'):
     if name=='CIFAR10':
         transform_train = torchvision.transforms.Compose([
         torchvision.transforms.RandomCrop(32, padding=4),
@@ -11,13 +13,13 @@ def get_dataset(name='FMNIST', batch_size=128):
                                          (0.2023, 0.1994, 0.2010)),
         ])
         
-        refset = torchvision.datasets.CIFAR10(root='./CIFAR10_data', 
+        refset = torchvision.datasets.CIFAR10(root=root+'/CIFAR10_data', 
                     train=True, download=True, transform=None)
-        trainset = torchvision.datasets.CIFAR10(root='./CIFAR10_data', 
+        trainset = torchvision.datasets.CIFAR10(root=root+'/CIFAR10_data', 
                     train=True, download=True, transform=transform_train)
         trainloader = torch.utils.data.DataLoader(trainset, 
                     batch_size=batch_size, shuffle=True, num_workers=2)
-        testset = torchvision.datasets.CIFAR10(root='./CIFAR10_data', 
+        testset = torchvision.datasets.CIFAR10(root=root+'/CIFAR10_data', 
                     train=False, download=True, transform=transform_train)
         testloader = torch.utils.data.DataLoader(trainset, 
                     batch_size=batch_size, shuffle=True, num_workers=2)
@@ -29,13 +31,13 @@ def get_dataset(name='FMNIST', batch_size=128):
                 torchvision.transforms.Normalize((0.5,),
                                                  (0.5,)),
             ])
-        refset = torchvision.datasets.FashionMNIST('F_MNIST_data/', 
+        refset = torchvision.datasets.FashionMNIST(root+'/F_MNIST_data/', 
                 download=True, train=True, transform=None)
-        trainset = torchvision.datasets.FashionMNIST('F_MNIST_data/', 
+        trainset = torchvision.datasets.FashionMNIST(root+'/F_MNIST_data/', 
                 download=True, train=True, transform=transform)
         trainloader = torch.utils.data.DataLoader(trainset, 
                 batch_size=batch_size, shuffle=True)
-        testset = torchvision.datasets.FashionMNIST('F_MNIST_data/', 
+        testset = torchvision.datasets.FashionMNIST(root+'/F_MNIST_data/', 
                 download=True, train=False, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, 
                 batch_size=batch_size, shuffle=True)
