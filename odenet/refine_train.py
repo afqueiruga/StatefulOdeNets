@@ -1,6 +1,6 @@
 import torch
 from .odenet import refine
-
+from .helper import get_device
 #
 # helper functions to examine models
 #
@@ -12,8 +12,10 @@ def train_for_epochs(model, loader,
                      criterion,
                      N_epochs, losses = None, 
                      lr=1.0e-3, lr_decay=0.2,
-                     N_print=1000):
+                     N_print=1000, device=None):
     "Works for normal models too"
+    if device is None:
+        device = get_device()
     if losses is None:
         losses = []
     #criterion = torch.nn.BCEWithLogitsLoss()
@@ -21,21 +23,25 @@ def train_for_epochs(model, loader,
     step_count = 0
     for e in range(N_epochs):
         for imgs,labels in iter(loader):
+            imgs = imgs.to(device)
+            labels = labels.to(device)
             optimizer.zero_grad()
             out = model(imgs)
             L = criterion(out,labels)
             L.backward()
             optimizer.step()
-            losses.append(L.detach().numpy())
+            losses.append(L.detach().cpu().item())
             if step_count % N_print == N_print-1:
-                print(L.detach())
+                print(L.detach().cpu())
             step_count += 1
     return losses
 
 
 def train_adapt(model, loader, criterion, N_epochs, N_refine,
-               lr=1.0e-3, lr_decay=0.2):
+               lr=1.0e-3, lr_decay=0.2, device=None):
     """I don't know how to control the learning rate"""
+    if device is None:
+        device = get_device()
     losses = []
     refine_steps = []
     model_list = [model]
@@ -49,7 +55,7 @@ def train_adapt(model, loader, criterion, N_epochs, N_refine,
         else:
             print("Starting with ",count_parameters(model_list[-1]), "with lr = ",gen_lr)
         losses = train_for_epochs(model_list[-1],loader, criterion,N_epochs,losses,
-                                  lr = gen_lr, lr_decay)
+                                  lr = gen_lr, lr_decay=lr_decay, device=device)
         refine_steps.append(len(losses))
     return model_list, losses, refine_steps
 

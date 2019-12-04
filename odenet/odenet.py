@@ -6,6 +6,8 @@ import torch
 import torchdiffeq
 import copy
 
+from .helper import which_device
+
 def refine(net):
     try:
         return net.refine()
@@ -87,6 +89,7 @@ class Conv2DODE(torch.nn.Module):
         # Use the trick where it's the same as index selection
         t_idx = int(t*self.time_d)
         if t_idx==self.time_d: t_idx = self.time_d-1
+        #t_idx = torch.LongTensor([t_idx]).to(which_device(self))
         wij = self.weights[t_idx,:,:]
         bi = self.bias[t_idx,:]
         y = torch.nn.functional.conv2d(x, wij,bi, padding=self.padding)
@@ -97,7 +100,7 @@ class Conv2DODE(torch.nn.Module):
                        self.in_channels,
                        self.out_channels,
                        width=self.width,
-                       padding=self.padding)
+                       padding=self.padding).to(which_device(self))
         for t in range(self.time_d):
             new.weights.data[2*t:2*t+2,:,:,:,:] = self.weights.data[t,:,:,:,:]
         for t in range(self.time_d):
@@ -156,7 +159,7 @@ class ODEBlock(torch.nn.Module):
         return h
     def refine(self):
         newnet = self.net.refine()
-        new = ODEBlock(newnet,self.N_time*2,method=self.method)
+        new = ODEBlock(newnet,self.N_time*2,method=self.method).to(which_device(self))
         return new
     
     def diffeq(self,x):
