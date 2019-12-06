@@ -7,11 +7,20 @@ from .helper import get_device, which_device
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
+def exp_lr_scheduler(optimizer, epoch, lr_decay_rate=0.8, decayEpoch=[]):
+    """Decay learning rate by a factor of lr_decay_rate every lr_decay_epoch epochs"""
+    if epoch in decayEpoch:
+        for param_group in optimizer.param_groups:
+            param_group['lr'] *= lr_decay_rate
+        return optimizer
+    else:
+        return optimizer  
+
 
 def train_for_epochs(model, loader,
                      criterion,
                      N_epochs, losses = None, 
-                     lr=1.0e-3, lr_decay=0.2,
+                     lr=1.0e-3, lr_decay=0.2, epoch_update=[], weight_decay=1e-5,
                      N_print=1000, device=None):
     "Works for normal models too"
     if device is None:
@@ -19,7 +28,9 @@ def train_for_epochs(model, loader,
     if losses is None:
         losses = []
     #criterion = torch.nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    #optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+
     step_count = 0
     for e in range(N_epochs):
         for imgs,labels in iter(loader):
@@ -34,29 +45,51 @@ def train_for_epochs(model, loader,
             if step_count % N_print == N_print-1:
                 print(L.detach().cpu())
             step_count += 1
+        
+        #exp_lr_scheduler(optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
+        
+        model.eval()
+        correct = 0
+        total_num = 0
+        for data, target in loader:
+            data, target = data.to(device), target.to(device)
+            output = model(data)
+            pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
+            correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
+            total_num += len(data)
+        print('Train Loss: ', correct / total_num)         
+        
+        
     return losses
 
 
 def train_adapt(model, loader, criterion, N_epochs, N_refine,
-               lr=1.0e-3, lr_decay=0.2, device=None):
+               lr=1.0e-3, lr_decay=0.2, epoch_update=[], weight_decay=1e-5, device=None):
     """I don't know how to control the learning rate"""
     if device is None:
         device = get_device()
     losses = []
     refine_steps = []
     model_list = [model]
-    N_print= 10000
+    N_print= 1
+    epoch_temp = 0
     for i in range(N_refine):
         # Adapt the learning rate as the network gets deeper
-        gen_lr =  lr * 10.0**(-i//2)
+        #gen_lr =  lr * 10.0**(-i//2)
         if i > 0:
             model_list.append(model_list[-1].refine())
-            print("Adapting to ", count_parameters(model_list[-1]), "with lr = ",gen_lr)
+            print("Adapting to ", count_parameters(model_list[-1]), "with lr = ",lr)
         else:
-            print("Starting with ",count_parameters(model_list[-1]), "with lr = ",gen_lr)
+            print("Starting with ",count_parameters(model_list[-1]), "with lr = ",lr)
         losses = train_for_epochs(model_list[-1],loader, criterion,N_epochs,losses,
-                                  lr = gen_lr, lr_decay=lr_decay, device=device)
+                                  lr = lr, lr_decay=lr_decay, epoch_update=epoch_update, weight_decay=weight_decay, device=device)
         refine_steps.append(len(losses))
+        
+        epoch_temp += N_epochs
+        if epoch_temp in epoch_update:
+            lr *= lr_decay
+            print('lr decay')
+        
     return model_list, losses, refine_steps
 
 #

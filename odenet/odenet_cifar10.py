@@ -20,7 +20,8 @@ class ODEResNet(nn.Module):
             nn.Conv2d(2*ALPHA, 4*ALPHA,kernel_size=1,stride=2,bias=False),
             ODEBlock(ShallowConv2DODE(time_d,4*ALPHA,4*ALPHA),
                      N_time=time_d,method=method),
-            nn.AdaptiveAvgPool2d(1),
+            #nn.AdaptiveAvgPool2d(1),
+            nn.AvgPool2d(8),
             nn.Flatten(),
             nn.Linear(4*ALPHA,10),
         )
