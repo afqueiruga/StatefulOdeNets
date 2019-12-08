@@ -14,6 +14,7 @@ class ODEResNet(nn.Module):
             ODEBlock(ShallowConv2DODE(time_d,ALPHA,ALPHA),
                      N_time=time_d,method=method),
             #nn.MaxPool2d(2), # Downsampale
+<<<<<<< HEAD
             nn.Conv2d(ALPHA, 2*ALPHA, kernel_size=3,padding=1,stride=2,bias=False),
             nn.BatchNorm2d(2*ALPHA),
             ODEBlock(ShallowConv2DODE(time_d,2*ALPHA,2*ALPHA),
@@ -24,6 +25,16 @@ class ODEResNet(nn.Module):
                      N_time=time_d,method=method),
             nn.AdaptiveAvgPool2d(1),
             #nn.AvgPool2d(8),
+=======
+            nn.Conv2d(ALPHA, 2*ALPHA, kernel_size=1,stride=2,bias=False),
+            ODEBlock(ShallowConv2DODE(time_d,2*ALPHA,2*ALPHA),
+                     N_time=time_d,method=method),
+            nn.Conv2d(2*ALPHA, 4*ALPHA,kernel_size=1,stride=2,bias=False),
+            ODEBlock(ShallowConv2DODE(time_d,4*ALPHA,4*ALPHA),
+                     N_time=time_d,method=method),
+            #nn.AdaptiveAvgPool2d(1),
+            nn.AvgPool2d(8),
+>>>>>>> 4519ddb1457fcfb62b0518e4c0e71c4201bcc4fc
             nn.Flatten(),
             nn.Linear(4*ALPHA,10),
         )

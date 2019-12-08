@@ -118,17 +118,11 @@ class ShallowConv2DODE(torch.nn.Module):
                             width=width, padding=padding)
         self.L2 = Conv2DODE(time_d,hidden_features,in_features,
                             width=width, padding=padding)
-        
-        self.bn1 = torch.nn.BatchNorm2d(hidden_features)
-        self.bn2 = torch.nn.BatchNorm2d(in_features)
-        
     def forward(self, t, x):
         h = self.L1(t,x)
         hh = self.act(h)
-        hh = self.bn1(hh)
         y = self.L2(t,hh)
         yy = self.act(y)
-        yy = self.bn2(yy)
         return yy
     def refine(self):
         L1 = self.L1.refine()
