@@ -37,11 +37,8 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
     N_print= 1
     lr_init = lr
     model = model_list[-1]    
-    
+    step_count = 0
 
-    "Works for normal models too"
-    if device is None:
-            device = get_device()
     #criterion = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -100,9 +97,9 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
             print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
             print('************')
             reset_lr(optimizer, lr=lr_init)
-            refine_steps.append(e)
+            refine_steps.append(step_count)
 
-        
+        step_count+=1
         exp_lr_scheduler(optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
 
     return model_list, losses, refine_steps
