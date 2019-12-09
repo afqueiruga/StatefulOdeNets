@@ -90,7 +90,7 @@ class Conv2DODE(torch.nn.Module):
         t_idx = int(t*self.time_d)
         if t_idx==self.time_d: t_idx = self.time_d-1
         #t_idx = torch.LongTensor([t_idx]).to(which_device(self))
-        wij = self.weights[t_idx,:,:]
+        wij = self.weights[t_idx,:,:,:,:]
         bi = self.bias[t_idx,:]
         y = torch.nn.functional.conv2d(x, wij,bi, padding=self.padding)
         return y
@@ -124,8 +124,9 @@ class ShallowConv2DODE(torch.nn.Module):
                             width=width, padding=padding)
         
         self.bn2 = torch.nn.BatchNorm2d(in_features)
-        
+        self.verbose=False
     def forward(self, t, x):
+        if self.verbose: print("shallow @ ",t)
         h = self.L1(t,x)
         hh = self.act(h)
         hh = self.bn1(hh)
@@ -166,7 +167,7 @@ class ODEBlock(torch.nn.Module):
     
     def forward(self,x):
         h = torchdiffeq.odeint(self.net, x, self.ts, method=self.method,
-                              options=dict(enforce_openset=True)[-1,:,:]
+                              options=dict(enforce_openset=True))[-1,:,:]
         return h
     
     def refine(self):
@@ -176,5 +177,5 @@ class ODEBlock(torch.nn.Module):
     
     def diffeq(self,x):
         hs = torchdiffeq.odeint(self.net, x, self.ts, method=self.method,
-                              options=dict(enforce_openset=True)
+                              options=dict(enforce_openset=True))
         return hs

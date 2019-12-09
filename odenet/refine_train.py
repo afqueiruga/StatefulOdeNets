@@ -100,6 +100,7 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
             print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
             print('************')
             reset_lr(optimizer, lr=lr_init)
+            refine_steps.append(e)
 
         
         exp_lr_scheduler(optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
@@ -112,11 +113,17 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
 def acc(y,labels):
     return torch.sum(torch.argmax(y,dim=-1) == labels)*1.0/len(labels)
 def model_acc(model,loader):
-    imgs,labels = next(iter(loader))
+    try:
+        imgs,labels = loader
+    except:
+        imgs,labels = next(iter(loader))
     y = model(imgs.to(which_device(model)))
     return acc(y.cpu(),labels)
 def plot_accuracy(model,loader):
-    imgs,labels = next(iter(loader))
+    try:
+        imgs,labels = loader
+    except:
+        imgs,labels = next(iter(loader))
     y = model(imgs.to(which_device(model)))
     print(acc(y.cpu(),labels).item())
     bars = torch.nn.Softmax(dim=-1)(y[:10])

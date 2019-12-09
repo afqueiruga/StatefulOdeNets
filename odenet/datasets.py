@@ -20,7 +20,7 @@ def get_dataset(name='FMNIST', batch_size=128, root='.'):
                     train=True, download=True, transform=transform_train)
         trainloader = torch.utils.data.DataLoader(trainset, 
                     batch_size=batch_size, shuffle=True, num_workers=2)
-                testset = torchvision.datasets.CIFAR10(root=root+'/CIFAR10_data', 
+        testset = torchvision.datasets.CIFAR10(root=root+'/CIFAR10_data', 
                     train=False, download=True, transform=transform_test)
         testloader = torch.utils.data.DataLoader(testset, 
                     batch_size=batch_size, shuffle=True, num_workers=2)
