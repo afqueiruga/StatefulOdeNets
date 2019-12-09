@@ -153,16 +153,18 @@ class ODEBlock(torch.nn.Module):
         self.method = method
         self.ts = torch.linspace(0,1,N_time+1) # TODO: awk with piecewise constant centered on the half-cells
         self.net = net
+    
     def forward(self,x):
-        h = torchdiffeq.odeint(self.net, x, self.ts,
-                               method=self.method)[-1,:,:]
+        h = torchdiffeq.odeint(self.net, x, self.ts, method=self.method,
+                              options=dict(enforce_openset=True)[-1,:,:]
         return h
+    
     def refine(self):
         newnet = self.net.refine()
         new = ODEBlock(newnet,self.N_time*2,method=self.method).to(which_device(self))
         return new
     
     def diffeq(self,x):
-        hs = torchdiffeq.odeint(self.net, x, self.ts,
-                               method=self.method)
+        hs = torchdiffeq.odeint(self.net, x, self.ts, method=self.method,
+                              options=dict(enforce_openset=True)
         return hs
