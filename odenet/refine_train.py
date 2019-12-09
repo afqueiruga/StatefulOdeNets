@@ -28,6 +28,7 @@ def reset_lr(optimizer, lr):
 def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
                lr=1.0e-3, lr_decay=0.2, epoch_update=[], weight_decay=1e-5, device=None):
     """I don't know how to control the learning rate"""
+
     if device is None:
         device = get_device()
     losses = []
@@ -47,7 +48,8 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
 
     for e in range(N_epochs):
         model.train()
-        
+
+
         for imgs,labels in iter(loader):
             imgs = imgs.to(device)
             labels = labels.to(device)
@@ -60,11 +62,9 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
             optimizer.step()
             optimizer.zero_grad()
             losses.append(L.detach().cpu().item())
-            
-                
-        if e % 5 == 0:
-            print('Epoch: ', e)         
 
+        if e % 5 == 0:
+            print('Epoch: ', e)
         
         if e % 5 == 0:
             model.eval()
@@ -103,8 +103,8 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
 
         
         exp_lr_scheduler(optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
-        
-    return model_list, losses
+
+    return model_list, losses, refine_steps
 
 #
 # Evaluation tools
@@ -157,9 +157,7 @@ def plot_layers_over_times(model, img):
             plt.subplot(L,4,4*i+j+1)
             plt.imshow(yy[i,2,j,:,:])
     plt.show()
-    
-    
-    
+   
     
 #def train_for_epochs(model, loader, testloader,
 #                     criterion,
