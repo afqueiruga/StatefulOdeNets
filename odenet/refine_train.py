@@ -32,11 +32,13 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
     if device is None:
         device = get_device()
     losses = []
+    train_acc = []
+    test_acc = []
     refine_steps = []
     model_list = [model]
     N_print= 1
     lr_init = lr
-    model = model_list[-1]    
+    lr_current = lr
     step_count = 0
 
     #criterion = torch.nn.BCEWithLogitsLoss()
@@ -59,11 +61,12 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
             optimizer.step()
             optimizer.zero_grad()
             losses.append(L.detach().cpu().item())
+            step_count+=1
 
-        if e % 5 == 0:
+        if e % 1 == 0:
             print('Epoch: ', e)
         
-        if e % 5 == 0:
+        if e % 1 == 0:
             model.eval()
             correct = 0
             total_num = 0        
@@ -74,9 +77,12 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
                 pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
                 correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
                 total_num += len(data)
-            print('Train Loss: ', correct / total_num)         
+                
+            print('Train Accuracy: ', correct / total_num)    
+            train_acc.append(correct / total_num)
+            
 
-        if e % 5 == 0:
+        if e % 1 == 0:
             model.eval()
             correct = 0
             total_num = 0   
@@ -87,22 +93,30 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
                 pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
                 correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
                 total_num += len(data)
-            print('Test Loss: ', correct / total_num)        
-        
+            print('Test Accuracy: ', correct / total_num)        
+            test_acc.append(correct / total_num)
+
+
+        if e in epoch_update:
+            lr_current *= lr_decay
+            
 
         if e in N_refine:
-            model_list.append(model_list[-1].refine())
-            model = model_list[-1]
+            new_model = model.refine()
+            model_list.append(new_model)
+            model = new_model
             print('**** Setup ****')
             print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
             print('************')
-            reset_lr(optimizer, lr=lr_init)
+            optimizer = torch.optim.SGD(model.parameters(), lr=lr_current, momentum=0.9, 
+                                        weight_decay=weight_decay)
+            #reset_lr(optimizer, lr=lr_init)
             refine_steps.append(step_count)
 
-        step_count+=1
+
         exp_lr_scheduler(optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
 
-    return model_list, losses, refine_steps
+    return model_list, losses, refine_steps, train_acc, test_acc
 
 #
 # Evaluation tools

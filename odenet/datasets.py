@@ -14,6 +14,14 @@ def get_dataset(name='FMNIST', batch_size=128, root='.'):
                                          (0.2023, 0.1994, 0.2010)),
         ])
         
+        transform_test = torchvision.transforms.Compose([
+        torchvision.transforms.ToTensor(),
+
+        torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), 
+                                         (0.2023, 0.1994, 0.2010)),
+        ])        
+        
+        
         refset = torchvision.datasets.CIFAR10(root=root+'/CIFAR10_data', 
                     train=True, download=True, transform=None)
         trainset = torchvision.datasets.CIFAR10(root=root+'/CIFAR10_data', 

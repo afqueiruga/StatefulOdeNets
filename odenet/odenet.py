@@ -19,7 +19,7 @@ def refine(net):
         else:
             #raise RuntimeError("Hit a network that cannot be refined.")
             # Error is for debugging. This makes sense too:
-            return net
+            return copy.deepcopy(net)
 
         
 class LinearODE(torch.nn.Module):
@@ -158,16 +158,21 @@ class ODEify(torch.nn.Module):
 class ODEBlock(torch.nn.Module):
     """Wraps an ode-model with the odesolve to fit into standard 
     models."""
-    def __init__(self,net,N_time=1,method='euler'):
+    def __init__(self,net,N_time=1,method='euler',use_adjoint=False):
         super(ODEBlock,self).__init__()
         self.N_time = N_time
         self.method = method
+        self.use_adjoint = use_adjoint
         self.ts = torch.linspace(0,1,N_time+1) # TODO: awk with piecewise constant centered on the half-cells
         self.net = net
     
     def forward(self,x):
-        h = torchdiffeq.odeint(self.net, x, self.ts, method=self.method,
-                              options=dict(enforce_openset=True))[-1,:,:]
+        if self.use_adjoint:
+            integ = torchdiffeq.odeint_adjoint
+        else:
+            integ = torchdiffeq.odeint
+        h = integ(self.net, x, self.ts, method=self.method,
+                  options=dict(enforce_openset=True))[-1,:,:]
         return h
     
     def refine(self):
