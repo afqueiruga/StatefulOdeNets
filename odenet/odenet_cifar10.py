@@ -1,5 +1,8 @@
 from torch import nn
+import math
 from .odenet import *
+
+
 
 class ODEResNet(nn.Module):
     """Better idea."""
@@ -15,27 +18,48 @@ class ODEResNet(nn.Module):
             nn.ReLU(),
             ODEBlock(ShallowConv2DODE(time_d, ALPHA, ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
+            ODEBlock(ShallowConv2DODE(time_d, ALPHA, ALPHA),
+                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+            ODEBlock(ShallowConv2DODE(time_d, ALPHA, ALPHA),
+                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+
 
             nn.Conv2d(ALPHA, 2*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
             nn.BatchNorm2d(2*ALPHA),
             ODEBlock(ShallowConv2DODE(time_d, 2*ALPHA, 2*ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
+            ODEBlock(ShallowConv2DODE(time_d, 2*ALPHA, 2*ALPHA),
+                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+            ODEBlock(ShallowConv2DODE(time_d, 2*ALPHA, 2*ALPHA),
+                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+
 
             nn.Conv2d(2*ALPHA, 4*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
             nn.BatchNorm2d(4*ALPHA), 
             ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
-
-            nn.Conv2d(4*ALPHA, 8*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
-            nn.BatchNorm2d(8*ALPHA), 
-            ODEBlock(ShallowConv2DODE(time_d, 8*ALPHA, 8*ALPHA),
+            ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
+                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+            ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
 
-            nn.AdaptiveAvgPool2d(1),
-            #nn.AvgPool2d(8),
+            #nn.AdaptiveAvgPool2d(1),
+            nn.AvgPool2d(8),
             nn.Flatten(),
-            nn.Linear(8*ALPHA,10),
+            nn.Linear(4*ALPHA,10),
         )
+            
+            
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()            
+            
+                        
+            
     def forward(self,x):
         return self.net(x)
     def refine(self):
@@ -43,6 +67,8 @@ class ODEResNet(nn.Module):
         for i in range(len(self.net)):
             new.net[i] = refine(self.net[i])
         return new
+
+
 
 class ODEResNet_new(nn.Module):
     """Better idea."""

@@ -3,8 +3,11 @@ RefineNet
 """
 
 import torch
+import torch.nn as nn
 import torchdiffeq
 import copy
+
+import torch.nn.functional as F
 
 from .helper import which_device
 
@@ -117,26 +120,24 @@ class ShallowConv2DODE(torch.nn.Module):
         self.L1 = Conv2DODE(time_d,in_features,hidden_features,
                             width=width, padding=padding)
 
-        self.bn1 = torch.nn.BatchNorm2d(hidden_features, track_running_stats=False)
+        self.bn1 = torch.nn.BatchNorm2d(hidden_features, track_running_stats=True)
 
         
         self.L2 = Conv2DODE(time_d,hidden_features,in_features,
                             width=width, padding=padding)
         
-        self.bn2 = torch.nn.BatchNorm2d(in_features, track_running_stats=False)
+        self.bn2 = torch.nn.BatchNorm2d(in_features, track_running_stats=True)
         self.verbose=False
     def forward(self, t, x):
         if self.verbose: print("shallow @ ",t)
-
-        h = self.act(x)
-        h = self.bn2(h)        
-        z = self.L1(t, h)
-        
-        hh = self.act(z)
-        hh = self.bn1(hh)
-        y = self.L2(t,hh)
-
-        return y
+  
+        x = self.L1(t, x)
+        x = self.act(x)
+        x = self.bn1(x)
+        x = self.L2(t, x)
+        x = self.act(x)
+        x = self.bn2(x)         
+        return x
     
     def refine(self):
         L1 = self.L1.refine()
@@ -187,3 +188,29 @@ class ODEBlock(torch.nn.Module):
         hs = torchdiffeq.odeint(self.net, x, self.ts, method=self.method,
                               options=dict(enforce_openset=True))
         return hs
+    
+    
+    
+class PreActBlock(torch.nn.Module):
+    '''Pre-activation version of the BasicBlock.'''
+    expansion = 1
+
+    def __init__(self, in_planes, planes, stride=1):
+        super(PreActBlock, self).__init__()
+        self.bn1 = nn.BatchNorm2d(in_planes)
+        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
+
+        if stride != 1 or in_planes != self.expansion*planes:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_planes, self.expansion*planes, kernel_size=1, stride=stride, bias=False)
+            )
+
+    def forward(self, x):
+        out = F.relu(self.bn1(x))
+        shortcut = self.shortcut(out) if hasattr(self, 'shortcut') else x
+        out = self.conv1(out)
+        out = self.conv2(F.relu(self.bn2(out)))
+        out += shortcut
+        return out    
