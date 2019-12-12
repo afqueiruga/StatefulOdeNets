@@ -1,6 +1,9 @@
 import numpy as np
 import torch
+import torch.nn as nn
+
 import torch.nn.init as init
+
 
 from matplotlib import pylab as plt
 from odenet import datasets
@@ -59,12 +62,25 @@ device = get_device()
 refset,trainset,trainloader,testset,testloader = datasets.get_dataset('CIFAR10',root='../data/')
 
 
+def init_params(net):
+    '''Init layer parameters.'''
+    for m in net.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)        
 
+            elif isinstance(m, nn.Linear):
+                nn.init.xavier_normal(m.weight)
+                if m.bias is not None:
+                    nn.init.constant(m.bias, 0.0) 
 
 def do_a_train_set(ALPHA, method, N_epochs, N_adapt, lr, lr_decay=0.1, epoch_update=[10], weight_decay=1e-5):
     
     model = ODEResNet(ALPHA=ALPHA, method=method, in_channels=3).to(device)
-    #model.apply(weights_init)
+    model.apply(init_params)
     
     #==============================================================================
     # Model summary
