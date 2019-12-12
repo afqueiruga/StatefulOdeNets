@@ -117,13 +117,13 @@ class ShallowConv2DODE(torch.nn.Module):
         self.L1 = Conv2DODE(time_d,in_features,hidden_features,
                             width=width, padding=padding)
 
-        self.bn1 = torch.nn.BatchNorm2d(hidden_features)
+        self.bn1 = torch.nn.BatchNorm2d(hidden_features, track_running_stats=False)
 
         
         self.L2 = Conv2DODE(time_d,hidden_features,in_features,
                             width=width, padding=padding)
         
-        self.bn2 = torch.nn.BatchNorm2d(in_features)
+        self.bn2 = torch.nn.BatchNorm2d(in_features, track_running_stats=False)
         self.verbose=False
     def forward(self, t, x):
         if self.verbose: print("shallow @ ",t)
@@ -141,6 +141,10 @@ class ShallowConv2DODE(torch.nn.Module):
         new = copy.deepcopy(self) # TODO Don't like it, it re-allocates the weights that we're gonna throw away
         new.L1 = L1
         new.L2 = L2
+        #new.bn1.reset_running_stats()
+        #new.bn2.reset_running_stats()      
+        #new.bn1 = torch.nn.BatchNorm2d(L1.in_channels)
+        #new.bn2 = torch.nn.BatchNorm2d(L2.in_channels)
         return new
 
 

@@ -5,10 +5,10 @@ import torch.nn.init as init
 #
 # Torch helpers to keep environments uniform.
 #
-def set_seed():
+def set_seed(seed=1):
     """Set one seed for reproducibility."""
-    np.random.seed(10)
-    torch.manual_seed(10)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
 def get_device():
     """Get a gpu if available."""

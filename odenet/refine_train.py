@@ -1,6 +1,11 @@
 import torch
 from .odenet import refine
 from .helper import get_device, which_device
+import collections
+import torch.nn.init as init
+import copy
+
+
 #
 # helper functions to examine models
 #
@@ -23,7 +28,23 @@ def reset_lr(optimizer, lr):
             print('reset lr', param_group['lr'])
     return optimizer
     
-    
+
+def weights_init(m):
+    if isinstance(m, torch.nn.Linear):
+        if m.weight is not None:
+            init.xavier_uniform_(m.weight)
+        if m.bias is not None:
+            init.constant_(m.bias, 0.0)
+            
+    if isinstance(m, torch.nn.Conv2d):
+        if m.weight is not None:
+            init.kaiming_uniform_(m.weight)
+        if m.bias is not None:
+            init.zeros_(m.bias, 0.0)  
+
+def weight_reset(m):
+    if isinstance(m, torch.nn.Conv2d) or isinstance(m, torch.nn.Linear):
+        m.reset_parameters()            
 
 def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
                lr=1.0e-3, lr_decay=0.2, epoch_update=[], weight_decay=1e-5, device=None):
@@ -48,6 +69,43 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
     for e in range(N_epochs):
         model.train()
 
+        if e in N_refine:
+            new_model = model.refine()
+            model_list.append(new_model)
+            model = new_model
+
+            print('**** Setup ****')
+            print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
+            print('************')
+            print(model)
+            
+            
+            #print(optimizer.state)
+
+            #print(model.state_dict())
+                
+            #model.apply(weight_reset)
+            #model.apply(weights_init)
+
+            
+            print('************')
+            print('************')
+            print('************')
+  
+            #print(model.state_dict())
+                
+            optimizer = torch.optim.SGD(model.parameters(), lr=lr_init, momentum=0.9, 
+                                        weight_decay=weight_decay)
+
+            #print(optimizer.state)
+            #optimizer.state = collections.defaultdict(dict) # Reset state
+            #print(optimizer.state)
+            
+            
+            #reset_lr(optimizer, lr=lr_init)
+            refine_steps.append(step_count)        
+        
+        
 
         for imgs,labels in iter(loader):
             imgs = imgs.to(device)
@@ -63,10 +121,10 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
             losses.append(L.detach().cpu().item())
             step_count+=1
 
-        if e % 1 == 0:
+        if e % 5 == 0:
             print('Epoch: ', e)
         
-        if e % 1 == 0:
+        if e % 5 == 0:
             model.eval()
             correct = 0
             total_num = 0        
@@ -82,7 +140,7 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
             train_acc.append(correct / total_num)
             
 
-        if e % 1 == 0:
+        if e % 5 == 0:
             model.eval()
             correct = 0
             total_num = 0   
@@ -100,18 +158,6 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
         if e in epoch_update:
             lr_current *= lr_decay
             
-
-        if e in N_refine:
-            new_model = model.refine()
-            model_list.append(new_model)
-            model = new_model
-            print('**** Setup ****')
-            print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
-            print('************')
-            optimizer = torch.optim.SGD(model.parameters(), lr=lr_current, momentum=0.9, 
-                                        weight_decay=weight_decay)
-            #reset_lr(optimizer, lr=lr_init)
-            refine_steps.append(step_count)
 
 
         exp_lr_scheduler(optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
