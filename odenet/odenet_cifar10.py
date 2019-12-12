@@ -43,20 +43,20 @@ class ODEResNet(nn.Module):
             ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
 
-            #nn.AdaptiveAvgPool2d(1),
-            nn.AvgPool2d(8),
+            nn.AdaptiveAvgPool2d(1),
+            #nn.AvgPool2d(8),
             nn.Flatten(),
             nn.Linear(4*ALPHA,10),
         )
             
             
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()            
+#        for m in self.modules():
+#            if isinstance(m, nn.Conv2d):
+#                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+#                m.weight.data.normal_(0, math.sqrt(2. / n))
+#            elif isinstance(m, nn.BatchNorm2d):
+#                m.weight.data.fill_(1)
+#                m.bias.data.zero_()            
             
                         
             
