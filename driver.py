@@ -44,7 +44,7 @@ parser.add_argument('--lr_decay', type=float, default='0.1',  help='PCL penalty 
 #
 parser.add_argument('--seed', type=int, default='1',  help='Prediction steps')
 #
-parser.add_argument('--refine', type=int, nargs='+', default=[0,1], help='Decrease learning rate at these epochs.')
+parser.add_argument('--refine', type=int, nargs='+', default=[], help='Decrease learning rate at these epochs.')
 #
 
 args = parser.parse_args()

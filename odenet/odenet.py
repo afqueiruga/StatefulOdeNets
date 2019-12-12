@@ -127,12 +127,15 @@ class ShallowConv2DODE(torch.nn.Module):
         self.verbose=False
     def forward(self, t, x):
         if self.verbose: print("shallow @ ",t)
-        h = self.L1(t,x)
-        hh = self.act(h)
+
+        h = self.act(x)
+        h = self.bn2(h)        
+        z = self.L1(t, h)
+        
+        hh = self.act(z)
         hh = self.bn1(hh)
         y = self.L2(t,hh)
-        #yy = self.act(y)
-        #yy = self.bn2(yy)
+
         return y
     
     def refine(self):
