@@ -131,9 +131,9 @@ class ShallowConv2DODE(torch.nn.Module):
         hh = self.act(h)
         hh = self.bn1(hh)
         y = self.L2(t,hh)
-        yy = self.act(y)
-        yy = self.bn2(yy)
-        return yy
+        #yy = self.act(y)
+        #yy = self.bn2(yy)
+        return y
     
     def refine(self):
         L1 = self.L1.refine()
@@ -141,10 +141,6 @@ class ShallowConv2DODE(torch.nn.Module):
         new = copy.deepcopy(self) # TODO Don't like it, it re-allocates the weights that we're gonna throw away
         new.L1 = L1
         new.L2 = L2
-        #new.bn1.reset_running_stats()
-        #new.bn2.reset_running_stats()      
-        #new.bn1 = torch.nn.BatchNorm2d(L1.in_channels)
-        #new.bn2 = torch.nn.BatchNorm2d(L2.in_channels)
         return new
 
 

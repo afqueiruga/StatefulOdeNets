@@ -12,7 +12,6 @@ class ODEResNet(nn.Module):
             
             nn.Conv2d(in_channels, ALPHA, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(ALPHA),
-            nn.ReLU(),
             ODEBlock(ShallowConv2DODE(time_d, ALPHA, ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
             #ODEBlock(ShallowConv2DODE(time_d, ALPHA, ALPHA),
@@ -21,7 +20,6 @@ class ODEResNet(nn.Module):
             #         N_time=time_d, method=method, use_adjoint=use_adjoint),
             nn.Conv2d(ALPHA, 2*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
             nn.BatchNorm2d(2*ALPHA),
-            nn.ReLU(),
             ODEBlock(ShallowConv2DODE(time_d, 2*ALPHA, 2*ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
             #ODEBlock(ShallowConv2DODE(time_d, 2*ALPHA, 2*ALPHA),
@@ -37,10 +35,20 @@ class ODEResNet(nn.Module):
             #         N_time=time_d, method=method, use_adjoint=use_adjoint),
             #ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
             #         N_time=time_d, method=method, use_adjoint=use_adjoint),
+            nn.Conv2d(4*ALPHA, 8*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
+            nn.BatchNorm2d(8*ALPHA), 
+            nn.ReLU(),
+            ODEBlock(ShallowConv2DODE(time_d, 8*ALPHA, 8*ALPHA),
+                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+            #ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
+            #         N_time=time_d, method=method, use_adjoint=use_adjoint),
+            #ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
+            #         N_time=time_d, method=method, use_adjoint=use_adjoint),            
+            
             nn.AdaptiveAvgPool2d(1),
             #nn.AvgPool2d(8),
             nn.Flatten(),
-            nn.Linear(4*ALPHA,10),
+            nn.Linear(8*ALPHA,10),
         )
     def forward(self,x):
         return self.net(x)
