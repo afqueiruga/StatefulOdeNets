@@ -120,13 +120,13 @@ class ShallowConv2DODE(torch.nn.Module):
         self.L1 = Conv2DODE(time_d,in_features,hidden_features,
                             width=width, padding=padding)
 
-        self.bn1 = torch.nn.BatchNorm2d(hidden_features, track_running_stats=True)
+        self.bn1 = torch.nn.BatchNorm2d(hidden_features, affine=True, track_running_stats=True)
 
         
         self.L2 = Conv2DODE(time_d,hidden_features,in_features,
                             width=width, padding=padding)
         
-        self.bn2 = torch.nn.BatchNorm2d(in_features, track_running_stats=True)
+        self.bn2 = torch.nn.BatchNorm2d(in_features, affine=True, track_running_stats=True)
         self.verbose=False
     def forward(self, t, x):
         if self.verbose: print("shallow @ ",t)
@@ -142,9 +142,45 @@ class ShallowConv2DODE(torch.nn.Module):
     def refine(self):
         L1 = self.L1.refine()
         L2 = self.L2.refine()
+        
+        self.bn1.track_running_stats = False
+        self.bn2.track_running_stats = False
+
         new = copy.deepcopy(self) # TODO Don't like it, it re-allocates the weights that we're gonna throw away
         new.L1 = L1
         new.L2 = L2
+        
+        self.bn1.track_running_stats = True
+        self.bn2.track_running_stats = True
+
+
+#        new.bn1.reset_running_stats()
+#        new.bn1.register_buffer('running_mean', torch.zeros(new.bn1.num_features))
+#        new.bn1.register_buffer('running_var', torch.ones(new.bn1.num_features))
+#        new.bn1.register_buffer('num_batches_tracked', torch.tensor(0, dtype=torch.long))
+#
+#        new.bn2.reset_running_stats()
+#        new.bn2.register_buffer('running_mean', torch.zeros(new.bn2.num_features))
+#        new.bn2.register_buffer('running_var', torch.ones(new.bn2.num_features))
+#        new.bn2.register_buffer('num_batches_tracked', torch.tensor(0, dtype=torch.long))
+#  
+        
+#        new.bn1 = torch.nn.BatchNorm2d(self.bn1.num_features, track_running_stats=True)
+#        new.bn1.weight.data = self.bn1.weight.data
+#        new.bn1.bias.data = self.bn1.bias.data
+#        new.bn1.running_mean.data = self.bn1.running_mean.data
+#        new.bn1.running_var.data = self.bn1.running_var.data
+#        new.bn1.num_batches_tracked.data = self.bn1.num_batches_tracked.data
+#
+#        
+#        
+#        new.bn2 = torch.nn.BatchNorm2d(self.bn1.num_features, track_running_stats=True)
+#        new.bn2.weight.data = self.bn2.weight.data
+#        new.bn2.bias.data = self.bn2.bias.data
+#        new.bn2.running_mean.data = self.bn2.running_mean.data
+#        new.bn2.running_var.data = self.bn2.running_var.data
+#        new.bn2.num_batches_tracked.data = self.bn2.num_batches_tracked.data
+
         return new
 
 

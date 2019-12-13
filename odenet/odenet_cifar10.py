@@ -20,8 +20,8 @@ class ODEResNet(nn.Module):
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
             ODEBlock(ShallowConv2DODE(time_d, ALPHA, ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
-            ODEBlock(ShallowConv2DODE(time_d, ALPHA, ALPHA),
-                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+#            ODEBlock(ShallowConv2DODE(time_d, ALPHA, ALPHA),
+#                     N_time=time_d, method=method, use_adjoint=use_adjoint),
 
 
             nn.Conv2d(ALPHA, 2*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
@@ -30,8 +30,8 @@ class ODEResNet(nn.Module):
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
             ODEBlock(ShallowConv2DODE(time_d, 2*ALPHA, 2*ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
-            ODEBlock(ShallowConv2DODE(time_d, 2*ALPHA, 2*ALPHA),
-                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+#            ODEBlock(ShallowConv2DODE(time_d, 2*ALPHA, 2*ALPHA),
+#                     N_time=time_d, method=method, use_adjoint=use_adjoint),
 
 
             nn.Conv2d(2*ALPHA, 4*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
@@ -40,8 +40,8 @@ class ODEResNet(nn.Module):
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
             ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
-            ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
-                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+#            ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
+#                     N_time=time_d, method=method, use_adjoint=use_adjoint),
 
             nn.AdaptiveAvgPool2d(1),
             #nn.AvgPool2d(8),
