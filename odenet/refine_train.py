@@ -63,10 +63,10 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
             print('************')
             #print(model)
  
-            optimizer = torch.optim.SGD(model.parameters(), lr=lr_current, momentum=0.9, 
+            optimizer = torch.optim.SGD(model.parameters(), lr=lr_init, momentum=0.9, 
                                         weight_decay=weight_decay)
 
-            #optimizer.state = collections.defaultdict(dict) # Reset state
+            optimizer.state = collections.defaultdict(dict) # Reset state
 
             
             refine_steps.append(step_count)        

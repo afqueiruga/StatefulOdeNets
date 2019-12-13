@@ -127,6 +127,8 @@ class ShallowConv2DODE(torch.nn.Module):
                             width=width, padding=padding)
         
         self.bn2 = torch.nn.BatchNorm2d(in_features, affine=True, track_running_stats=True)
+        
+        
         self.verbose=False
     def forward(self, t, x):
         if self.verbose: print("shallow @ ",t)
@@ -149,6 +151,10 @@ class ShallowConv2DODE(torch.nn.Module):
         new = copy.deepcopy(self) # TODO Don't like it, it re-allocates the weights that we're gonna throw away
         new.L1 = L1
         new.L2 = L2
+        
+        new.bn1.reset_running_stats()
+        new.bn2.reset_running_stats()
+        
         
         self.bn1.track_running_stats = True
         self.bn2.track_running_stats = True

@@ -18,8 +18,8 @@ class ODEResNet(nn.Module):
             nn.ReLU(),
             ODEBlock(ShallowConv2DODE(time_d, ALPHA, ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
-            ODEBlock(ShallowConv2DODE(time_d, ALPHA, ALPHA),
-                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+            #ODEBlock(ShallowConv2DODE(time_d, ALPHA, ALPHA),
+            #         N_time=time_d, method=method, use_adjoint=use_adjoint),
 #            ODEBlock(ShallowConv2DODE(time_d, ALPHA, ALPHA),
 #                     N_time=time_d, method=method, use_adjoint=use_adjoint),
 
@@ -28,8 +28,8 @@ class ODEResNet(nn.Module):
             nn.BatchNorm2d(2*ALPHA),
             ODEBlock(ShallowConv2DODE(time_d, 2*ALPHA, 2*ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
-            ODEBlock(ShallowConv2DODE(time_d, 2*ALPHA, 2*ALPHA),
-                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+            #ODEBlock(ShallowConv2DODE(time_d, 2*ALPHA, 2*ALPHA),
+            #         N_time=time_d, method=method, use_adjoint=use_adjoint),
 #            ODEBlock(ShallowConv2DODE(time_d, 2*ALPHA, 2*ALPHA),
 #                     N_time=time_d, method=method, use_adjoint=use_adjoint),
 
@@ -38,8 +38,8 @@ class ODEResNet(nn.Module):
             nn.BatchNorm2d(4*ALPHA), 
             ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
                      N_time=time_d, method=method, use_adjoint=use_adjoint),
-            ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
-                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+            #ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
+            #         N_time=time_d, method=method, use_adjoint=use_adjoint),
 #            ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
 #                     N_time=time_d, method=method, use_adjoint=use_adjoint),
 
@@ -50,13 +50,13 @@ class ODEResNet(nn.Module):
         )
             
             
-#        for m in self.modules():
-#            if isinstance(m, nn.Conv2d):
-#                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-#                m.weight.data.normal_(0, math.sqrt(2. / n))
-#            elif isinstance(m, nn.BatchNorm2d):
-#                m.weight.data.fill_(1)
-#                m.bias.data.zero_()            
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()            
             
                         
             
