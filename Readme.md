@@ -21,4 +21,4 @@ pip3 install git+https://github.com/afqueiruga/torchdiffeq.git
 
 N.B. Erichson is supported by U.C. Berkeley and I.C.S.I.
 
-A. Queiruga performed this work at Lawrence Berkeley National Lab with support from the Deport of Energy, Office of Fossil Energy.
+A. Queiruga performed this work at Lawrence Berkeley National Lab with support from the U.S. Department of Energy.
