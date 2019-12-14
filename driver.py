@@ -49,7 +49,8 @@ parser.add_argument('--seed', type=int, default='1',  help='Prediction steps')
 #
 parser.add_argument('--refine', type=int, nargs='+', default=[], help='Decrease learning rate at these epochs.')
 #
-
+parser.add_argument('--method', type=str, nargs='+', default=['euler'])
+#
 args = parser.parse_args()
 
 
@@ -103,11 +104,11 @@ def do_a_train_set(ALPHA, method, N_epochs, N_adapt, lr, lr_decay=0.1, epoch_upd
 
 stash = {}
 #for method in ['euler','rk4','midpoint']:
-for method in ['euler']:
+for method in args.method:
     res = do_a_train_set(16, method, N_epochs=args.epochs, N_adapt=args.refine, lr=args.lr, lr_decay=args.lr_decay, epoch_update=args.lr_update, weight_decay=args.wd)
     stash[method] = res
     
     
-    
-#torch.save(stash['euler'][0], 'results/resnet_euler.pkl')        
+for method in args.method:
+    torch.save(stash[method][0], 'results/resnet_' + method + '.pkl')        
 #torch.save(stash['rk4'][0], 'results/resnet_rk4.pkl')

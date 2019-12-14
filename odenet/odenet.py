@@ -142,23 +142,29 @@ class ShallowConv2DODE(torch.nn.Module):
         return x
     
     def refine(self):
-        L1 = self.L1.refine()
-        L2 = self.L2.refine()
-        
-        self.bn1.track_running_stats = False
-        self.bn2.track_running_stats = False
+        #with torch.no_grad():
+            L1 = self.L1.refine()
+            L2 = self.L2.refine()
+            
+            self.bn1.track_running_stats = False
+            self.bn2.track_running_stats = False
 
-        new = copy.deepcopy(self) # TODO Don't like it, it re-allocates the weights that we're gonna throw away
-        new.L1 = L1
-        new.L2 = L2
-        
-        new.bn1.reset_running_stats()
-        new.bn2.reset_running_stats()
-        
-        
-        self.bn1.track_running_stats = True
-        self.bn2.track_running_stats = True
 
+            new = copy.deepcopy(self) # TODO Don't like it, it re-allocates the weights that we're gonna throw away
+            new.L1 = L1
+            new.L2 = L2
+            
+            #new.bn1.reset_running_stats()
+            #new.bn2.reset_running_stats()
+ 
+#            new.bn1.track_running_stats = False
+#            new.bn2.track_running_stats = False                
+#            new.bn1.affine = False
+#            new.bn2.affine = False
+#            
+            self.bn1.track_running_stats = True
+            self.bn2.track_running_stats = True
+            return new
 
 #        new.bn1.reset_running_stats()
 #        new.bn1.register_buffer('running_mean', torch.zeros(new.bn1.num_features))
@@ -187,7 +193,7 @@ class ShallowConv2DODE(torch.nn.Module):
 #        new.bn2.running_var.data = self.bn2.running_var.data
 #        new.bn2.num_batches_tracked.data = self.bn2.num_batches_tracked.data
 
-        return new
+        
 
 
 class ODEify(torch.nn.Module):
