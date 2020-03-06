@@ -7,6 +7,12 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 
 
+from odenet.odenet_cifar10 import ODEResNet, ODEResNet2
+from odenet.helper import set_seed, get_device, which_device
+
+device = get_device()
+
+
 def getData(name='cifar10', train_bs=128, test_bs=1000):    
     
     
@@ -148,5 +154,11 @@ def exp_lr_scheduler(epoch, optimizer, strategy=True, decay_eff=0.1, decayEpoch=
         raise ValueError('A very specific bad thing happened.')
 
     return optimizer
+
+
+
+
+
+
 
 

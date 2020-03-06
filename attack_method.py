@@ -51,7 +51,7 @@ def fgsm_adaptive_iter(model, data, target, eps, iterations):
     i = 0
     while True:
         if i >= iterations:
-            print('failed to fool all the image')
+            #print('failed to fool all the image')
             data = Variable(data)
             break
         

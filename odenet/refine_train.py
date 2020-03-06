@@ -5,6 +5,10 @@ import collections
 import torch.nn.init as init
 import copy
 
+from utils import * 
+
+from odenet.odenet_cifar10 import ODEResNet, ODEResNet2, ODEResNet_new
+
 
 #
 # helper functions to examine models
@@ -54,6 +58,8 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
         model.train()
 
         if e in N_refine:
+        
+            
             new_model = model.refine()
             model_list.append(new_model)
             model = new_model
@@ -61,18 +67,26 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
             print('**** Setup ****')
             print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
             print('************')
-            #print(model)
+            print(model)
+            
+#            torch.save(model.state_dict(), 'temp' + '.pkl')                    
+#            model = ODEResNet2(method='euler')    
+#
+#            device = get_device()
+#            model.load_state_dict(torch.load('temp.pkl'))
+#            model.to(device = device)
+#            model.train() 
  
             optimizer = torch.optim.SGD(model.parameters(), lr=lr_current, momentum=0.9, 
                                         weight_decay=weight_decay)
 
-            optimizer.state = collections.defaultdict(dict) # Reset state
+            #optimizer.state = collections.defaultdict(dict) # Reset state
 
             
             refine_steps.append(step_count)        
         
         
-
+        model.train()
         for imgs,labels in iter(loader):
             imgs = imgs.to(device)
             labels = labels.to(device)

@@ -11,10 +11,11 @@ class ODEBlock(torch.nn.Module):
         self.method = method
         self.ts = torch.tensor([0,t_max])
         self.net = net
+        
     def forward(self,x):
-        h = torchdiffeq.odeint(self.net, x, self.ts,
-                               method=self.method)[1,:,:]
+        h = torchdiffeq.odeint(self.net, x, self.ts, method=self.method)[1,:,:]
         return h
+    
     def refine(self):
         """ddCut self.net in half"""
         front_net = copy.deepcopy(self.net)
@@ -31,12 +32,10 @@ class ODEModel(torch.nn.Module):
         super(ODEModel,self).__init__()
         self.net = torch.nn.Sequential(
             torch.nn.Linear(i_dim,ode_width),
-            ODEBlock(
-                ShallowODE(ode_width,hidden=inside_width,
-                           Act=Act),
-                method='euler'),
+            ODEBlock(ShallowODE(ode_width, hidden=inside_width, Act=Act), method='euler'),
+            
             torch.nn.Linear(ode_width,o_dim),
-        )i wi
+        )
     def forward(self,x):
         # Missing sigmoid
         y = self.net(x)

@@ -7,7 +7,10 @@ import torch.nn.init as init
 
 from matplotlib import pylab as plt
 from odenet import datasets
-from odenet.odenet_cifar10 import ODEResNet
+#from odenet.odenet_cifar10 import ODEResNet
+
+from odenet.odenet_test import ODEResNet
+
 from odenet import refine_train
 
 import importlib
@@ -82,6 +85,7 @@ def do_a_train_set(ALPHA, method, N_epochs, N_adapt, lr, lr_decay=0.1, epoch_upd
     
     model = ODEResNet(ALPHA=ALPHA, method=method, in_channels=3).to(device)
     #model.apply(init_params)
+    #model = torch.nn.DataParallel(model)
     
     #==============================================================================
     # Model summary
