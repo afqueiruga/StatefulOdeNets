@@ -10,14 +10,14 @@ def set_seed(seed=1):
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-def get_device():
+def get_device(which_gpu=0):
     """Get a gpu if available."""
     if torch.cuda.device_count()>0:
-        device = torch.device('cuda')
+        device = torch.device(f'cuda:{which_gpu}')
         print("Connected to a GPU")
     else:
-        print("Using the CPU")
         device = torch.device('cpu')
+        print("Using the CPU")
     return device
 
 def which_device(model):

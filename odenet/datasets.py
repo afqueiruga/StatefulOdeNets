@@ -2,10 +2,8 @@ import torch
 import torchvision
 
 
-
 def get_dataset(name='FMNIST', batch_size=128, root='.'):
     if name=='CIFAR10':
-        
         transform_train = torchvision.transforms.Compose([
         torchvision.transforms.RandomCrop(32, padding=4),
         torchvision.transforms.RandomHorizontalFlip(),
@@ -20,7 +18,6 @@ def get_dataset(name='FMNIST', batch_size=128, root='.'):
                                          (0.2023, 0.1994, 0.2010)),
         ])        
         
-        
         refset = torchvision.datasets.CIFAR10(root=root+'/CIFAR10_data', 
                     train=True, download=True, transform=None)
         trainset = torchvision.datasets.CIFAR10(root=root+'/CIFAR10_data', 
@@ -32,7 +29,6 @@ def get_dataset(name='FMNIST', batch_size=128, root='.'):
         testloader = torch.utils.data.DataLoader(testset, 
                     batch_size=batch_size, shuffle=True, num_workers=2)
         
-    
     elif name=='FMNIST':
         transform = torchvision.transforms.Compose([
                 torchvision.transforms.ToTensor(),
