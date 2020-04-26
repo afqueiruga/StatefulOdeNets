@@ -38,15 +38,13 @@ parser.add_argument('--lr_decay', type=float, default='0.1',  help='PCL penalty 
 parser.add_argument('--seed', type=int, default='1',  help='Prediction steps')
 parser.add_argument('--refine', type=int, nargs='+', default=[], help='Decrease learning rate at these epochs.')
 parser.add_argument('--method', type=str, nargs='+', default=['euler'])
+parser.add_argument('--device', type=str, default=[None], help='Which pytorch device?')
+
+
 args = parser.parse_args()
 
-
-
 set_seed(args.seed)
-device = get_device()
-
-
-
+device = get_device(args.device)
 refset,trainset,trainloader,testset,testloader = datasets.get_dataset(args.dataset,root='../data/')
 
 
@@ -91,7 +89,6 @@ def do_a_train_set(ALPHA, method, N_epochs, N_adapt, lr, lr_decay=0.1, epoch_upd
 
 def file_name(method):
     return 'results/resnet_' + method + '.pkl'
-#stash = {}
 #for method in ['euler','rk4','midpoint']:
 for method in args.method:
     res = do_a_train_set(16, method, N_epochs=args.epochs,
