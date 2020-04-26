@@ -2,14 +2,14 @@
 RefineNet
 """
 
+import copy
 import torch
 import torch.nn as nn
-import torchdiffeq
-import copy
-
 import torch.nn.functional as F
+import torchdiffeq
 
 from .helper import which_device
+
 
 def refine(net):
     try:
@@ -24,7 +24,7 @@ def refine(net):
             # Error is for debugging. This makes sense too:
             return copy.deepcopy(net)
 
-        
+
 class LinearODE(torch.nn.Module):
     def __init__(self, time_d, in_features, out_features):
         super(LinearODE,self).__init__()
@@ -70,7 +70,8 @@ class ShallowODE(torch.nn.Module):
     def refine(self):
         L1 = self.L1.refine()
         L2 = self.L2.refine()
-        new = copy.deepcopy(self) # TODO Don't like it, it re-allocates the weights that we're gonna throw away
+        # TODO Don't like it, it re-allocates the weights that we're gonna throw away
+        new = copy.deepcopy(self)
         new.L1 = L1
         new.L2 = L2
         return new
@@ -110,6 +111,7 @@ class Conv2DODE(torch.nn.Module):
             new.bias.data[2*t:2*t+2,:] = self.bias.data[t,:]
         return new
 
+# TODO batchnorms are still messed up
     
 class ShallowConv2DODE(torch.nn.Module):
     def __init__(self, time_d, in_features, hidden_features, 

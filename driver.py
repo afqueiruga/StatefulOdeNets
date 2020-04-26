@@ -1,23 +1,16 @@
+import argparse
+import os
+from matplotlib import pylab as plt
 import numpy as np
+
 import torch
 import torch.nn as nn
-
 import torch.nn.init as init
 
-
-from matplotlib import pylab as plt
 from odenet import datasets
-from odenet.odenet_cifar10 import ODEResNet
-
-#from odenet.odenet_test import ODEResNet
-
-from odenet import refine_train
-
-import importlib
-importlib.reload(refine_train)
 from odenet.helper import set_seed, get_device, which_device
-
-import argparse
+from odenet.odenet_cifar10 import ODEResNet
+from odenet import refine_train
 
 
 #==============================================================================
@@ -41,11 +34,8 @@ parser.add_argument('--method', type=str, nargs='+', default=['euler'])
 args = parser.parse_args()
 
 
-
 set_seed(args.seed)
 device = get_device()
-
-
 
 refset,trainset,trainloader,testset,testloader = datasets.get_dataset(args.dataset,root='../data/')
 
@@ -79,7 +69,6 @@ def do_a_train_set(ALPHA, method, N_epochs, N_adapt, lr, lr_decay=0.1, epoch_upd
     print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
     print('************')
     
-
     res = refine_train.train_adapt(model, trainloader, testloader, torch.nn.CrossEntropyLoss(),
                 N_epochs, N_adapt, lr=lr, lr_decay=lr_decay, epoch_update=epoch_update, weight_decay=weight_decay, 
                                    device=device)
@@ -89,6 +78,7 @@ def do_a_train_set(ALPHA, method, N_epochs, N_adapt, lr, lr_decay=0.1, epoch_upd
     return res
 
 
+os.mkdir('results')
 def file_name(method):
     return 'results/resnet_' + method + '.pkl'
 #stash = {}
@@ -102,5 +92,5 @@ for method in args.method:
     torch.save(res, file_name(method))
     
 #for method in args.method:
-#    torch.save(stash[method][0], 'results/resnet_' + method + '.pkl')        
+#    torch.save(stash[method][0], 'results/resnet_' + method + '.pkl')        a
 #torch.save(stash['rk4'][0], 'results/resnet_rk4.pkl')

@@ -1,6 +1,8 @@
 import torch
 import functools
 
+# These are standard networks
+
 #
 # Helper functions for making standard networks
 #
