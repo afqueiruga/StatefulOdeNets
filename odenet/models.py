@@ -1,6 +1,8 @@
 import torch
 import functools
 
+# These are standard networks
+
 #
 # Helper functions for making standard networks
 #
@@ -11,6 +13,7 @@ def shallow(in_dim,hidden,out_dim,Act=torch.nn.ReLU):
             Act(),
             torch.nn.Linear(hidden,out_dim),
         )
+
 def deep(widths,Act=torch.nn.ReLU):
     """Make a deep FCMLP given width specifications. Degenerates to a shallow layer if len(widths)==3"""
     layers = []
@@ -18,7 +21,6 @@ def deep(widths,Act=torch.nn.ReLU):
         layers.extend([torch.nn.Linear(widths[i],widths[i+1]), Act()])
     layers.append(torch.nn.Linear(widths[-2],widths[-1]))
     return torch.nn.Sequential(*layers)
-
 
 def channel_squish(imgs, sq):
     """TODO: Only works without channels right now"""
@@ -64,7 +66,7 @@ class ShallowNet(torch.nn.Module):
         self.net = shallow(in_dim,hidden,out_dim,Act=Act)
     def forward(self,x):
         return self.net(x)
-    
+
 class ShallowSkipNet(torch.nn.Module):
     """A basic shallow network with a skip connection"""
     def __init__(self, dim, hidden=10, Act=torch.nn.ReLU):
