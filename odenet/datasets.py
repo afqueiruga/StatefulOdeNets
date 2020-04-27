@@ -47,6 +47,6 @@ def get_dataset(name='FMNIST', batch_size=128, root='.'):
                 batch_size=batch_size, shuffle=True)
         
     else:
-        raise RunetimeError('Unknown dataset')
+        raise RuntimeError('Unknown dataset')
         
     return refset,trainset,trainloader,testset,testloader

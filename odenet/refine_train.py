@@ -157,9 +157,7 @@ def train_for_epochs(model, loader, testloader,
             if step_count % N_print == N_print-1:
                 print(L.detach().cpu())
             step_count += 1
-       
-        #exp_lr_scheduler(optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
-       
+        # exp_lr_scheduler(optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)   
         model.eval()
         correct = 0
         total_num = 0
