@@ -6,6 +6,7 @@ import torch
 #
 def acc(y,labels):
     return torch.sum(torch.argmax(y,dim=-1) == labels)*1.0/len(labels)
+
 def model_acc(model,loader):
     try:
         imgs,labels = loader

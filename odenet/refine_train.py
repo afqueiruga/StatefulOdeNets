@@ -50,6 +50,8 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
     
     for e in range(N_epochs):
         model.train()
+        
+        # Make a new model if the epoch number is in the schedule
         if e in N_refine:
             new_model = model.refine()
             model_list.append(new_model)
@@ -68,33 +70,31 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
 #            model.to(device = device)
 #            model.train() 
  
-            optimizer = torch.optim.SGD(model.parameters(), lr=lr_current, momentum=0.9, 
-                                        weight_decay=weight_decay)
+            optimizer = torch.optim.SGD(
+                model.parameters(), lr=lr_current, momentum=0.9, 
+                weight_decay=weight_decay)
 
             #optimizer.state = collections.defaultdict(dict) # Reset state
             refine_steps.append(step_count)        
         
+        # Train one epoch over the new model
         model.train()
         for imgs,labels in iter(loader):
             imgs = imgs.to(device)
             labels = labels.to(device)
-            
             out = model(imgs)
-            
             L = criterion(out,labels)
             L.backward()
-            
             optimizer.step()
             optimizer.zero_grad()
             losses.append(L.detach().cpu().item())
             step_count+=1
 
+        # Evaluate training accuracy
         if e % 5 == 0:
             print('Epoch: ', e)
             model.eval()
-            correct = 0
-            total_num = 0        
-
+            correct, total_num = 0, 0
             for data, target in loader:
                 data, target = data.to(device), target.to(device)
                 output = model(data)
@@ -102,10 +102,10 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
                 pred = output.data.max(1, keepdim=True)[1]
                 correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
                 total_num += len(data)
-                
-            print('Train Accuracy: ', correct / total_num)    
+            print('Train Accuracy: ', correct / total_num)
             train_acc.append(correct / total_num)
-            
+
+        # Evaluate testing accuracy
         if e % 5 == 0:
             model.eval()
             correct = 0
@@ -122,20 +122,19 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
 
         if e in epoch_update:
             lr_current *= lr_decay
-            
+
         optimizer = exp_lr_scheduler(
             optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
 
     return model_list, losses, refine_steps, train_acc, test_acc
 
 
-    
 def train_for_epochs(model, loader, testloader,
                      criterion,
                      N_epochs, losses = None, 
                      lr=1.0e-3, lr_decay=0.2, epoch_update=[], weight_decay=1e-5,
                      N_print=1000, device=None):
-    "Works for normal models too"
+    "A training loop without refinement. Works for normal models too."
     if device is None:
         device = get_device()
     if losses is None:
