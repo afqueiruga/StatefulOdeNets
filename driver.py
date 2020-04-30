@@ -9,12 +9,12 @@ import torch.nn.init as init
 
 from odenet import datasets
 from odenet.helper import set_seed, get_device, which_device
-from odenet.odenet_cifar10 import ODEResNet
+from odenet import odenet_cifar10
 from odenet import refine_train
 
 
-def file_name(method):
-    return 'results/resnet_' + method + '.pkl'
+def file_name(dataset, model, alpha, scheme, initial_time_d, use_batch_norms):
+    return f'results/resnet_{dataset}_{model}_{alpha}_{scheme}_{initial_time_d}_{use_batch_norms}.pkl'
 
 def init_params(net):
     '''Init layer parameters.'''
@@ -32,14 +32,15 @@ def init_params(net):
                 nn.init.constant(m.bias, 0.0)
 
 def do_a_train_set(
-    dataset, ALPHA, scheme, N_epochs, N_adapt, lr,
+    dataset, which_model, ALPHA, scheme, use_batch_norms, initial_time_d,
+    N_epochs, N_adapt, lr,
     lr_decay=0.1, epoch_update=[10], weight_decay=1e-5,               
     seed=None, device=None):
     """Set up and train one model, and save it.
     
     Args:
         dataset: Which dataset to load
-        ALPHA: Initial refinement
+        ALPHA: Multiplier for inner width of resnet units
         scheme: One of "euler", "midpoint", or "RK4"
         N_epochs: How many dataset epochs to train over for the whole duration
         N_adapt: A list of epoch numbers at which to refine. Only numbers less than N_epochs are meaningful
@@ -67,7 +68,15 @@ def do_a_train_set(
         in_channels=1
     else:
         in_channels=3
-    model = ODEResNet(ALPHA=ALPHA, method=scheme, in_channels=in_channels).to(device)
+        
+    if which_model == "ThreePerSegment":
+        model = odenet_cifar10.ODEResNet(
+            ALPHA=ALPHA, method=scheme, time_d=initial_time_d, in_channels=in_channels).to(device)
+    elif which_model == "SingleSegment":
+        model = odenet_cifar10.ODEResNet_SingleSegment(
+            ALPHA=ALPHA, method=scheme, time_d=initial_time_d, in_channels=in_channels, use_batch_norms=use_batch_norms).to(device)
+    else:
+        raise RuntimeError("Unknown model name specified")
     #model.apply(init_params)
     #model = torch.nn.DataParallel(model)
     
@@ -83,7 +92,7 @@ def do_a_train_set(
         model, trainloader, testloader, torch.nn.CrossEntropyLoss(),
         N_epochs, N_adapt, lr=lr, lr_decay=lr_decay, epoch_update=epoch_update, weight_decay=weight_decay,
         device=device)
-    torch.save(res, file_name(scheme))
+    torch.save(res, file_name(dataset, which_model, scheme, ALPHA, initial_time_d, use_batch_norms))
 
     #plt.semilogy(res[1])
     #for r in res[2]:

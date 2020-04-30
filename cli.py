@@ -18,8 +18,10 @@ parser.add_argument('--lr_update', type=int, nargs='+', default=[30, 60, 90], he
 parser.add_argument('--lr_decay', type=float, default='0.1',  help='PCL penalty lambda hyperparameter')
 parser.add_argument('--refine', type=int, nargs='+', default=[], help='Decrease learning rate at these epochs.')
 
-parser.add_argument('--method', type=str, default='euler')
-parser.add_argument('--alpha', type=int, default=16, help='inital number of layers per segment')
+parser.add_argument('--scheme', type=str, default='euler')
+parser.add_argument('--alpha', type=int, default=16, help="width of the first's segment hidden layer")
+parser.add_argument('--initial_time_d', type=int, default=3, help="initial time refinement--ie, number of layers--of each segment")
+parser.add_argument('--use_batch_norms', type=bool, default=True, help='include batch norm layers')
 
 parser.add_argument('--seed', type=int, default='1',  help='Prediction steps')
 parser.add_argument('--device', type=str, default=None, help='Which pytorch device?')
@@ -29,7 +31,8 @@ args = parser.parse_args()
 
 def drive_by_args(args):
     driver.do_a_train_set(
-        args.dataset, args.alpha, args.method, N_epochs=args.epochs, N_adapt=args.refine,
+        args.dataset,  args.model, args.alpha, args.scheme, args.use_batch_norms, args.initial_time_d,
+        N_epochs=args.epochs, N_adapt=args.refine,
         lr=args.lr, lr_decay=args.lr_decay,
         epoch_update=args.lr_update, weight_decay=args.wd,
         seed=args.seed, device=args.device)

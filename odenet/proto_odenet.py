@@ -17,7 +17,7 @@ class ODEBlock(torch.nn.Module):
         return h
     
     def refine(self):
-        """ddCut self.net in half"""
+        """Cut self.net in half by creating two ODEBlocks with half the time span."""
         front_net = copy.deepcopy(self.net)
         back_net = copy.deepcopy(self.net)
         return torch.nn.Sequential(

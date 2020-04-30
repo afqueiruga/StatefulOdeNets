@@ -116,31 +116,35 @@ class Conv2DODE(torch.nn.Module):
 class ShallowConv2DODE(torch.nn.Module):
     def __init__(self, time_d, in_features, hidden_features, 
                  width=3, padding=1,
-                 act=torch.nn.functional.relu):
-        super(ShallowConv2DODE,self).__init__()
+                 act=torch.nn.functional.relu,
+                 use_batch_norms=True):
+        super().__init__()
         self.act = act
+        self.use_batch_norms=use_batch_norms
+        self.verbose=False
         self.L1 = Conv2DODE(time_d,in_features,hidden_features,
                             width=width, padding=padding)
-
-        self.bn1 = torch.nn.BatchNorm2d(hidden_features, affine=True, track_running_stats=True)
-
         
         self.L2 = Conv2DODE(time_d,hidden_features,in_features,
                             width=width, padding=padding)
         
-        self.bn2 = torch.nn.BatchNorm2d(in_features, affine=True, track_running_stats=True)
+        if use_batch_norms:
+            self.bn1 = torch.nn.BatchNorm2d(
+                hidden_features, affine=True, track_running_stats=True)
+            self.bn2 = torch.nn.BatchNorm2d(
+                in_features, affine=True, track_running_stats=True)
         
-        
-        self.verbose=False
     def forward(self, t, x):
         if self.verbose: print("shallow @ ",t)
   
         x = self.L1(t, x)
         x = self.act(x)
-        x = self.bn1(x)
+        if self.use_batch_norms:
+            x = self.bn1(x)
         x = self.L2(t, x)
         x = self.act(x)
-        x = self.bn2(x)         
+        if self.use_batch_norms:
+            x = self.bn2(x)
         return x
     
     def refine(self):
@@ -148,11 +152,12 @@ class ShallowConv2DODE(torch.nn.Module):
             L1 = self.L1.refine()
             L2 = self.L2.refine()
             
-            self.bn1.track_running_stats = False
-            self.bn2.track_running_stats = False
+            if self.use_batch_norms:
+                self.bn1.track_running_stats = False
+                self.bn2.track_running_stats = False
 
-
-            new = copy.deepcopy(self) # TODO Don't like it, it re-allocates the weights that we're gonna throw away
+            # TODO Don't like it, it re-allocates the weights that we're gonna throw away
+            new = copy.deepcopy(self) 
             new.L1 = L1
             new.L2 = L2
             
@@ -163,9 +168,9 @@ class ShallowConv2DODE(torch.nn.Module):
 #            new.bn2.track_running_stats = False                
 #            new.bn1.affine = False
 #            new.bn2.affine = False
-#            
-            self.bn1.track_running_stats = True
-            self.bn2.track_running_stats = True
+            if self.use_batch_norms:
+                self.bn1.track_running_stats = True
+                self.bn2.track_running_stats = True
             return new
 
 #        new.bn1.reset_running_stats()

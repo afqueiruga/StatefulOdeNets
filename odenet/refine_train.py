@@ -1,11 +1,20 @@
 import collections
-
+from typing import List, Any
+import attr
 import torch
 import torch.nn.init as init
 
 from .helper import get_device, which_device
 from .ode_models import refine
 
+@attr.s(auto_attribs=True)
+class Result:
+    """A container class to collect tuples"""
+    model_list: List[Any]
+    losses: Any
+    refine_steps: Any
+    train_acc: Any
+    test_acc: Any
 
 #
 # helper functions to examine models
@@ -92,7 +101,7 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
 
         # Evaluate training accuracy
         if e % 5 == 0:
-            print('Epoch: ', e)
+            print('After Epoch: ', e)
             model.eval()
             correct, total_num = 0, 0
             for data, target in loader:
@@ -126,7 +135,7 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
         optimizer = exp_lr_scheduler(
             optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
 
-    return model_list, losses, refine_steps, train_acc, test_acc
+    return Result(model_list, losses, refine_steps, train_acc, test_acc)
 
 
 def train_for_epochs(model, loader, testloader,
@@ -134,11 +143,13 @@ def train_for_epochs(model, loader, testloader,
                      N_epochs, losses = None, 
                      lr=1.0e-3, lr_decay=0.2, epoch_update=[], weight_decay=1e-5,
                      N_print=1000, device=None):
-    "A training loop without refinement. Works for normal models too."
+    """A training loop without refinement. Works for normal models too."""
     if device is None:
         device = get_device()
     if losses is None:
         losses = []
+    train_acc = []
+    test_acc = []
     #criterion = torch.nn.BCEWithLogitsLoss()
     #optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -168,7 +179,8 @@ def train_for_epochs(model, loader, testloader,
             correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
             total_num += len(data)
         print('Train Loss: ', correct / total_num)         
-
+        train_acc.append( correct / total_num)
+        
         for data, target in testloader:
             data, target = data.to(device), target.to(device)
             output = model(data)
@@ -176,5 +188,6 @@ def train_for_epochs(model, loader, testloader,
             correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
             total_num += len(data)
         print('Test Loss: ', correct / total_num)         
+        test_acc.append( correct / total_num)
 
-    return losses
+    return Result(None, losses, None, train_acc, test_acc)
