@@ -21,20 +21,34 @@ parser.add_argument('--refine', type=int, nargs='+', default=[], help='Decrease 
 parser.add_argument('--scheme', type=str, default='euler')
 parser.add_argument('--alpha', type=int, default=16, help="width of the first's segment hidden layer")
 parser.add_argument('--initial_time_d', type=int, default=3, help="initial time refinement--ie, number of layers--of each segment")
-parser.add_argument('--use_batch_norms', type=bool, default=True, help='include batch norm layers')
+parser.add_argument('--n_time_steps', type=int, default=1, help="number of time-steps per time_d to take during forward pass")
+parser.add_argument('--time_epsilon', type=float, default=1.0, help="How long is the depth-time")
+parser.add_argument('--use_batch_norms', default=False, help='include batch norm layers', action='store_true')
 
 parser.add_argument('--seed', type=int, default='1',  help='Prediction steps')
 parser.add_argument('--device', type=str, default=None, help='Which pytorch device?')
 
 args = parser.parse_args()
 
+print(args.use_batch_norms)
 
 def drive_by_args(args):
     driver.do_a_train_set(
-        args.dataset,  args.model, args.alpha, args.scheme, args.use_batch_norms, args.initial_time_d,
-        N_epochs=args.epochs, N_adapt=args.refine,
-        lr=args.lr, lr_decay=args.lr_decay,
-        epoch_update=args.lr_update, weight_decay=args.wd,
-        seed=args.seed, device=args.device)
+        args.dataset,
+        args.model,
+        args.alpha,
+        args.scheme,
+        args.use_batch_norms,
+        args.initial_time_d,
+        args.time_epsilon,
+        args.n_time_steps,
+        N_epochs=args.epochs,
+        N_adapt=args.refine,
+        lr=args.lr,
+        lr_decay=args.lr_decay,
+        epoch_update=args.lr_update,
+        weight_decay=args.wd,
+        seed=args.seed,
+        device=args.device)
 
 drive_by_args(args)

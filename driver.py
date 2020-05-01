@@ -13,9 +13,6 @@ from odenet import odenet_cifar10
 from odenet import refine_train
 
 
-def file_name(dataset, model, alpha, scheme, initial_time_d, use_batch_norms):
-    return f'results/resnet_{dataset}_{model}_{alpha}_{scheme}_{initial_time_d}_{use_batch_norms}.pkl'
-
 def init_params(net):
     '''Init layer parameters.'''
     for m in net.modules():
@@ -32,7 +29,8 @@ def init_params(net):
                 nn.init.constant(m.bias, 0.0)
 
 def do_a_train_set(
-    dataset, which_model, ALPHA, scheme, use_batch_norms, initial_time_d,
+    dataset, which_model, ALPHA, scheme, use_batch_norms, 
+    initial_time_d, time_epsilon, n_time_steps_per,
     N_epochs, N_adapt, lr,
     lr_decay=0.1, epoch_update=[10], weight_decay=1e-5,               
     seed=None, device=None):
@@ -71,28 +69,39 @@ def do_a_train_set(
         
     if which_model == "ThreePerSegment":
         model = odenet_cifar10.ODEResNet(
-            ALPHA=ALPHA, method=scheme, time_d=initial_time_d, in_channels=in_channels).to(device)
+            ALPHA=ALPHA,
+            scheme=scheme,
+            time_d=initial_time_d,
+            in_channels=in_channels,
+            use_batch_norms=use_batch_norms,
+            time_epsilon=time_epsilon,
+            n_time_steps_per=n_time_steps_per).to(device)
     elif which_model == "SingleSegment":
         model = odenet_cifar10.ODEResNet_SingleSegment(
-            ALPHA=ALPHA, method=scheme, time_d=initial_time_d, in_channels=in_channels, use_batch_norms=use_batch_norms).to(device)
+            ALPHA=ALPHA,
+            scheme=scheme,
+            time_d=initial_time_d,
+            in_channels=in_channels,
+            use_batch_norms=use_batch_norms,
+            time_epsilon=time_epsilon,
+            n_time_steps_per=n_time_steps_per).to(device)
     else:
         raise RuntimeError("Unknown model name specified")
     #model.apply(init_params)
     #model = torch.nn.DataParallel(model)
     
-    #==============================================================================
-    # Model summary
-    #==============================================================================
     print(model)
     print('**** Setup ****')
-    print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
+    n_params = sum(p.numel() for p in model.parameters())
+    print('Total params: %.2fk' % (n_params*10**-3))
     print('************')
     
     res = refine_train.train_adapt(
         model, trainloader, testloader, torch.nn.CrossEntropyLoss(),
         N_epochs, N_adapt, lr=lr, lr_decay=lr_decay, epoch_update=epoch_update, weight_decay=weight_decay,
         device=device)
-    torch.save(res, file_name(dataset, which_model, scheme, ALPHA, initial_time_d, use_batch_norms))
+    
+    torch.save(res, f'results/odenet_{dataset}_{model}_{alpha}_{use_batch_norms}_{scheme}_{initial_time_d}_{time_epsilon}_{n_time_steps_per}.pkl')
 
     #plt.semilogy(res[1])
     #for r in res[2]:

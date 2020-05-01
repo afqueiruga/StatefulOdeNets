@@ -34,14 +34,39 @@ def exp_lr_scheduler(optimizer, epoch, lr_decay_rate=0.8, decayEpoch=[]):
 
 def reset_lr(optimizer, lr):
     for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
-            print('reset lr', param_group['lr'])
+        param_group['lr'] = lr
+        print('reset lr', param_group['lr'])
     return optimizer
 
+def calculate_accuracy(model, loader):
+    device = which_device(model)
+    correct, total_num = 0, 0
+    for data, target in loader:
+        data, target = data.to(device), target.to(device)
+        output = model(data)
+        # get the index of the max log-probability
+        pred = output.data.max(1, keepdim=True)[1]
+        correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
+        total_num += len(data)
+    return correct / total_num
 
-def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
-               lr=1.0e-3, lr_decay=0.2, epoch_update=[], weight_decay=1e-5, device=None):
+
+def train_adapt(model,
+                loader,
+                testloader,
+                criterion,
+                N_epochs,
+                N_refine=None,
+                lr=1.0e-3,
+                lr_decay=0.2,
+                epoch_update=None,
+                weight_decay=1e-5,
+                device=None):
     """I don't know how to control the learning rate"""
+    if N_refine is None:
+        N_refine = []
+    if epoch_update is None:
+        epoch_update = []
     if device is None:
         device = get_device()
     losses = []
@@ -65,8 +90,7 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
             new_model = model.refine()
             model_list.append(new_model)
             model = new_model
-
-            print('**** Setup ****')
+            print('**** Allocated refinment ****')
             print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
             print('************')
             print(model)
@@ -78,12 +102,12 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
 #            model.load_state_dict(torch.load('temp.pkl'))
 #            model.to(device = device)
 #            model.train() 
- 
+             # We need to reset the optimizer to point to the new weights
             optimizer = torch.optim.SGD(
                 model.parameters(), lr=lr_current, momentum=0.9, 
                 weight_decay=weight_decay)
-
-            #optimizer.state = collections.defaultdict(dict) # Reset state
+            # Reset state
+            # optimizer.state = collections.defaultdict(dict) 
             refine_steps.append(step_count)        
         
         # Train one epoch over the new model
@@ -99,35 +123,17 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
             losses.append(L.detach().cpu().item())
             step_count+=1
 
-        # Evaluate training accuracy
-        if e % 5 == 0:
+        # Evaluate training and testing accuracy
+        n_print = 1
+        if e == 0 or (e+1) % n_print == 0:
             print('After Epoch: ', e)
             model.eval()
-            correct, total_num = 0, 0
-            for data, target in loader:
-                data, target = data.to(device), target.to(device)
-                output = model(data)
-                # get the index of the max log-probability
-                pred = output.data.max(1, keepdim=True)[1]
-                correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
-                total_num += len(data)
-            print('Train Accuracy: ', correct / total_num)
-            train_acc.append(correct / total_num)
-
-        # Evaluate testing accuracy
-        if e % 5 == 0:
-            model.eval()
-            correct = 0
-            total_num = 0
-            for data, target in testloader:
-                data, target = data.to(device), target.to(device)
-                output = model(data)
-                # get the index of the max log-probability
-                pred = output.data.max(1, keepdim=True)[1]
-                correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
-                total_num += len(data)
-            print('Test Accuracy: ', correct / total_num)        
-            test_acc.append(correct / total_num)
+            tr_acc = calculate_accuracy(model, loader)
+            print('Train Accuracy: ', tr_acc)
+            train_acc.append(tr_acc)
+            te_acc = calculate_accuracy(model, testloader)
+            print('Test Accuracy: ', te_acc)
+            test_acc.append(te_acc)
 
         if e in epoch_update:
             lr_current *= lr_decay
@@ -138,11 +144,18 @@ def train_adapt(model, loader, testloader, criterion, N_epochs, N_refine=[],
     return Result(model_list, losses, refine_steps, train_acc, test_acc)
 
 
-def train_for_epochs(model, loader, testloader,
+def train_for_epochs(model,
+                     loader,
+                     testloader,
                      criterion,
-                     N_epochs, losses = None, 
-                     lr=1.0e-3, lr_decay=0.2, epoch_update=[], weight_decay=1e-5,
-                     N_print=1000, device=None):
+                     N_epochs,
+                     losses=None,
+                     lr=1.0e-3,
+                     lr_decay=0.2,
+                     epoch_update=[],
+                     weight_decay=1e-5,
+                     N_print=1000,
+                     device=None):
     """A training loop without refinement. Works for normal models too."""
     if device is None:
         device = get_device()

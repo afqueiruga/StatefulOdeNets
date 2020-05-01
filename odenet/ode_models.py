@@ -117,10 +117,12 @@ class ShallowConv2DODE(torch.nn.Module):
     def __init__(self, time_d, in_features, hidden_features, 
                  width=3, padding=1,
                  act=torch.nn.functional.relu,
+                 epsilon=1.0,
                  use_batch_norms=True):
         super().__init__()
         self.act = act
-        self.use_batch_norms=use_batch_norms
+        self.epsilon = epsilon
+        self.use_batch_norms = use_batch_norms
         self.verbose=False
         self.L1 = Conv2DODE(time_d,in_features,hidden_features,
                             width=width, padding=padding)
@@ -145,7 +147,7 @@ class ShallowConv2DODE(torch.nn.Module):
         x = self.act(x)
         if self.use_batch_norms:
             x = self.bn2(x)
-        return x
+        return self.epsilon*x
     
     def refine(self):
         #with torch.no_grad():
@@ -163,7 +165,7 @@ class ShallowConv2DODE(torch.nn.Module):
             
             #new.bn1.reset_running_stats()
             #new.bn2.reset_running_stats()
- 
+
 #            new.bn1.track_running_stats = False
 #            new.bn2.track_running_stats = False                
 #            new.bn1.affine = False
@@ -208,7 +210,7 @@ class ODEify(torch.nn.Module):
     def __init__(self, f):
         super().__init__()
         self.f = f
-    def forward(self,t,x):
+    def forward(self, t, x):
         return f(x)
     def refine(self):
         return ODEify(f)
@@ -217,30 +219,35 @@ class ODEify(torch.nn.Module):
 class ODEBlock(torch.nn.Module):
     """Wraps an ode-model with the odesolve to fit into standard 
     models."""
-    def __init__(self,net,N_time=1,method='euler',use_adjoint=False):
+    def __init__(self, net, n_time_steps=1, scheme='euler',
+                 use_adjoint=False):
         super(ODEBlock,self).__init__()
-        self.N_time = N_time
-        self.method = method
+        self.n_time_steps = n_time_steps
+        self.scheme = scheme
         self.use_adjoint = use_adjoint
-        self.ts = torch.linspace(0,1,N_time+1) # TODO: awk with piecewise constant centered on the half-cells
+        # TODO: awk with piecewise constant centered on the half-cells
+        self.ts = torch.linspace(0, 1.0, self.n_time_steps+1)
         self.net = net
-    
+        
     def forward(self,x):
         if self.use_adjoint:
             integ = torchdiffeq.odeint_adjoint
         else:
             integ = torchdiffeq.odeint
-        h = integ(self.net, x, self.ts, method=self.method,
+        h = integ(self.net, x, self.ts, method=self.scheme,
                   options=dict(enforce_openset=True))[-1,:,:]
         return h
     
     def refine(self):
         newnet = self.net.refine()
-        new = ODEBlock(newnet,self.N_time*2,method=self.method).to(which_device(self))
+        new = ODEBlock(newnet,self.N_time*2,method=self.scheme).to(which_device(self))
         return new
     
     def diffeq(self,x):
-        hs = torchdiffeq.odeint(self.net, x, self.ts, method=self.method,
+        hs = torchdiffeq.odeint(self.net, x, self.ts, method=self.scheme,
                               options=dict(enforce_openset=True))
         return hs
     
+    def set_n_time_steps(self, n_time_steps):
+        self.n_time_steps=n_time_steps
+        self.ts = torch.linspace(0, 1.0, self.n_time_steps+1)
