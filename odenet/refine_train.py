@@ -81,6 +81,14 @@ def train_adapt(model,
 
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    print('Random initialization checking accuracy metrics:')
+    model.eval()
+    tr_acc = calculate_accuracy(model, loader)
+    print('Train Accuracy: ', tr_acc)
+    train_acc.append(tr_acc)
+    te_acc = calculate_accuracy(model, testloader)
+    print('Test Accuracy: ', te_acc)
+    test_acc.append(te_acc)
     
     for e in range(N_epochs):
         model.train()

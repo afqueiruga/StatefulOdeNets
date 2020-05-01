@@ -101,7 +101,7 @@ def do_a_train_set(
         N_epochs, N_adapt, lr=lr, lr_decay=lr_decay, epoch_update=epoch_update, weight_decay=weight_decay,
         device=device)
     
-    torch.save(res, f'results/odenet_{dataset}_{model}_{alpha}_{use_batch_norms}_{scheme}_{initial_time_d}_{time_epsilon}_{n_time_steps_per}.pkl')
+    torch.save(res, f'results/odenet_{dataset}_{which_model}_{ALPHA}_{use_batch_norms}_{scheme}_{initial_time_d}_{time_epsilon}_{n_time_steps_per}.pkl')
 
     #plt.semilogy(res[1])
     #for r in res[2]:

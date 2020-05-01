@@ -21,7 +21,7 @@ parser.add_argument('--refine', type=int, nargs='+', default=[], help='Decrease 
 parser.add_argument('--scheme', type=str, default='euler')
 parser.add_argument('--alpha', type=int, default=16, help="width of the first's segment hidden layer")
 parser.add_argument('--initial_time_d', type=int, default=3, help="initial time refinement--ie, number of layers--of each segment")
-parser.add_argument('--n_time_steps', type=int, default=1, help="number of time-steps per time_d to take during forward pass")
+parser.add_argument('--n_time_steps_per', type=int, default=1, help="number of time-steps per time_d to take during forward pass")
 parser.add_argument('--time_epsilon', type=float, default=1.0, help="How long is the depth-time")
 parser.add_argument('--use_batch_norms', default=False, help='include batch norm layers', action='store_true')
 
@@ -41,7 +41,7 @@ def drive_by_args(args):
         args.use_batch_norms,
         args.initial_time_d,
         args.time_epsilon,
-        args.n_time_steps,
+        args.n_time_steps_per,
         N_epochs=args.epochs,
         N_adapt=args.refine,
         lr=args.lr,
