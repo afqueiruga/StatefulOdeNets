@@ -3,7 +3,7 @@ import attr
 import driver
 
 
-@attr.s(autto_atribs=True)
+@attr.s(auto_attribs=True)
 class Pack:
     dataset: str
     model: str
@@ -13,31 +13,37 @@ class Pack:
     time_epsilon: float
     use_batch_norms: bool
 
-    epochs: int = 20
+    n_time_steps_per: int = 1
+    epochs: int = 50
     # batch_size: int = 128
     # test_batch_size: int = 200
 
-    lr: float = 0.1
+    lr: float = 0.05
     wd: float = 5e-4
     
-    n_time_steps:int = 1
-    lr_decay: float = 
-    lr_update: List[int] = 
+    lr_decay: float = 0.1
+    lr_update: List[int] = None
     refine: List[int] = None
     
 args_list = [
+    # Pack("FMNIST", "SingleSegment", "rk4",
+    #      8, 3, 0.5, True),
     Pack("FMNIST", "SingleSegment", "rk4",
-         8, 3, 0.5, True),
+         8, 3, 0.5, False),
+    # Pack("FMNIST", "SingleSegment", "midpoint",
+    #      8, 3, 0.5, True),
+    Pack("FMNIST", "SingleSegment", "midpoint",
+         8, 3, 0.5, False),
+    # Pack("FMNIST", "SingleSegment", "euler",
+    #      8, 3, 0.5, True),
+    Pack("FMNIST", "SingleSegment", "euler",
+         8, 3, 0.5, False),
     Pack("FMNIST", "SingleSegment", "rk4",
-         8, 3, 0.5, False),
+         12, 3, 0.5, False),
     Pack("FMNIST", "SingleSegment", "midpoint",
-         8, 3, 0.5, True),
-    Pack("FMNIST", "SingleSegment", "midpoint",
-         8, 3, 0.5, False),
+         12, 3, 0.5, False),
     Pack("FMNIST", "SingleSegment", "euler",
-         8, 3, 0.5, True),
-    Pack("FMNIST", "SingleSegment", "euler",
-         8, 3, 0.5, False),
+         12, 3, 0.5, False),
 ]
 
 for args in args_list:
