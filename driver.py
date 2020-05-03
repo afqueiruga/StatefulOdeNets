@@ -29,10 +29,11 @@ def init_params(net):
                 nn.init.constant(m.bias, 0.0)
 
 def do_a_train_set(
-    dataset, which_model, ALPHA, scheme, use_batch_norms, 
+    dataset, which_model, ALPHA, scheme, use_batch_norms,
     initial_time_d, time_epsilon, n_time_steps_per,
     N_epochs, N_adapt, lr,
-    lr_decay=0.1, epoch_update=[10], weight_decay=1e-5,               
+    lr_decay=0.1, epoch_update=[10], weight_decay=1e-5,
+    use_adjoint=False,
     seed=1, device=None):
     """Set up and train one model, and save it.
     
@@ -46,6 +47,7 @@ def do_a_train_set(
         lr_decay: Learning rate decay
         epoch_update: A list of epochs at which to call a learning_rate schedule
         weight_decay: Traditional weight decay parameter
+        use_adjoint: Use the adjoint method for backpropogation
         seed: a seed
         device: which device to use
     """
@@ -75,7 +77,9 @@ def do_a_train_set(
             in_channels=in_channels,
             use_batch_norms=use_batch_norms,
             time_epsilon=time_epsilon,
-            n_time_steps_per=n_time_steps_per).to(device)
+            n_time_steps_per=n_time_steps_per,
+            use_adjoint=use_adjoint
+        ).to(device)
     elif which_model == "SingleSegment":
         model = odenet_cifar10.ODEResNet_SingleSegment(
             ALPHA=ALPHA,
@@ -84,7 +88,9 @@ def do_a_train_set(
             in_channels=in_channels,
             use_batch_norms=use_batch_norms,
             time_epsilon=time_epsilon,
-            n_time_steps_per=n_time_steps_per).to(device)
+            n_time_steps_per=n_time_steps_per,
+            use_adjoint=use_adjoint
+        ).to(device)
     else:
         raise RuntimeError("Unknown model name specified")
     #model.apply(init_params)
@@ -101,7 +107,7 @@ def do_a_train_set(
         N_epochs, N_adapt, lr=lr, lr_decay=lr_decay, epoch_update=epoch_update, weight_decay=weight_decay,
         device=device)
     
-    torch.save(res, f'results/odenet_{dataset}_{which_model}_ARCH_{ALPHA}_{use_batch_norms}_{scheme}_{initial_time_d}_{time_epsilon}_{n_time_steps_per}_LEARN_{lr}_{N_epochs}_{N_adapt}_SEED_{seed}.pkl')
+    torch.save(res, f'results/odenet_{dataset}_{which_model}_ARCH_{ALPHA}_{use_batch_norms}_{scheme}_{initial_time_d}_{time_epsilon}_{n_time_steps_per}_LEARN_{lr}_{N_epochs}_{N_adapt}_{"Adjoint" if use_adjoint else "Backprop"}_SEED_{seed}.pkl')
 
     #plt.semilogy(res[1])
     #for r in res[2]:

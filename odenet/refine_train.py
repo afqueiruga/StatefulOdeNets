@@ -166,7 +166,7 @@ def train_for_epochs(model,
                      device=None):
     """A training loop without refinement. Works for normal models too."""
     if device is None:
-        device = get_device()
+        device = which_device(model)
     if losses is None:
         losses = []
     train_acc = []
@@ -211,4 +211,4 @@ def train_for_epochs(model,
         print('Test Loss: ', correct / total_num)         
         test_acc.append( correct / total_num)
 
-    return Result(None, losses, None, train_acc, test_acc)
+    return Result([model], losses, [], train_acc, test_acc)
