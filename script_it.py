@@ -16,20 +16,22 @@ class Pack:
     use_batch_norms: bool
 
     n_time_steps_per: int = 1
-    epochs: int = 10
+    epochs: int = 5
     # batch_size: int = 128
     # test_batch_size: int = 200
 
-    lr: float = 0.05
+    lr: float = 0.01
     wd: float = 0
     use_adjoint: bool = True
     
     lr_decay: float = 0.1
     lr_update: List[int] = None
     refine: List[int] = None
+    use_kaiming: bool = True
     
 args_list = [
-    Pack("FMNIST", "SingleSegment", "rk4",       8, 3, 0.5, False),
+    Pack("FMNIST", "SingleSegment", "rk4",       8, 3, 0.5, False,
+       lr_decay = 0.01, lr_update = [1,2,3]),
     Pack("FMNIST", "SingleSegment", "midpoint",  8, 3, 0.5, False),
     Pack("FMNIST", "SingleSegment", "euler",     8, 3, 0.5, False),
     Pack("FMNIST", "SingleSegment", "rk4",      12, 3, 0.5, False),
@@ -57,4 +59,5 @@ for args in args_list:
         epoch_update=args.lr_update,
         weight_decay=args.wd,
         use_adjoint=args.use_adjoint,
+        use_kaiming=args.use_kaiming,
         device="cuda:0")

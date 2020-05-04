@@ -14,7 +14,7 @@ from odenet import refine_train
 
 
 def init_params(net):
-    '''Init layer parameters.'''
+    '''Init layer parameters using a Kaiming scheme.'''
     for m in net.modules():
         if isinstance(m, nn.Conv2d):
             nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -34,6 +34,7 @@ def do_a_train_set(
     N_epochs, N_adapt, lr,
     lr_decay=0.1, epoch_update=[10], weight_decay=1e-5,
     use_adjoint=False,
+    use_kaiming=False,
     seed=1, device=None):
     """Set up and train one model, and save it.
     
@@ -93,7 +94,8 @@ def do_a_train_set(
         ).to(device)
     else:
         raise RuntimeError("Unknown model name specified")
-    #model.apply(init_params)
+    if use_kaiming:
+        model.apply(init_params)
     #model = torch.nn.DataParallel(model)
     
     print(model)
@@ -107,7 +109,7 @@ def do_a_train_set(
         N_epochs, N_adapt, lr=lr, lr_decay=lr_decay, epoch_update=epoch_update, weight_decay=weight_decay,
         device=device)
     
-    torch.save(res, f'results/odenet_{dataset}_{which_model}_ARCH_{ALPHA}_{use_batch_norms}_{scheme}_{initial_time_d}_{time_epsilon}_{n_time_steps_per}_LEARN_{lr}_{N_epochs}_{N_adapt}_{"Adjoint" if use_adjoint else "Backprop"}_SEED_{seed}.pkl')
+    torch.save(res, f'results/odenet_{dataset}_{which_model}_ARCH_{ALPHA}_{use_batch_norms}_{scheme}_{initial_time_d}_{time_epsilon}_{n_time_steps_per}_LEARN_{lr}_{N_epochs}_{N_adapt}_{"Adjoint" if use_adjoint else "Backprop"}_{"KaimingInit" if use_kaiming else "NormalInit"}_SEED_{seed}.pkl')
 
     #plt.semilogy(res[1])
     #for r in res[2]:
