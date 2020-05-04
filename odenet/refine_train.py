@@ -68,7 +68,7 @@ def train_adapt(model,
     if epoch_update is None:
         epoch_update = []
     if device is None:
-        device = get_device()
+        device = which_device(model)
     losses = []
     train_acc = []
     test_acc = []
