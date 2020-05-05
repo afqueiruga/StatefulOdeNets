@@ -102,6 +102,8 @@ def do_a_train_set(
     print('**** Setup ****')
     n_params = sum(p.numel() for p in model.parameters())
     print('Total params: %.2fk' % (n_params*10**-3))
+    print('Total params: %.2fk' % (n_params*10**-6))
+
     print('************')
     
     res = refine_train.train_adapt(
