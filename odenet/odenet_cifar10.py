@@ -3,6 +3,12 @@ import math
 from .ode_models import *
 
 
+def NoSequential(*args):
+    """Filters Nones as no-ops when making ann.Sequential to allow for architecture toggling."""
+    net = [ arg for arg in args if arg is not None ]
+    return nn.Sequential(*net)
+
+
 class ODEResNet(nn.Module):
     """Multiple ODEBlocks per segment."""
     def __init__(self,
@@ -31,10 +37,10 @@ class ODEResNet(nn.Module):
                 method=method,
                 use_adjoint=use_adjoint)
         # The full resnet, with three segments with 3 macros each
-        self.net = nn.Sequential(
+        self.net = NoSequential(
             nn.Conv2d(
                 in_channels, ALPHA, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(ALPHA),
+            nn.BatchNorm2d(ALPHA) if use_batch_norms else None,
             nn.ReLU(),
             # Segment 1
             _macro(ALPHA),
@@ -43,7 +49,7 @@ class ODEResNet(nn.Module):
 
             nn.Conv2d(
                 ALPHA, 2*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
-            nn.BatchNorm2d(2*ALPHA),
+            nn.BatchNorm2d(2*ALPHA) if use_batch_norms else None,
             # Segment 2
             _macro(2*ALPHA),
             _macro(2*ALPHA),
@@ -51,20 +57,20 @@ class ODEResNet(nn.Module):
             
             nn.Conv2d(
                 2*ALPHA, 4*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
-            nn.BatchNorm2d(4*ALPHA),
+            nn.BatchNorm2d(4*ALPHA) if use_batch_norms else None,
             # Segment 3
             _macro(4*ALPHA),
             _macro(4*ALPHA),
             _macro(4*ALPHA),
 
-#            nn.Conv2d(4*ALPHA, 4*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
-#            nn.BatchNorm2d(4*ALPHA), 
-#            ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
-#                     N_time=time_d, method=method, use_adjoint=use_adjoint),
-#            ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
-#                     N_time=time_d*2, method=method, use_adjoint=use_adjoint),
-#            ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
-#                     N_time=time_d, method=method, use_adjoint=use_adjoint),
+            # nn.Conv2d(4*ALPHA, 4*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
+            # nn.BatchNorm2d(4*ALPHA), 
+            # ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
+            #          N_time=time_d, method=method, use_adjoint=use_adjoint),
+            # ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
+            #          N_time=time_d*2, method=method, use_adjoint=use_adjoint),
+            # ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
+            #       N_time=time_d, method=method, use_adjoint=use_adjoint),
 
             nn.AdaptiveAvgPool2d(1),
             #nn.AvgPool2d(8),
@@ -121,21 +127,21 @@ class ODEResNet_SingleSegment(nn.Module):
                 scheme=scheme,
                 use_adjoint=use_adjoint)
         # The full resnet, with three segments of the above macro
-        self.net = nn.Sequential(
+        self.net = NoSequential(
             nn.Conv2d(
                 in_channels, ALPHA, kernel_size=3, padding=1,bias=False),
-            nn.BatchNorm2d(ALPHA),
+            nn.BatchNorm2d(ALPHA) if use_batch_norms else None,
             nn.ReLU(),
             _macro(ALPHA),
             nn.Conv2d(
                 ALPHA, 2*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
-            nn.BatchNorm2d(2*ALPHA), 
+            nn.BatchNorm2d(2*ALPHA) if use_batch_norms else None, 
             #nn.ReLU(),
             _macro(2*ALPHA),
             
             nn.Conv2d(
                 2*ALPHA, 4*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
-            nn.BatchNorm2d(4*ALPHA),
+            nn.BatchNorm2d(4*ALPHA) if use_batch_norms else None,
             #nn.ReLU(),
             _macro(4*ALPHA),
             
@@ -149,9 +155,9 @@ class ODEResNet_SingleSegment(nn.Module):
         return self.net(x)
     
     def refine(self):
-        new = ODEResNet.__new__(ODEResNet)
+        new = copy.deepcopy(self)#ODEResNet.__new__(ODEResNet)
         new.time_d = 2*self.time_d
-        new.method = self.method
+        new.scheme = self.scheme
         new.net = nn.Sequential(*[ refine(mod) for mod in self.net])
         return new
 

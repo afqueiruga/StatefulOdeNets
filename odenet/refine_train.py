@@ -3,6 +3,7 @@ from typing import List, Any
 import attr
 import torch
 import torch.nn.init as init
+import pytorch_memlab
 
 from .helper import get_device, which_device
 from .ode_models import refine
@@ -38,6 +39,7 @@ def reset_lr(optimizer, lr):
         print('reset lr', param_group['lr'])
     return optimizer
 
+@torch.no_grad()
 def calculate_accuracy(model, loader):
     device = which_device(model)
     correct, total_num = 0, 0
@@ -89,12 +91,13 @@ def train_adapt(model,
     te_acc = calculate_accuracy(model, testloader)
     print('Test Accuracy: ', te_acc)
     test_acc.append(te_acc)
-    
+    memory_profile = pytorch_memlab.MemReporter(model)
     for e in range(N_epochs):
         model.train()
         
         # Make a new model if the epoch number is in the schedule
         if e in N_refine:
+            memory_profile.report()
             new_model = model.refine()
             model_list.append(new_model)
             model = new_model
@@ -136,9 +139,9 @@ def train_adapt(model,
         if e == 0 or (e+1) % n_print == 0:
             print('After Epoch: ', e)
             model.eval()
-            tr_acc = calculate_accuracy(model, loader)
-            print('Train Accuracy: ', tr_acc)
-            train_acc.append(tr_acc)
+            # tr_acc = calculate_accuracy(model, loader)
+            # print('Train Accuracy: ', tr_acc)
+            # train_acc.append(tr_acc)
             te_acc = calculate_accuracy(model, testloader)
             print('Test Accuracy: ', te_acc)
             test_acc.append(te_acc)
@@ -148,7 +151,8 @@ def train_adapt(model,
 
         optimizer = exp_lr_scheduler(
             optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
-
+    
+    memory_profile.report()
     return Result(model_list, losses, refine_steps, train_acc, test_acc)
 
 
@@ -160,11 +164,13 @@ def train_for_epochs(model,
                      losses=None,
                      lr=1.0e-3,
                      lr_decay=0.2,
-                     epoch_update=[],
+                     epoch_update=None,
                      weight_decay=1e-5,
                      N_print=1000,
                      device=None):
     """A training loop without refinement. Works for normal models too."""
+    if epoch_update is None:
+        epoch_update = []
     if device is None:
         device = which_device(model)
     if losses is None:

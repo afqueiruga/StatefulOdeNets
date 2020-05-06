@@ -16,11 +16,11 @@ class Pack:
     use_batch_norms: bool
 
     n_time_steps_per: int = 1
-    epochs: int = 25
+    epochs: int = 5
     # batch_size: int = 128
     # test_batch_size: int = 200
 
-    lr: float = 0.005
+    lr: float = 0.01
     wd: float = 0
     use_adjoint: bool = True
     
@@ -30,9 +30,9 @@ class Pack:
     use_kaiming: bool = False
     
 args_list = [
-    Pack("FMNIST", "SingleSegment", "rk4", alpha, 1, 0.5, False,
+    Pack("FMNIST", "SingleSegment", "rk4", alpha, 2, 0.5, False,
          refine=refine, epochs=epochs)
-    for refine, epochs in [ ([1,2,3,4],10), ([2,4,6,8],10), ([5, 10, 15, 20], 30) ]
+    for refine, epochs in [ ([1,2,3],10), ([2,4,6],10), ([5, 10, 15,], 30) ]
     for scheme in ["rk4", "euler"]
     for alpha in [8, 12, 16]
 ]
