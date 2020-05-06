@@ -82,6 +82,7 @@ def train_adapt(model,
     step_count = 0
 
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
+    print('sgd')
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     print('Random initialization checking accuracy metrics:')
     model.eval()
@@ -114,9 +115,7 @@ def train_adapt(model,
 #            model.to(device = device)
 #            model.train() 
              # We need to reset the optimizer to point to the new weights
-            optimizer = torch.optim.SGD(
-                model.parameters(), lr=lr_current, momentum=0.9, 
-                weight_decay=weight_decay)
+            optimizer = torch.optim.SGD(model.parameters(), lr=lr_current, momentum=0.9, weight_decay=weight_decay)
             # Reset state
             # optimizer.state = collections.defaultdict(dict) 
             refine_steps.append(step_count)        
