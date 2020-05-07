@@ -84,26 +84,27 @@ def train_adapt(model,
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
     print('sgd')
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    print('Random initialization checking accuracy metrics:')
-    model.eval()
-    tr_acc = calculate_accuracy(model, loader)
-    print('Train Accuracy: ', tr_acc)
-    train_acc.append(tr_acc)
-    te_acc = calculate_accuracy(model, testloader)
-    print('Test Accuracy: ', te_acc)
-    test_acc.append(te_acc)
-    memory_profile = pytorch_memlab.MemReporter(model)
+    if False:
+        print('Random initialization checking accuracy metrics:')
+        model.eval()
+        tr_acc = calculate_accuracy(model, loader)
+        print('Train Accuracy: ', tr_acc)
+        train_acc.append(tr_acc)
+        te_acc = calculate_accuracy(model, testloader)
+        print('Test Accuracy: ', te_acc)
+        test_acc.append(te_acc)
+    # memory_profile = pytorch_memlab.MemReporter(model)
     for e in range(N_epochs):
         model.train()
         
         # Make a new model if the epoch number is in the schedule
         if e in N_refine:
-            memory_profile.report()
+            # memory_profile.report()
             new_model = model.refine()
             model_list.append(new_model)
             model = new_model
             print('**** Allocated refinment ****')
-            print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
+            print('Total params: %.2fM' % (count_parameters(model)/1000000.0))
             print('************')
             print(model)
             
@@ -118,7 +119,7 @@ def train_adapt(model,
             optimizer = torch.optim.SGD(model.parameters(), lr=lr_current, momentum=0.9, weight_decay=weight_decay)
             # Reset state
             # optimizer.state = collections.defaultdict(dict) 
-            refine_steps.append(step_count)        
+            refine_steps.append(step_count)
         
         # Train one epoch over the new model
         model.train()
@@ -151,7 +152,7 @@ def train_adapt(model,
         optimizer = exp_lr_scheduler(
             optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
     
-    memory_profile.report()
+    # memory_profile.report()
     return Result(model_list, losses, refine_steps, train_acc, test_acc)
 
 
@@ -195,25 +196,16 @@ def train_for_epochs(model,
                 print(L.detach().cpu())
             step_count += 1
         # exp_lr_scheduler(optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)   
-        model.eval()
-        correct = 0
-        total_num = 0
-        for data, target in loader:
-            data, target = data.to(device), target.to(device)
-            output = model(data)
-            pred = output.data.max(1, keepdim=True)[1]
-            correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
-            total_num += len(data)
-        print('Train Loss: ', correct / total_num)         
-        train_acc.append( correct / total_num)
-        
-        for data, target in testloader:
-            data, target = data.to(device), target.to(device)
-            output = model(data)
-            pred = output.data.max(1, keepdim=True)[1]
-            correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
-            total_num += len(data)
-        print('Test Loss: ', correct / total_num)         
-        test_acc.append( correct / total_num)
+        # Evaluate training and testing accuracy
+        n_print = 1
+        if e == 0 or (e+1) % n_print == 0:
+            print('After Epoch: ', e)
+            model.eval()
+            # tr_acc = calculate_accuracy(model, loader)
+            # print('Train Accuracy: ', tr_acc)
+            # train_acc.append(tr_acc)
+            te_acc = calculate_accuracy(model, testloader)
+            print('Test Accuracy: ', te_acc)
+            test_acc.append(te_acc)
 
     return Result([model], losses, [], train_acc, test_acc)

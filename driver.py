@@ -32,9 +32,10 @@ def do_a_train_set(
     dataset, which_model, ALPHA, scheme, use_batch_norms,
     initial_time_d, time_epsilon, n_time_steps_per,
     N_epochs, N_adapt, lr,
-    lr_decay=0.1, epoch_update=[10], weight_decay=1e-5,
+    lr_decay=0.1, epoch_update=None, weight_decay=1e-5,
     use_adjoint=False,
     use_kaiming=False,
+    use_skip_init=False,
     seed=1, device=None):
     """Set up and train one model, and save it.
     
@@ -57,7 +58,8 @@ def do_a_train_set(
         print("Making directory ", "results.")
     except:
         print("Directory ", "results", " already exists.")
-    
+    fname =  f'results/odenet_{dataset}_{which_model}_ARCH_{ALPHA}_{use_batch_norms}_{scheme}_{initial_time_d}_{time_epsilon}_{n_time_steps_per}_LEARN_{lr}_{N_epochs}_{N_adapt}_{"Adjoint" if use_adjoint else "Backprop"}_{"KaimingInit" if use_kaiming else "NormalInit"}_SEED_{seed}.pkl'
+    print("Working on ", fname)
     set_seed(seed)
     device = get_device(device)
 
@@ -90,6 +92,7 @@ def do_a_train_set(
             use_batch_norms=use_batch_norms,
             time_epsilon=time_epsilon,
             n_time_steps_per=n_time_steps_per,
+            use_skip_init=use_skip_init,
             use_adjoint=use_adjoint
         ).to(device)
     else:
@@ -101,8 +104,7 @@ def do_a_train_set(
     print(model)
     print('**** Setup ****')
     n_params = sum(p.numel() for p in model.parameters())
-    print('Total params: %.2fk' % (n_params*10**-3))
-    print('Total params: %.2fk' % (n_params*10**-6))
+    print('Total params: %.2fk ; %.2fM' % (n_params*10**-3, n_params*10**-6))
 
     print('************')
     
@@ -111,8 +113,8 @@ def do_a_train_set(
         N_epochs, N_adapt, lr=lr, lr_decay=lr_decay, epoch_update=epoch_update, weight_decay=weight_decay,
         device=device)
     
-    torch.save(res, f'results/odenet_{dataset}_{which_model}_ARCH_{ALPHA}_{use_batch_norms}_{scheme}_{initial_time_d}_{time_epsilon}_{n_time_steps_per}_LEARN_{lr}_{N_epochs}_{N_adapt}_{"Adjoint" if use_adjoint else "Backprop"}_{"KaimingInit" if use_kaiming else "NormalInit"}_SEED_{seed}.pkl')
-
+    torch.save(res, fname)
+    print("Wrote", fname)
     #plt.semilogy(res[1])
     #for r in res[2]:
     #    plt.axvline(r,color='k')

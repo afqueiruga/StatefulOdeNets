@@ -11,6 +11,11 @@ import torchdiffeq
 from .helper import which_device
 
 
+def piecewise_index(t, time_d):
+    t_idx = int(t*time_d)
+    if t_idx==time_d: t_idx = time_d-1
+    return t_idx
+
 def refine(net):
     try:
         return net.refine()
@@ -27,7 +32,7 @@ def refine(net):
 
 class LinearODE(torch.nn.Module):
     def __init__(self, time_d, in_features, out_features):
-        super(LinearODE,self).__init__()
+        super().__init__()
         self.time_d = time_d
         self.out_features = out_features
         self.in_features = in_features
@@ -53,11 +58,28 @@ class LinearODE(torch.nn.Module):
             new.bias.data[2*t:2*t+2,:] = self.bias.data[t,:]
         return new
 
+class SkipInitODE(nn.Module):
+    def __init__(self, time_d):
+        super().__init__()
+        self.time_d = time_d
+        self.weight = nn.Parameter(torch.zeros(time_d).float())
+    def forward(self, t, x):
+        t_idx = int(t*self.time_d)
+        if t_idx==self.time_d: t_idx = self.time_d-1
+        return self.weight[t_idx] * x
+    def refine(self):
+        new = SkipInitOde(2*self.time_d)
+        for t in range(self.time_d):
+            new.weights.data[2*t:2*t+2] = self.weights.data[t]
+        for t in range(self.time_d):
+            new.bias.data[2*t:2*t+2] = self.bias.data[t]
+        return new
+    
     
 class ShallowODE(torch.nn.Module):
     def __init__(self, time_d, in_features, hidden_features, 
                  act=torch.nn.functional.relu):
-        super(ShallowODE,self).__init__()
+        super().__init__()
         self.act = act
         self.L1 = LinearODE(time_d, in_features, hidden_features)
         self.L2 = LinearODE(time_d, hidden_features, in_features)
@@ -80,7 +102,7 @@ class ShallowODE(torch.nn.Module):
 class Conv2DODE(torch.nn.Module):
     def __init__(self, time_d, in_channels, out_channels,
                 width=1, padding=1):
-        super(Conv2DODE,self).__init__()
+        super().__init__()
         self.time_d = time_d
         self.out_channels = out_channels
         self.in_channels = in_channels
@@ -111,28 +133,27 @@ class Conv2DODE(torch.nn.Module):
             new.bias.data[2*t:2*t+2,:] = self.bias.data[t,:]
         return new
 
-# TODO batchnorms are still messed up
-    
+
 class ShallowConv2DODE(torch.nn.Module):
     def __init__(self, time_d, in_features, hidden_features, 
                  width=3, padding=1,
                  act=torch.nn.functional.relu,
                  epsilon=1.0,
-                 use_batch_norms=True):
+                 use_batch_norms=True,
+                 use_skip_init=True):
         super().__init__()
         self.act = act
         self.epsilon = epsilon
         self.use_batch_norms = use_batch_norms
+        self.use_skip_init = use_skip_init
         self.verbose=False
         self.L1 = Conv2DODE(time_d,in_features,hidden_features,
                             width=width, padding=padding)
         
         self.L2 = Conv2DODE(time_d,hidden_features,in_features,
                             width=width, padding=padding)
-        
-        self.SkipInit = nn.Parameter(torch.tensor(0.0).float())           
-
-        
+        if use_skip_init:
+            self.skip_init = SkipInitODE(time_d)
         if use_batch_norms:
             self.bn1 = torch.nn.BatchNorm2d(
                 hidden_features, affine=True, track_running_stats=True)
@@ -141,21 +162,16 @@ class ShallowConv2DODE(torch.nn.Module):
         
     def forward(self, t, x):
         if self.verbose: print("shallow @ ",t)
-  
         x = self.L1(t, x)
         x = self.act(x)
-                
-        #if self.use_batch_norms:
-        x = self.bn1(x)
-            
+        if self.use_batch_norms:
+            x = self.bn1(x)
         x = self.L2(t, x)
         x = self.act(x)
-        
-        #if self.use_batch_norms:
-        x = self.bn2(x)
-            
-            
-        #x = self.SkipInit * x            
+        if self.use_batch_norms:
+            x = self.bn2(x)
+        if self.use_skip_init:
+            x = self.skip_init(t, x)
         return self.epsilon*x
     
     def refine(self):
@@ -176,7 +192,6 @@ class ShallowConv2DODE(torch.nn.Module):
                 self.bn1.track_running_stats = True
                 self.bn2.track_running_stats = True
             return new
-
 
 
 class ODEify(torch.nn.Module):
