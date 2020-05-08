@@ -19,15 +19,19 @@ def piecewise_index(t, time_d):
 def refine(net):
     try:
         return net.refine()
-    except AttributeError:
+    except AttributeError as e:
         if type(net) is torch.nn.Sequential:
             return torch.nn.Sequential(*[
                 refine(m) for m in net
             ])
+        if type(net) in (nn.Conv2d, nn.ReLU, nn.Flatten, nn.AdaptiveAvgPool2d, nn.Flatten, nn.Linear):
+            return copy.deepcopy(net)
         else:
             #raise RuntimeError("Hit a network that cannot be refined.")
+            print("Could not refine ", net)
             # Error is for debugging. This makes sense too:
-            return copy.deepcopy(net)
+            raise e
+            # return copy.deepcopy(net)
 
 
 class LinearODE(torch.nn.Module):
@@ -36,14 +40,14 @@ class LinearODE(torch.nn.Module):
         self.time_d = time_d
         self.out_features = out_features
         self.in_features = in_features
-        self.weights = torch.nn.Parameter(torch.randn(time_d, in_features, out_features) / (out_features)**0.5)
+        self.weight = torch.nn.Parameter(torch.randn(time_d, in_features, out_features) / (out_features)**0.5)
         self.bias = torch.nn.Parameter(torch.zeros(time_d, out_features))
         
     def forward(self, t, x):
         # Use the trick where it's the same as index selection
         t_idx = int(t*self.time_d)
         if t_idx==self.time_d: t_idx = self.time_d-1
-        wij = self.weights[t_idx,:,:]
+        wij = self.weight[t_idx,:,:]
         bi = self.bias[t_idx,:]
         y = x @ wij+ bi # TODO use torch.linear
         return y
@@ -53,7 +57,7 @@ class LinearODE(torch.nn.Module):
                        self.in_features,
                        self.out_features)
         for t in range(self.time_d):
-            new.weights.data[2*t:2*t+2,:,:] = self.weights.data[t,:,:]
+            new.weight.data[2*t:2*t+2,:,:] = self.weight.data[t,:,:]
         for t in range(self.time_d):
             new.bias.data[2*t:2*t+2,:] = self.bias.data[t,:]
         return new
@@ -66,13 +70,12 @@ class SkipInitODE(nn.Module):
     def forward(self, t, x):
         t_idx = int(t*self.time_d)
         if t_idx==self.time_d: t_idx = self.time_d-1
+        #print(t_idx, t.data, self.weight[t_idx].data)
         return self.weight[t_idx] * x
     def refine(self):
-        new = SkipInitOde(2*self.time_d)
+        new = SkipInitODE(2*self.time_d)
         for t in range(self.time_d):
-            new.weights.data[2*t:2*t+2] = self.weights.data[t]
-        for t in range(self.time_d):
-            new.bias.data[2*t:2*t+2] = self.bias.data[t]
+            new.weight.data[2*t:2*t+2] = self.weight.data[t]
         return new
     
     
@@ -108,7 +111,7 @@ class Conv2DODE(torch.nn.Module):
         self.in_channels = in_channels
         self.width = width
         self.padding = padding
-        self.weights = torch.nn.Parameter(torch.randn(time_d, out_channels,in_channels, width , width) / (out_channels)**0.5)
+        self.weight = torch.nn.Parameter(torch.randn(time_d, out_channels,in_channels, width , width))
         self.bias = torch.nn.Parameter(torch.zeros(time_d, out_channels))
         
     def forward(self, t, x):
@@ -116,7 +119,7 @@ class Conv2DODE(torch.nn.Module):
         t_idx = int(t*self.time_d)
         if t_idx==self.time_d: t_idx = self.time_d-1
         #t_idx = torch.LongTensor([t_idx]).to(which_device(self))
-        wij = self.weights[t_idx,:,:,:,:]
+        wij = self.weight[t_idx,:,:,:,:]
         bi = self.bias[t_idx,:]
         y = torch.nn.functional.conv2d(x, wij,bi, padding=self.padding)
         return y
@@ -128,7 +131,7 @@ class Conv2DODE(torch.nn.Module):
                        width=self.width,
                        padding=self.padding).to(which_device(self))
         for t in range(self.time_d):
-            new.weights.data[2*t:2*t+2,:,:,:,:] = self.weights.data[t,:,:,:,:]
+            new.weight.data[2*t:2*t+2,:,:,:,:] = self.weight.data[t,:,:,:,:]
         for t in range(self.time_d):
             new.bias.data[2*t:2*t+2,:] = self.bias.data[t,:]
         return new
@@ -176,8 +179,8 @@ class ShallowConv2DODE(torch.nn.Module):
     
     def refine(self):
         #with torch.no_grad():
-            L1 = self.L1.refine()
-            L2 = self.L2.refine()
+            L1 = refine(self.L1)
+            L2 = refine(self.L2)
             
             if self.use_batch_norms:
                 self.bn1.track_running_stats = False
@@ -187,7 +190,8 @@ class ShallowConv2DODE(torch.nn.Module):
             new = copy.deepcopy(self) 
             new.L1 = L1
             new.L2 = L2
-            
+            if self.use_skip_init:
+                new.skip_init = refine(self.skip_init)
             if self.use_batch_norms:
                 self.bn1.track_running_stats = True
                 self.bn2.track_running_stats = True
@@ -224,17 +228,19 @@ class ODEBlock(torch.nn.Module):
         else:
             integ = torchdiffeq.odeint
         h = integ(self.net, x, self.ts, method=self.scheme,
-                  options=dict(enforce_openset=True))[-1,:,:]
+                  # options=dict(enforce_openset=True)
+                 )[-1,:,:]
         return h
     
     def refine(self):
-        newnet = self.net.refine()
+        newnet = refine(self.net)
         new = ODEBlock(newnet,self.n_time_steps*2,scheme=self.scheme).to(which_device(self))
         return new
     
     def diffeq(self,x):
         hs = torchdiffeq.odeint(self.net, x, self.ts, method=self.scheme,
-                              options=dict(enforce_openset=True))
+                               # options=dict(enforce_openset=True)
+                               )
         return hs
     
     def set_n_time_steps(self, n_time_steps):

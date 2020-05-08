@@ -106,6 +106,9 @@ def train_adapt(model,
             print('**** Allocated refinment ****')
             print('Total params: %.2fM' % (count_parameters(model)/1000000.0))
             print('************')
+            te_acc = calculate_accuracy(model, testloader)
+            print('Test Accuracy after refinement: ', te_acc)
+            test_acc.append(te_acc)
             print(model)
             
 #            torch.save(model.state_dict(), 'temp' + '.pkl')                    
