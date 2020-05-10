@@ -16,13 +16,13 @@ def piecewise_index(t, time_d):
     if t_idx==time_d: t_idx = time_d-1
     return t_idx
 
-def refine(net):
+def refine(net, variance=0.0):
     try:
-        return net.refine()
+        return net.refine(variance)
     except AttributeError as e:
         if type(net) is torch.nn.Sequential:
             return torch.nn.Sequential(*[
-                refine(m) for m in net
+                refine(m, variance) for m in net
             ])
         if type(net) in (nn.Conv2d, nn.ReLU, nn.Flatten, nn.AdaptiveAvgPool2d, nn.Flatten, nn.Linear):
             return copy.deepcopy(net)
@@ -52,7 +52,7 @@ class LinearODE(torch.nn.Module):
         y = x @ wij+ bi # TODO use torch.linear
         return y
     
-    def refine(self):
+    def refine(self, variance=0.0):
         new = LinearODE(2*self.time_d,
                        self.in_features,
                        self.out_features)
@@ -60,6 +60,9 @@ class LinearODE(torch.nn.Module):
             new.weight.data[2*t:2*t+2,:,:] = self.weight.data[t,:,:]
         for t in range(self.time_d):
             new.bias.data[2*t:2*t+2,:] = self.bias.data[t,:]
+        if variance != 0:
+            new.weight.data *= 1.0 + variance * torch.randn_like(new.weight)
+            new.bias.data *= 1.0 + variance * torch.randn_like(new.bias)
         return new
 
 class SkipInitODE(nn.Module):
@@ -72,7 +75,7 @@ class SkipInitODE(nn.Module):
         if t_idx==self.time_d: t_idx = self.time_d-1
         #print(t_idx, t.data, self.weight[t_idx].data)
         return self.weight[t_idx] * x
-    def refine(self):
+    def refine(self, variance=0.0):
         new = SkipInitODE(2*self.time_d)
         for t in range(self.time_d):
             new.weight.data[2*t:2*t+2] = self.weight.data[t]
@@ -92,7 +95,7 @@ class ShallowODE(torch.nn.Module):
         y = self.L2(t, hh)
         yy = self.act(y)
         return yy
-    def refine(self):
+    def refine(self, variance=0.0):
         L1 = self.L1.refine()
         L2 = self.L2.refine()
         # TODO Don't like it, it re-allocates the weights that we're gonna throw away
@@ -124,7 +127,8 @@ class Conv2DODE(torch.nn.Module):
         y = torch.nn.functional.conv2d(x, wij,bi, padding=self.padding)
         return y
     
-    def refine(self):
+    @torch.no_grad()
+    def refine(self, variance=0.0):
         new = Conv2DODE(2*self.time_d,
                        self.in_channels,
                        self.out_channels,
@@ -134,6 +138,9 @@ class Conv2DODE(torch.nn.Module):
             new.weight.data[2*t:2*t+2,:,:,:,:] = self.weight.data[t,:,:,:,:]
         for t in range(self.time_d):
             new.bias.data[2*t:2*t+2,:] = self.bias.data[t,:]
+        if variance != 0:
+            new.weight.data *= 1.0 + variance * torch.randn_like(new.weight)
+            new.bias.data *= 1.0 + variance * torch.randn_like(new.bias)
         return new
 
 
@@ -177,25 +184,25 @@ class ShallowConv2DODE(torch.nn.Module):
             x = self.skip_init(t, x)
         return self.epsilon*x
     
-    def refine(self):
-        #with torch.no_grad():
-            L1 = refine(self.L1)
-            L2 = refine(self.L2)
-            
-            if self.use_batch_norms:
-                self.bn1.track_running_stats = False
-                self.bn2.track_running_stats = False
+    @torch.no_grad()
+    def refine(self, variance=0.0):
+        L1 = refine(self.L1, variance)
+        L2 = refine(self.L2, variance)
 
-            # TODO Don't like it, it re-allocates the weights that we're gonna throw away
-            new = copy.deepcopy(self) 
-            new.L1 = L1
-            new.L2 = L2
-            if self.use_skip_init:
-                new.skip_init = refine(self.skip_init)
-            if self.use_batch_norms:
-                self.bn1.track_running_stats = True
-                self.bn2.track_running_stats = True
-            return new
+        if self.use_batch_norms:
+            self.bn1.track_running_stats = False
+            self.bn2.track_running_stats = False
+
+        # TODO Don't like it, it re-allocates the weights that we're gonna throw away
+        new = copy.deepcopy(self) 
+        new.L1 = L1
+        new.L2 = L2
+        if self.use_skip_init:
+            new.skip_init = refine(self.skip_init, variance)
+        if self.use_batch_norms:
+            self.bn1.track_running_stats = True
+            self.bn2.track_running_stats = True
+        return new
 
 
 class ODEify(torch.nn.Module):
@@ -228,18 +235,18 @@ class ODEBlock(torch.nn.Module):
         else:
             integ = torchdiffeq.odeint
         h = integ(self.net, x, self.ts, method=self.scheme,
-                  # options=dict(enforce_openset=True)
+                  options=dict(enforce_openset=True)
                  )[-1,:,:]
         return h
     
-    def refine(self):
-        newnet = refine(self.net)
+    def refine(self, variance=0.0):
+        newnet = refine(self.net, variance)
         new = ODEBlock(newnet,self.n_time_steps*2,scheme=self.scheme).to(which_device(self))
         return new
     
     def diffeq(self,x):
         hs = torchdiffeq.odeint(self.net, x, self.ts, method=self.scheme,
-                               # options=dict(enforce_openset=True)
+                                options=dict(enforce_openset=True)
                                )
         return hs
     

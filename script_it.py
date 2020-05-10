@@ -14,27 +14,40 @@ class Pack:
         # t=1/3, t=2/3, t=1.0 -> resnet epsilon = 0.3
     time_epsilon: float  # xdot = epsilon * f(x,t)
     use_batch_norms: bool
-
+    use_skip_init: bool = False
+    
     n_time_steps_per: int = 1
-    epochs: int = 5
+    epochs: int = 30
     # batch_size: int = 128
     # test_batch_size: int = 200
 
-    lr: float = 0.01
-    wd: float = 0
-    use_adjoint: bool = True
-    
+    lr: float = 0.1
+    wd: float = 5e-4
+    use_adjoint: bool = False
+
     lr_decay: float = 0.1
     lr_update: List[int] = None
     refine: List[int] = None
+    refine_variance: float = 0.1
     use_kaiming: bool = False
     
 args_list = [
-    Pack("FMNIST", "SingleSegment", "rk4", alpha, 2, 0.5, False,
-         refine=refine, epochs=epochs)
-    for refine, epochs in [ ([1,2,3],10), ([2,4,6],10), ([5, 10, 15,], 30) ]
-    for scheme in ["rk4", "euler"]
-    for alpha in [8, 12, 16]
+    Pack("FMNIST", "SingleSegment", scheme, alpha,
+         initial_time_d, epsilon, False,
+         refine=refine,
+         refine_variance=refine_variance,
+         epochs=75,
+         use_skip_init=True,
+         lr_decay=0.1, lr_update=range(5,80,10)
+        )
+    for epsilon in [1.0] # 0.25, 0.5, 1.0, 2.0, 3.0]
+    for initial_time_d, refine in [
+        (4,[]) 
+        #(1,[35,50])
+    ] #10, 20, 30])]
+    for refine_variance in [0.0, 0.01, 0.1, 0.2]
+    for alpha in [8]
+    for scheme in [ "rk4_classic", ]
 ]
 nothing = [
     Pack("FMNIST", "SingleSegment", "midpoint",  8, 1, 0.5, False),
@@ -65,4 +78,6 @@ for args in args_list:
         weight_decay=args.wd,
         use_adjoint=args.use_adjoint,
         use_kaiming=args.use_kaiming,
+        use_skip_init=args.use_skip_init,
+        refine_variance=args.refine_variance,
         device="cuda:0")

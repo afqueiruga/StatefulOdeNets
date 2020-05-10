@@ -36,6 +36,7 @@ def do_a_train_set(
     use_adjoint=False,
     use_kaiming=False,
     use_skip_init=False,
+    refine_variance=0.0,
     seed=1, device=None):
     """Set up and train one model, and save it.
     
@@ -58,7 +59,7 @@ def do_a_train_set(
         print("Making directory ", "results.")
     except:
         print("Directory ", "results", " already exists.")
-    fname =  f'results/odenet_{dataset}_{which_model}_ARCH_{ALPHA}_{use_batch_norms}_{scheme}_{initial_time_d}_{time_epsilon}_{n_time_steps_per}_LEARN_{lr}_{N_epochs}_{N_adapt}_{"Adjoint" if use_adjoint else "Backprop"}_{"KaimingInit" if use_kaiming else "NormalInit"}_SEED_{seed}.pkl'
+    fname =  f'results/odenet_{dataset}_{which_model}_ARCH_{ALPHA}_{use_batch_norms}_{"SkipInit" if use_skip_init else "NoSkip"}_{scheme}_{initial_time_d}_{time_epsilon}_{n_time_steps_per}_LEARN_{lr}_{N_epochs}_{N_adapt}_{refine_variance}_{"Adjoint" if use_adjoint else "Backprop"}_{"KaimingInit" if use_kaiming else "NormalInit"}_SEED_{seed}.pkl'
     print("Working on ", fname)
     set_seed(seed)
     device = get_device(device)
@@ -111,6 +112,7 @@ def do_a_train_set(
     res = refine_train.train_adapt(
         model, trainloader, testloader, torch.nn.CrossEntropyLoss(),
         N_epochs, N_adapt, lr=lr, lr_decay=lr_decay, epoch_update=epoch_update, weight_decay=weight_decay,
+        refine_variance=refine_variance,
         device=device)
     
     torch.save(res, fname)

@@ -1,5 +1,6 @@
 import collections
 from typing import List, Any
+import timeit
 import attr
 import torch
 import torch.nn.init as init
@@ -16,6 +17,7 @@ class Result:
     refine_steps: Any
     train_acc: Any
     test_acc: Any
+    epoch_times: List[Any]
 
 #
 # helper functions to examine models
@@ -63,6 +65,7 @@ def train_adapt(model,
                 lr_decay=0.2,
                 epoch_update=None,
                 weight_decay=1e-5,
+                refine_variance=0.0,
                 device=None):
     """I don't know how to control the learning rate"""
     if N_refine is None:
@@ -75,11 +78,13 @@ def train_adapt(model,
     train_acc = []
     test_acc = []
     refine_steps = []
+    epoch_times = []
     model_list = [model]
     N_print= 1
     lr_init = lr
     lr_current = lr
     step_count = 0
+
 
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
     print('sgd')
@@ -94,23 +99,26 @@ def train_adapt(model,
         print('Test Accuracy: ', te_acc)
         test_acc.append(te_acc)
     # memory_profile = pytorch_memlab.MemReporter(model)
+
     for e in range(N_epochs):
         model.train()
-        
+
         # Make a new model if the epoch number is in the schedule
         if e in N_refine:
             # memory_profile.report()
-            new_model = model.refine()
+            new_model = model.refine(refine_variance)
             model_list.append(new_model)
             model = new_model
             print('**** Allocated refinment ****')
-            print('Total params: %.2fM' % (count_parameters(model)/1000000.0))
+            print('Total params: %.2fk' % (count_parameters(model)/1000.0))
             print('************')
             te_acc = calculate_accuracy(model, testloader)
             print('Test Accuracy after refinement: ', te_acc)
-            test_acc.append(te_acc)
+            test_acc.append( (e,te_acc) )
+            tr_acc = calculate_accuracy(model, loader)
+            print('Train Accuracy after refinement: ', tr_acc)
+            train_acc.append( (e,tr_acc) )
             print(model)
-            
 #            torch.save(model.state_dict(), 'temp' + '.pkl')                    
 #            model = ODEResNet2(method='euler')    
 #
@@ -123,7 +131,8 @@ def train_adapt(model,
             # Reset state
             # optimizer.state = collections.defaultdict(dict) 
             refine_steps.append(step_count)
-        
+            
+        starting_time = timeit.default_timer()
         # Train one epoch over the new model
         model.train()
         for imgs,labels in iter(loader):
@@ -134,29 +143,31 @@ def train_adapt(model,
             L.backward()
             optimizer.step()
             optimizer.zero_grad()
-            losses.append(L.detach().cpu().item())
+            _loss = L.detach().cpu().item()
+            #print(_loss)
+            losses.append(_loss)
             step_count+=1
-
+        epoch_times.append(timeit.default_timer() - starting_time)
+        print("Epoch took ", epoch_times[-1], " seconds.")
         # Evaluate training and testing accuracy
         n_print = 1
         if e == 0 or (e+1) % n_print == 0:
             print('After Epoch: ', e)
             model.eval()
-            # tr_acc = calculate_accuracy(model, loader)
-            # print('Train Accuracy: ', tr_acc)
-            # train_acc.append(tr_acc)
+            tr_acc = calculate_accuracy(model, loader)
+            print('Train Accuracy: ', tr_acc)
+            train_acc.append( (e,tr_acc) )
             te_acc = calculate_accuracy(model, testloader)
             print('Test Accuracy: ', te_acc)
-            test_acc.append(te_acc)
+            test_acc.append( (e,te_acc) )
 
         if e in epoch_update:
             lr_current *= lr_decay
 
         optimizer = exp_lr_scheduler(
             optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
-    
     # memory_profile.report()
-    return Result(model_list, losses, refine_steps, train_acc, test_acc)
+    return Result(model_list, losses, refine_steps, train_acc, test_acc, epoch_times)
 
 
 def train_for_epochs(model,

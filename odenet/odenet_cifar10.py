@@ -70,7 +70,7 @@ class ODEResNet(nn.Module):
             # ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
             #          N_time=time_d*2, method=method, use_adjoint=use_adjoint),
             # ODEBlock(ShallowConv2DODE(time_d, 4*ALPHA, 4*ALPHA),
-            #       N_time=time_d, method=method, use_adjoint=use_adjoint),
+            #       N_time=time_d, method=method, use_adjoint=use_adjoint),s
 
             nn.AdaptiveAvgPool2d(1),
             #nn.AvgPool2d(8),
@@ -174,9 +174,9 @@ class ODEResNet_SingleSegment(nn.Module):
     def forward(self,x):
         return self.net(x)
     
-    def refine(self):
-        new = copy.deepcopy(self)#ODEResNet.__new__(ODEResNet)
+    def refine(self, variance=0.0):
+        new = copy.deepcopy(self)  # ODEResNet.__new__(ODEResNet)
         new.time_d = 2*self.time_d
         new.scheme = self.scheme
-        new.net = nn.Sequential(*[ refine(mod) for mod in self.net])
+        new.net = nn.Sequential(*[ refine(mod, variance) for mod in self.net])
         return new
