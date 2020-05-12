@@ -114,7 +114,7 @@ class Conv2DODE(torch.nn.Module):
         self.in_channels = in_channels
         self.width = width
         self.padding = padding
-        self.weight = torch.nn.Parameter(torch.randn(time_d, out_channels,in_channels, width , width))
+        self.weight = torch.nn.Parameter(torch.randn(time_d, out_channels,in_channels, width, width))
         self.bias = torch.nn.Parameter(torch.zeros(time_d, out_channels))
         
     def forward(self, t, x):
@@ -143,6 +143,42 @@ class Conv2DODE(torch.nn.Module):
             new.bias.data *= 1.0 + variance * torch.randn_like(new.bias)
         return new
 
+class Conv2DPolyODE(torch.nn.Module):
+    def __init__(self, time_d, in_channels, out_channels,
+                width=1, padding=1):
+        super().__init__()
+        self.time_d = time_d
+        self.out_channels = out_channels
+        self.in_channels = in_channels
+        self.width = width
+        self.padding = padding
+        self.weight = torch.nn.Parameter(torch.randn(time_d, out_channels,in_channels, width, width))
+        self.bias = torch.nn.Parameter(torch.zeros(time_d, out_channels))
+        
+    def forward(self, t, x):
+        """Shape function options: [1, t, t**2]
+        [(1-t), (t)]"""
+        wij = self.weight[0,:,:,:,:]*(1.0-t) + self.weight[1,:,:,:,:]*t
+        bi = self.bias[0,:]*(1.0-t) + self.bias[1,:]*t
+        y = torch.nn.functional.conv2d(x, wij,bi, padding=self.padding)
+        return y
+    
+    @torch.no_grad()
+    def refine(self, variance=0.0):
+        """What does refine mean"""
+        new = Conv2DPolyODE(
+            self.time_d+1,
+            self.in_channels,
+            self.out_channels,
+            width=self.width,
+            padding=self.padding).to(which_device(self))
+        # TODO this one is wrong
+        new.weight.data[:self.time_d,:,:,:,:] = self.weight.data[t,:,:,:,:]
+        new.bias.data[:self.time_d,:] = self.bias.data[t,:]
+        if variance != 0:
+            new.weight.data *= 1.0 + variance * torch.randn_like(new.weight)
+            new.bias.data *= 1.0 + variance * torch.randn_like(new.bias)
+        return new
 
 class ShallowConv2DODE(torch.nn.Module):
     def __init__(self, time_d, in_features, hidden_features, 
@@ -150,20 +186,31 @@ class ShallowConv2DODE(torch.nn.Module):
                  act=torch.nn.functional.relu,
                  epsilon=1.0,
                  use_batch_norms=True,
-                 use_skip_init=True):
+                 use_skip_init=True,
+                 shape_function='piecewise'):
         super().__init__()
         self.act = act
         self.epsilon = epsilon
         self.use_batch_norms = use_batch_norms
         self.use_skip_init = use_skip_init
         self.verbose=False
-        self.L1 = Conv2DODE(time_d,in_features,hidden_features,
+        self.shape_function = shape_function
+        if shape_function == 'piecewise':
+            self.L1 = Conv2DODE(time_d,in_features,hidden_features,
                             width=width, padding=padding)
-        
-        self.L2 = Conv2DODE(time_d,hidden_features,in_features,
+            self.L2 = Conv2DODE(time_d,hidden_features,in_features,
                             width=width, padding=padding)
-        if use_skip_init:
-            self.skip_init = SkipInitODE(time_d)
+            if use_skip_init:
+                self.skip_init = SkipInitODE(time_d)
+
+        elif shape_function == 'poly':
+            self.L1 = Conv2DPolyODE(time_d,in_features,hidden_features,
+                            width=width, padding=padding)
+            self.L2 = Conv2DPolyODE(time_d,hidden_features,in_features,
+                            width=width, padding=padding)
+            if use_skip_init:
+                self.skip_init = SkipInitODE(1)
+
         if use_batch_norms:
             self.bn1 = torch.nn.BatchNorm2d(
                 hidden_features, affine=True, track_running_stats=True)

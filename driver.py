@@ -37,6 +37,7 @@ def do_a_train_set(
     use_kaiming=False,
     use_skip_init=False,
     refine_variance=0.0,
+    shape_function='piecewise',
     seed=1, device=None):
     """Set up and train one model, and save it.
     
@@ -59,12 +60,13 @@ def do_a_train_set(
         print("Making directory ", "results.")
     except:
         print("Directory ", "results", " already exists.")
-    fname =  f'results/odenet_{dataset}_{which_model}_ARCH_{ALPHA}_{use_batch_norms}_{"SkipInit" if use_skip_init else "NoSkip"}_{scheme}_{initial_time_d}_{time_epsilon}_{n_time_steps_per}_LEARN_{lr}_{N_epochs}_{N_adapt}_{refine_variance}_{"Adjoint" if use_adjoint else "Backprop"}_{"KaimingInit" if use_kaiming else "NormalInit"}_SEED_{seed}.pkl'
+    fname =  f'results/odenet-{dataset}-{which_model}-ARCH-{ALPHA}-{use_batch_norms}-{"SkipInit" if use_skip_init else "NoSkip"}-{scheme}-{initial_time_d}-{time_epsilon}-{n_time_steps_per}-{shape_function}-LEARN-{lr}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-{"KaimingInit" if use_kaiming else "NormalInit"}-SEED-{seed}.pkl'
     print("Working on ", fname)
     set_seed(seed)
     device = get_device(device)
 
-    refset,trainset,trainloader,testset,testloader = datasets.get_dataset(dataset,root='../data/')
+    refset,trainset,trainloader,testset,testloader = \
+        datasets.get_dataset(dataset,root='../data/')
 
     if dataset=="CIFAR10":
         in_channels=3
@@ -94,6 +96,7 @@ def do_a_train_set(
             time_epsilon=time_epsilon,
             n_time_steps_per=n_time_steps_per,
             use_skip_init=use_skip_init,
+            shape_function=shape_function,
             use_adjoint=use_adjoint
         ).to(device)
     else:

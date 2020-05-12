@@ -144,7 +144,7 @@ def train_adapt(model,
             optimizer.step()
             optimizer.zero_grad()
             _loss = L.detach().cpu().item()
-            #print(_loss)
+            # print(_loss)
             losses.append(_loss)
             step_count+=1
         epoch_times.append(timeit.default_timer() - starting_time)

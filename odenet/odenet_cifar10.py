@@ -111,6 +111,7 @@ class ODEResNet_SingleSegment(nn.Module):
                  time_epsilon=1.0,
                  n_time_steps_per=1,
                  use_skip_init=False,
+                 shape_function='piecewise',
                  use_adjoint=False):
         super().__init__()
         self.scheme = scheme
@@ -125,6 +126,7 @@ class ODEResNet_SingleSegment(nn.Module):
                     _alpha,
                     epsilon=time_epsilon,
                     use_batch_norms=use_batch_norms,
+                    shape_function=shape_function,
                     use_skip_init=use_skip_init),
                 n_time_steps=time_d*n_time_steps_per,
                 scheme=scheme,
@@ -159,7 +161,13 @@ class ODEResNet_SingleSegment(nn.Module):
                 n = m.width * m.width * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
                 print('Init Conv2DODE') 
-
+            elif isinstance(m, Conv2DPolyODE):
+                n = m.width * m.width * m.out_channels
+                m.weight.data[:,:,:,:,:].normal_(0, math.sqrt(2. / n))
+                # m.weight.data[0,:,:,:,:].normal_(0, math.sqrt(2. / n))
+                # m.weight.data[1,:,:,:,:].normal_(0, 1.0e-5*math.sqrt(2. / n))
+                print(m.weight.data)
+                print('Init Conv2DPolyODE') 
             elif isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
                 if m.bias is not None:
