@@ -37,23 +37,28 @@ args_list = [
          initial_time_d, epsilon, False,
          refine=refine,
          refine_variance=refine_variance,
-         epochs=20,
+         epochs=200,
          use_skip_init=True,
          n_time_steps_per=n_time_steps_per,
+         lr=0.05,
          lr_decay=0.1,
          use_adjoint=use_adjoint,
-         lr_update=[20],#range(15,80,10)
+         lr_update=[80, 120, 140],#range(15,80,10)
         )
     for n_time_steps_per in range(1,4)
     for epsilon in [1.0]
     for initial_time_d, refine in [
-        (3,[])
-        #(1,[35,50])
+        (2,[]),
+        (2,[5,10]),
+        (2,[10,20]),
+        (2,[20,40]),
+        (2,[40,80]),
+        (8,[])
     ]
     for refine_variance in [0.0] #, 0.01, 0.1, 0.2]
     for alpha in [16]
-    for scheme in [ "euler", "rk4_classic", ]
-    for use_adjoint in [ True, False ]
+    for scheme in [ "rk4_classic", ]
+    for use_adjoint in [ False ]
 ]
 nothing = [
     Pack("FMNIST", "SingleSegment", "midpoint",  8, 1, 0.5, False),
