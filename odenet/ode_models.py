@@ -337,3 +337,5 @@ class ODEStitch(nn.Module):
             h = self.skip_init * h
         x_down = self.downsample(x)
         return x_down + h
+    def refine(self, variance=0):
+        return copy.deepcopy(self)
