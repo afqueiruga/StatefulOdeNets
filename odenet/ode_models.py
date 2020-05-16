@@ -185,9 +185,14 @@ class ShallowConv2DODE(torch.nn.Module):
                  width=3, padding=1,
                  act=torch.nn.functional.relu,
                  epsilon=1.0,
-                 use_batch_norms=True,
+                 use_batch_norms="None",
                  use_skip_init=True,
                  shape_function='piecewise'):
+        """
+        Args:
+        
+        use_batch_norms: options are ("No"|False), "nn", "ode"
+        """
         super().__init__()
         self.act = act
         self.epsilon = epsilon
@@ -195,6 +200,7 @@ class ShallowConv2DODE(torch.nn.Module):
         self.use_skip_init = use_skip_init
         self.verbose=False
         self.shape_function = shape_function
+        
         if shape_function == 'piecewise':
             self.L1 = Conv2DODE(time_d,in_features,hidden_features,
                             width=width, padding=padding)
@@ -202,7 +208,6 @@ class ShallowConv2DODE(torch.nn.Module):
                             width=width, padding=padding)
             if use_skip_init:
                 self.skip_init = SkipInitODE(time_d)
-
         elif shape_function == 'poly':
             self.L1 = Conv2DPolyODE(time_d,in_features,hidden_features,
                             width=width, padding=padding)
@@ -211,44 +216,69 @@ class ShallowConv2DODE(torch.nn.Module):
             if use_skip_init:
                 self.skip_init = SkipInitODE(1)
 
-        if use_batch_norms:
-            self.bn1 = torch.nn.BatchNorm2d(
+        if use_batch_norms=="nn":
+            self.bn1 = nn.BatchNorm2d(
                 hidden_features, affine=True, track_running_stats=True)
-            self.bn2 = torch.nn.BatchNorm2d(
+            self.bn2 = nn.BatchNorm2d(
                 in_features, affine=True, track_running_stats=True)
+        elif use_batch_norms=="ode":
+            self.bn1 = BatchNorm2DODE(
+                time_d, hidden_features, affine=True, track_running_stats=True)
+            self.bn2 = BatchNorm2DODE(
+                time_d, in_features, affine=True, track_running_stats=True)
         
     def forward(self, t, x):
         if self.verbose: print("shallow @ ",t)
         x = self.L1(t, x)
         x = self.act(x)
-        if self.use_batch_norms:
+        if self.use_batch_norms=="nn":
             x = self.bn1(x)
+        elif self.use_batch_norms=="ode":
+            x = self.bn1(t,x)
         x = self.L2(t, x)
         x = self.act(x)
-        if self.use_batch_norms:
+        if self.use_batch_norms=="nn":
             x = self.bn2(x)
+        elif self.use_batch_norms=="ode":
+            x = self.bn2(t,x)
         if self.use_skip_init:
             x = self.skip_init(t, x)
         return self.epsilon*x
     
     @torch.no_grad()
     def refine(self, variance=0.0):
-        L1 = refine(self.L1, variance)
-        L2 = refine(self.L2, variance)
+        r_L1 = refine(self.L1, variance)
+        r_L2 = refine(self.L2, variance)
+        
+        if self.use_skip_init:
+            r_skip_init = refine(self.skip_init, variance)
+        else:
+            r_skip_init = None
 
-        if self.use_batch_norms:
+        if self.use_batch_norms=="nn":
             self.bn1.track_running_stats = False
             self.bn2.track_running_stats = False
+            r_bn1 = copy.deepcopy(self.bn1)
+            r_bn2 = copy.deepcopy(self.bn2)
+        elif self.use_batch_norms=="ode":
+            r_bn1 = self.bn1.refine()
+            r_bn2 = self.bn2.refine()
+        else:
+            r_bn1 = None
+            r_bn2 = None
 
         # TODO Don't like it, it re-allocates the weights that we're gonna throw away
         new = copy.deepcopy(self) 
-        new.L1 = L1
-        new.L2 = L2
-        if self.use_skip_init:
-            new.skip_init = refine(self.skip_init, variance)
-        if self.use_batch_norms:
+        new.L1 = r_L1
+        new.L2 = r_L2
+        new.skip_init = r_skip_init
+        new.bn1 = r_bn1
+        new.bn2 = r_bn2
+        
+        if self.use_batch_norms=="nn":
             self.bn1.track_running_stats = True
             self.bn2.track_running_stats = True
+
         return new
 
 
@@ -287,8 +317,8 @@ class ODEBlock(torch.nn.Module):
         return h
     
     def refine(self, variance=0.0):
-        newnet = refine(self.net, variance)
-        new = ODEBlock(newnet,self.n_time_steps*2,scheme=self.scheme).to(which_device(self))
+        r_net = refine(self.net, variance)
+        new = ODEBlock(r_net, self.n_time_steps*2, scheme=self.scheme).to(which_device(self))
         return new
     
     def diffeq(self,x):
@@ -306,7 +336,8 @@ class ODEStitch(nn.Module):
     """Perfoms a downsampling stitch with the ResNet non-ode version.
     
     ODEs require in_features to be equal to out_features. This performs that one-time
-    reshaping needing in spacial dimensions."""
+    reshaping needing in spacial dimensions.
+    """
     def __init__(self, in_features, out_features, hidden_features, 
                  width=3, padding=1,
                  act=torch.nn.functional.relu,
@@ -337,5 +368,43 @@ class ODEStitch(nn.Module):
             h = self.skip_init * h
         x_down = self.downsample(x)
         return x_down + h
+
     def refine(self, variance=0):
         return copy.deepcopy(self)
+
+
+class BatchNorm2DODE(nn.Module):
+    """A piece-wise chain of batch norms."""
+    def __init__(self,
+                 time_d,
+                 features,
+                 affine=True,
+                 track_running_stats=True,
+                 _force_bns=None):
+        """Construct a new time-indexed batch norm group.
+        
+        _force_bns is meant to be called by refine, which overrides
+        initialization.
+        """
+        super().__init__()
+        self.time_d = time_d
+        self.features = features
+        if _force_bns is None:
+            self.bns = nn.ModuleList([
+                nn.BatchNorm2d(
+                    features, affine=affine, track_running_stats=track_running_stats)
+                for _ in range(time_d)
+            ])
+        else:
+            self.bns = nn.ModuleList(_force_bns)
+
+    def forward(self, t, x):
+        tdx = piecewise_index(t, self.time_d)
+        return self.bns[tdx](x)
+    def refine(self, variance=0):
+        _force_bns = []
+        for my_bn in self.bns:
+            for _ in range(2):
+                _force_bns.append(copy.deepcopy(my_bn))
+        new = BatchNormODE(2*time_d, features, _force_bns=_force_bns)
+        return new
