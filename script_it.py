@@ -17,7 +17,7 @@ class Pack:
     use_skip_init: bool = False
     
     n_time_steps_per: int = 1
-    epochs: int = 30
+    epochs: int = 160
     # batch_size: int = 128
     # test_batch_size: int = 200
 
@@ -32,43 +32,33 @@ class Pack:
     use_kaiming: bool = False
     shape_function: str = 'piecewise'
     
+cuda0_batch = [
+    #(2,[40,80]),
+    (2,[50,100]),
+    (2,[60,120]),
+]
+cuda1_batch = [
+    (1,[10,40,60,80])
+]
 args_list = [
     Pack("CIFAR10", "SingleSegment", scheme, alpha,
          initial_time_d, epsilon, False,
          refine=refine,
          refine_variance=refine_variance,
-         epochs=200,
          use_skip_init=True,
          n_time_steps_per=n_time_steps_per,
          lr=0.05,
          lr_decay=0.1,
          use_adjoint=use_adjoint,
-         lr_update=[80, 120, 140],#range(15,80,10)
+         lr_update=[80, 120, 140]
         )
-    for n_time_steps_per in range(1,4)
+    for n_time_steps_per in [1]
     for epsilon in [1.0]
-    for initial_time_d, refine in [
-        (2,[]),
-        (2,[5,10]),
-        (2,[10,20]),
-        (2,[20,40]),
-        (2,[40,80]),
-        (8,[])
-    ]
-    for refine_variance in [0.0] #, 0.01, 0.1, 0.2]
+    for initial_time_d, refine in cuda1_batch
+    for refine_variance in [0.0]
     for alpha in [16]
     for scheme in [ "rk4_classic", ]
     for use_adjoint in [ False ]
-]
-nothing = [
-    Pack("FMNIST", "SingleSegment", "midpoint",  8, 1, 0.5, False),
-    Pack("FMNIST", "SingleSegment", "euler",     8, 1, 0.5, False),
-    Pack("FMNIST", "SingleSegment", "rk4",      12, 1, 0.5, False),
-    Pack("FMNIST", "SingleSegment", "midpoint", 12, 1, 0.5, False),
-    Pack("FMNIST", "SingleSegment", "euler",    12, 1, 0.5, False),
-    Pack("FMNIST", "SingleSegment", "rk4",      16, 1, 0.5, False),
-    Pack("FMNIST", "SingleSegment", "midpoint", 16, 1, 0.5, False),
-    Pack("FMNIST", "SingleSegment", "euler",    16, 1, 0.5, False),
 ]
 
 for args in args_list:
@@ -92,4 +82,4 @@ for args in args_list:
         use_skip_init=args.use_skip_init,
         refine_variance=args.refine_variance,
         shape_function=args.shape_function,
-        device="cuda:0")
+        device="cuda:1")

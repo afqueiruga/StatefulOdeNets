@@ -84,7 +84,7 @@ def train_adapt(model,
     lr_init = lr
     lr_current = lr
     step_count = 0
-
+    want_train_acc = False
 
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
     print('sgd')
@@ -99,7 +99,6 @@ def train_adapt(model,
         print('Test Accuracy: ', te_acc)
         test_acc.append(te_acc)
     # memory_profile = pytorch_memlab.MemReporter(model)
-
     for e in range(N_epochs):
         model.train()
 
@@ -115,9 +114,10 @@ def train_adapt(model,
             te_acc = calculate_accuracy(model, testloader)
             print('Test Accuracy after refinement: ', te_acc)
             test_acc.append( (e,te_acc) )
-            tr_acc = calculate_accuracy(model, loader)
-            print('Train Accuracy after refinement: ', tr_acc)
-            train_acc.append( (e,tr_acc) )
+            if want_train_acc:
+                tr_acc = calculate_accuracy(model, loader)
+                print('Train Accuracy after refinement: ', tr_acc)
+                train_acc.append( (e,tr_acc) )
             print(model)
 #            torch.save(model.state_dict(), 'temp' + '.pkl')                    
 #            model = ODEResNet2(method='euler')    
@@ -154,9 +154,10 @@ def train_adapt(model,
         if e == 0 or (e+1) % n_print == 0:
             print('After Epoch: ', e)
             model.eval()
-            tr_acc = calculate_accuracy(model, loader)
-            print('Train Accuracy: ', tr_acc)
-            train_acc.append( (e,tr_acc) )
+            if want_train_acc:
+                tr_acc = calculate_accuracy(model, loader)
+                print('Train Accuracy: ', tr_acc)
+                train_acc.append( (e,tr_acc) )
             te_acc = calculate_accuracy(model, testloader)
             print('Test Accuracy: ', te_acc)
             test_acc.append( (e,te_acc) )
