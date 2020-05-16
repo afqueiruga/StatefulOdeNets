@@ -111,6 +111,7 @@ class ODEResNet_SingleSegment(nn.Module):
                  time_epsilon=1.0,
                  n_time_steps_per=1,
                  use_skip_init=False,
+                 use_stitch=True,
                  shape_function='piecewise',
                  use_adjoint=False):
         super().__init__()
@@ -131,7 +132,16 @@ class ODEResNet_SingleSegment(nn.Module):
                 n_time_steps=time_d*n_time_steps_per,
                 scheme=scheme,
                 use_adjoint=use_adjoint)
-        
+        if use_stitch:
+            _stitch_macro = lambda _alpha, _beta : \
+                ODEStitch(_alpha, _beta, _beta,
+                          epsilon=time_epsilon,
+                          use_batch_norms=use_batch_norms,
+                          use_skip_init=use_skip_init)
+        else:
+            _stitch_macro = lambda _alpha, _beta : \
+                nn.Conv2d(_alpha, _beta, kernel_size=1, padding=1, stride=2, bias=False)
+
         # The full resnet, with three segments of the above macro
         self.net = NoSequential(
             nn.Conv2d(
@@ -139,12 +149,10 @@ class ODEResNet_SingleSegment(nn.Module):
             nn.BatchNorm2d(ALPHA) if use_batch_norms else None,
             nn.ReLU(),
             _macro(ALPHA),
-            nn.Conv2d(
-                ALPHA, 2*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
+            _stitch_macro(ALPHA, 2*ALPHA),
             nn.BatchNorm2d(2*ALPHA) if use_batch_norms else None,
             _macro(2*ALPHA),
-            nn.Conv2d(
-                2*ALPHA, 4*ALPHA, kernel_size=1, padding=1, stride=2, bias=False),
+            _stitch_macro(2*ALPHA, 4*ALPHA),
             nn.BatchNorm2d(4*ALPHA) if use_batch_norms else None,
             _macro(4*ALPHA),
             nn.AdaptiveAvgPool2d(1),

@@ -300,3 +300,40 @@ class ODEBlock(torch.nn.Module):
     def set_n_time_steps(self, n_time_steps):
         self.n_time_steps=n_time_steps
         self.ts = torch.linspace(0, 1.0, self.n_time_steps+1)
+
+        
+class ODEStitch(nn.Module):
+    """Perfoms a downsampling stitch with the ResNet non-ode version.
+    
+    ODEs require in_features to be equal to out_features. This performs that one-time
+    reshaping needing in spacial dimensions."""
+    def __init__(self, in_features, out_features, hidden_features, 
+                 width=3, padding=1,
+                 act=torch.nn.functional.relu,
+                 epsilon=1.0,
+                 use_batch_norms=False,
+                 use_skip_init=True):
+        super().__init__()
+        self.act = act
+        self.epsilon = epsilon
+        self.use_batch_norms = use_batch_norms
+        self.use_skip_init = use_skip_init
+        self.verbose=False
+        self.downsample = nn.Conv2d(
+                in_features, out_features, kernel_size=1, padding=0, stride=2, bias=False)
+        self.L1 = nn.Conv2d(
+            in_features, hidden_features, stride=2, kernel_size=width, padding=padding)
+        self.L2 = nn.Conv2d(
+            hidden_features, out_features, kernel_size=width, padding=padding)
+        if use_skip_init:
+            self.skip_init = nn.Parameter(torch.zeros(1))
+
+    def forward(self, x):
+        h = self.L1(x)
+        h = self.act(h)
+        h = self.L2(h)
+        h = self.act(h)
+        if self.use_skip_init:
+            h = self.skip_init * h
+        x_down = self.downsample(x)
+        return x_down + h
