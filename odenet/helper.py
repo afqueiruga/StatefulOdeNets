@@ -5,10 +5,13 @@ import torch.nn.init as init
 #
 # Torch helpers to keep environments uniform.
 #
-def set_seed(seed=1):
+def set_seed(seed=1, deterministic=False):
     """Set one seed for reproducibility."""
     np.random.seed(seed)
     torch.manual_seed(seed)
+    if deterministic:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
 def get_device(device_id=None):
     """Get a gpu if available."""
