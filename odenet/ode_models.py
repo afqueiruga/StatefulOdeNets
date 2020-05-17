@@ -24,7 +24,7 @@ def refine(net, variance=0.0):
             return torch.nn.Sequential(*[
                 refine(m, variance) for m in net
             ])
-        if type(net) in (nn.Conv2d, nn.ReLU, nn.Flatten, nn.AdaptiveAvgPool2d, nn.Flatten, nn.Linear):
+        if type(net) in (nn.Conv2d, nn.ReLU, nn.Flatten, nn.AdaptiveAvgPool2d, nn.Flatten, nn.Linear, nn.BatchNorm2d):
             return copy.deepcopy(net)
         else:
             #raise RuntimeError("Hit a network that cannot be refined.")
@@ -405,10 +405,11 @@ class BatchNorm2DODE(nn.Module):
     def forward(self, t, x):
         tdx = piecewise_index(t, self.time_d)
         return self.bns[tdx](x)
+
     def refine(self, variance=0):
         _force_bns = []
         for my_bn in self.bns:
             for _ in range(2):
                 _force_bns.append(copy.deepcopy(my_bn))
-        new = BatchNormODE(2*time_d, features, _force_bns=_force_bns)
+        new = BatchNorm2DODE(2*self.time_d, self.features, _force_bns=_force_bns)
         return new
