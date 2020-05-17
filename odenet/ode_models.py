@@ -331,10 +331,8 @@ class ODEBlock(torch.nn.Module):
         self.n_time_steps=n_time_steps
         self.ts = torch.linspace(0, 1.0, self.n_time_steps+1)
 
-        
 class ODEStitch(nn.Module):
     """Perfoms a downsampling stitch with the ResNet non-ode version.
-    
     ODEs require in_features to be equal to out_features. This performs that one-time
     reshaping needing in spacial dimensions.
     """
@@ -358,17 +356,23 @@ class ODEStitch(nn.Module):
             hidden_features, out_features, kernel_size=width, padding=padding)
         if use_skip_init:
             self.skip_init = nn.Parameter(torch.zeros(1))
+        if use_batch_norms:
+            self.bn1 = torch.nn.BatchNorm2d(hidden_features)
+            self.bn2 = torch.nn.BatchNorm2d(out_features)
 
     def forward(self, x):
         h = self.L1(x)
         h = self.act(h)
+        if self.use_batch_norms:
+            h = self.bn1(h)   
         h = self.L2(h)
         h = self.act(h)
+        if self.use_batch_norms:
+            h = self.bn2(h)           
         if self.use_skip_init:
             h = self.skip_init * h
         x_down = self.downsample(x)
         return x_down + h
-
     def refine(self, variance=0):
         return copy.deepcopy(self)
 
