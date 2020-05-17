@@ -143,6 +143,9 @@ def train_adapt(model,
             L.backward()
             optimizer.step()
             optimizer.zero_grad()
+            if torch.isnan(L):
+                print("Hit a NaN, returning early.")
+                return Result(model_list, losses, refine_steps, train_acc, test_acc, epoch_times)
             _loss = L.detach().cpu().item()
             # print(_loss)
             losses.append(_loss)
