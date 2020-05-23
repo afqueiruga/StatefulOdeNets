@@ -73,17 +73,20 @@ reference_test = [
 cuda1_batch = ["euler"]
 cuda2_batch = ["rk4_classic"]
 refinements_batch = [
-    (1,[10,20,30]),
-    (1,[20,30,40]),
-    (1,[30,45,60]),
-    (2,[30,40]),
-    (2,[45,60]),
-    (2,[60,120]),
-    (2,[50,100]),
-    (2,[40,80]),
-    (2,[30,60]),
-    (1,[10,20,40,60]),
-    (1,[10,20,30,40,50]),
+#     (1,[10,20,30]),
+#     (1,[20,30,40]),
+#     (1,[30,45,60]),
+#     (2,[30,40]),
+#     (2,[45,60]),
+#     (2,[60,120]),
+#     (2,[50,100]),
+#     (2,[40,80]),
+#     (2,[30,60]),
+#     (1,[10,20,40,60]),
+#     (1,[10,20,30,40,50]),
+# The above one failed for rk4 on a memory error
+# So, I implemented relu(inplace=True) and was greedier with this:
+    (1,[20,40,60,70,80])
 ]
 experiment_1249May17_list = [
     Pack("CIFAR10", "SingleSegment", scheme, 16, initial_time_d,
@@ -92,7 +95,8 @@ experiment_1249May17_list = [
          refine=refine,
          lr=0.1,
          lr_decay=0.1,
-         lr_update=[80, 120, 140])
+         lr_update=[80, 120, 140],
+         use_adjoint=False)
     for initial_time_d, refine in refinements_batch
     for scheme in cuda2_batch
 ]
@@ -211,8 +215,8 @@ experiment_330May19_list = [
 ]
 
 
-DEVICE = "cuda:0"
-args_list = experiment_330May19_list
+DEVICE = "cuda:3"
+args_list = experiment_1249May17_list
 for args in args_list:
     driver.do_a_train_set(
         args.dataset,

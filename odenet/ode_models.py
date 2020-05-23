@@ -230,13 +230,13 @@ class ShallowConv2DODE(torch.nn.Module):
     def forward(self, t, x):
         if self.verbose: print("shallow @ ",t)
         x = self.L1(t, x)
-        x = self.act(x)
+        x = self.act(x, inplace=True)
         if self.use_batch_norms=="nn":
             x = self.bn1(x)
         elif self.use_batch_norms=="ode":
             x = self.bn1(t,x)
         x = self.L2(t, x)
-        x = self.act(x)
+        x = self.act(x, inplace=True)
         if self.use_batch_norms=="nn":
             x = self.bn2(x)
         elif self.use_batch_norms=="ode":
@@ -362,11 +362,11 @@ class ODEStitch(nn.Module):
 
     def forward(self, x):
         h = self.L1(x)
-        h = self.act(h)
+        h = self.act(h, inplace=True)
         if self.use_batch_norms:
             h = self.bn1(h)   
         h = self.L2(h)
-        h = self.act(h)
+        h = self.act(h, inplace=True)
         if self.use_batch_norms:
             h = self.bn2(h)           
         if self.use_skip_init:
