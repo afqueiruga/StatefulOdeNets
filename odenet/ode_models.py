@@ -202,16 +202,16 @@ class ShallowConv2DODE(torch.nn.Module):
         self.shape_function = shape_function
         
         if shape_function == 'piecewise':
-            self.L1 = Conv2DODE(time_d,in_features,hidden_features,
+            self.L1 = Conv2DODE(time_d, in_features, hidden_features,
                             width=width, padding=padding)
-            self.L2 = Conv2DODE(time_d,hidden_features,in_features,
+            self.L2 = Conv2DODE(time_d, hidden_features, in_features,
                             width=width, padding=padding)
             if use_skip_init:
                 self.skip_init = SkipInitODE(time_d)
         elif shape_function == 'poly':
-            self.L1 = Conv2DPolyODE(time_d,in_features,hidden_features,
+            self.L1 = Conv2DPolyODE(time_d, in_features, hidden_features,
                             width=width, padding=padding)
-            self.L2 = Conv2DPolyODE(time_d,hidden_features,in_features,
+            self.L2 = Conv2DPolyODE(time_d, hidden_features, in_features,
                             width=width, padding=padding)
             if use_skip_init:
                 self.skip_init = SkipInitODE(1)
