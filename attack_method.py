@@ -6,6 +6,9 @@ import torch
 import torch.nn.functional as F
 from torch.autograd import Variable, grad
 
+from odenet.helper import set_seed, get_device, which_device
+
+
 import numpy as np
 
 from copy import deepcopy
@@ -19,7 +22,7 @@ def fgsm(model, data, target, eps):
         data: input image to perturb
     """
     #model.eval()
-    data, target = Variable(data.cuda(), requires_grad=True), target.cuda()
+    data, target = Variable(data.to(which_device(model)), requires_grad=True), target.to(which_device(model))
     #data.requires_grad = True
     model.zero_grad()
     output = model(data)
@@ -55,8 +58,8 @@ def fgsm_adaptive_iter(model, data, target, eps, iterations):
             data = Variable(data)
             break
         
-        #model.eval()
-        data, target = data.cuda(), target.cuda()
+        model.eval()
+        data, target = data.to(which_device(model)), target.to(which_device(model))
         model.zero_grad()
         output = model(data)
 
@@ -94,7 +97,7 @@ def deep_fool(model, data, c=9, p=2):
         data: input image to perturb
     """
     #model.eval()
-    data = data.cuda()
+    data = data.to(which_device(model))
     data.requires_grad = True
     model.zero_grad()
     output = model(data)
@@ -108,8 +111,8 @@ def deep_fool(model, data, c=9, p=2):
     data.grad = None
     z_true.backward(retain_graph=True)
     true_grad = data.grad
-    grads = torch.zeros([1+c] + list(data.size())).cuda()
-    pers = torch.zeros(len(data), 1+c).cuda()
+    grads = torch.zeros([1+c] + list(data.size())).to(which_device(model))
+    pers = torch.zeros(len(data), 1+c).to(which_device(model))
     for i in range(1,1+c):
         z = torch.sum(output[:,i])
         data.grad = None
@@ -138,11 +141,11 @@ def deep_fool(model, data, c=9, p=2):
 
 
 def deep_fool_iter(model, data, target, c=9, p=2, iterations=10):
-    X_adv = data.cuda() + 0.0
+    X_adv = data.to(which_device(model)) + 0.0
     update_num = 0.
     for i in range(iterations):
         #model.eval()
-        Xdata, Xtarget = X_adv, target.cuda()
+        Xdata, Xtarget = X_adv, target.to(which_device(model))
         Xdata, Xtarget = Variable(Xdata, requires_grad=True), Variable(Xtarget)
         model.zero_grad()
         Xoutput = model(Xdata)
@@ -170,7 +173,7 @@ def select_index(model, data, c=9, p=2, worst_case = False):
         data: input image to perturb
     """
     #model.eval()
-    data = data.cuda()
+    data = data.to(which_device(model))
     data.requires_grad = True
     model.zero_grad()
     output = model(data)
@@ -183,7 +186,7 @@ def select_index(model, data, c=9, p=2, worst_case = False):
     data.grad = None
     z_true.backward(retain_graph=True)
     true_grad = data.grad
-    pers = torch.zeros(len(data), 1+c).cuda()
+    pers = torch.zeros(len(data), 1+c).to(which_device(model))
     for i in range(1,1+c):
         z = torch.sum(output[:,i])
         data.grad = None
@@ -221,7 +224,7 @@ def tr_attack(model, data, true_ind, target_ind, eps, p = 2):
         target_ind: is the attack label
     """
     #model.eval()
-    data = data.cuda()
+    data = data.to(which_device(model))
     data.requires_grad = True
     model.zero_grad()
     output = model(data)
@@ -257,13 +260,13 @@ def tr_attack(model, data, true_ind, target_ind, eps, p = 2):
 
             
 def tr_attack_iter(model, data, target, eps, c = 9, p = 2, iterations = 1000, worst_case = False):
-    X_adv = deepcopy(data.cuda()) 
+    X_adv = deepcopy(data.to(which_device(model))) 
     target_ind = select_index(model, data, c = c,p = p, worst_case = worst_case) 
     
     update_num = 0.
     for i in range(iterations):
         #model.eval()
-        Xdata, Ytarget = X_adv, target.cuda()
+        Xdata, Ytarget = X_adv, target.to(which_device(model))
         # First check if the input is correctly classfied before attack
         Xoutput = model(Xdata)
         Xpred = Xoutput.data.max(1, keepdim = True)[1] # get the index of the max log-probability

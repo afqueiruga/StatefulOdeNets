@@ -281,6 +281,25 @@ class ShallowConv2DODE(torch.nn.Module):
 
         return new
 
+class ShallowConv2DODE_Flipped(ShallowConv2DODE):
+    def forward(self, t, x):
+        if self.verbose: print("shallow @ ",t)
+        if self.use_batch_norms=="nn":
+            x = self.bn1(x)
+        elif self.use_batch_norms=="ode":
+            x = self.bn1(t,x)
+        x = self.act(x, inplace=True)
+        x = self.L1(t, x)
+        if self.use_batch_norms=="nn":
+            x = self.bn2(x)
+        elif self.use_batch_norms=="ode":
+            x = self.bn2(t,x)
+        x = self.act(x, inplace=True)
+        x = self.L2(t, x)
+        
+        if self.use_skip_init:
+            x = self.skip_init(t, x)
+        return self.epsilon*x
 
 class ODEify(torch.nn.Module):
     """Throws away the t."""
@@ -341,7 +360,8 @@ class ODEStitch(nn.Module):
                  act=torch.nn.functional.relu,
                  epsilon=1.0,
                  use_batch_norms=False,
-                 use_skip_init=True):
+                 use_skip_init=True,
+                 stride=2):
         super().__init__()
         self.act = act
         self.epsilon = epsilon
@@ -349,9 +369,9 @@ class ODEStitch(nn.Module):
         self.use_skip_init = use_skip_init
         self.verbose=False
         self.downsample = nn.Conv2d(
-                in_features, out_features, kernel_size=1, padding=0, stride=2, bias=False)
+                in_features, out_features, kernel_size=1, padding=0, stride=stride, bias=False)
         self.L1 = nn.Conv2d(
-            in_features, hidden_features, stride=2, kernel_size=width, padding=padding)
+            in_features, hidden_features, stride=stride, kernel_size=width, padding=padding)
         self.L2 = nn.Conv2d(
             hidden_features, out_features, kernel_size=width, padding=padding)
         if use_skip_init:
@@ -396,7 +416,9 @@ class BatchNorm2DODE(nn.Module):
         if _force_bns is None:
             self.bns = nn.ModuleList([
                 nn.BatchNorm2d(
-                    features, affine=affine, track_running_stats=track_running_stats)
+                    features,
+                    affine=affine,
+                    track_running_stats=track_running_stats)
                 for _ in range(time_d)
             ])
         else:

@@ -9,9 +9,9 @@ import torch.nn.init as init
 
 from odenet import datasets
 from odenet.helper import set_seed, get_device, which_device
-from odenet import odenet_cifar10, wide_odenet_cifar10
+from odenet import odenet_cifar10, wide_odenet_cifar10, wide2_odenet_cifar10
 from odenet import refine_train
-
+from odenet import refine_net
 
 def init_params(net):
     '''Init layer parameters using a Kaiming scheme.'''
@@ -72,7 +72,21 @@ def do_a_train_set(
     else:
         in_channels=3
         
-    if which_model == "ThreePerSegment":
+    if dataset=="CIFAR100":
+        model = refine_net.RefineNet(
+            ALPHA=ALPHA,
+            scheme=scheme,
+            time_d=initial_time_d,
+            in_channels=in_channels,
+            out_classes=100,
+            use_batch_norms=use_batch_norms,
+            time_epsilon=time_epsilon,
+            n_time_steps_per=n_time_steps_per,
+            use_skip_init=use_skip_init,
+            shape_function=shape_function,
+            use_adjoint=use_adjoint
+        ).to(device)
+    elif which_model == "ThreePerSegment":
         model = odenet_cifar10.ODEResNet(
             ALPHA=ALPHA,
             scheme=scheme,
@@ -98,6 +112,20 @@ def do_a_train_set(
         ).to(device)
     elif which_model == "Wide":
         model = wide_odenet_cifar10.ODEResNet_Wide(
+            ALPHA=ALPHA,
+            scheme=scheme,
+            time_d=initial_time_d,
+            in_channels=in_channels,
+            use_batch_norms=use_batch_norms,
+            time_epsilon=time_epsilon,
+            n_time_steps_per=n_time_steps_per,
+            use_skip_init=use_skip_init,
+            shape_function=shape_function,
+            WIDTH=width,
+            use_adjoint=use_adjoint
+        ).to(device)
+    elif which_model == "Wide2":
+        model = wide2_odenet_cifar10.ODEResNet_Wide2(
             ALPHA=ALPHA,
             scheme=scheme,
             time_d=initial_time_d,

@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from odenet.helper import set_seed, get_device, which_device
 
 
 
@@ -11,7 +12,7 @@ def test_ori(model, test_loader, num_data):
     total_ent = 0.
     with torch.no_grad():
         for data, target in test_loader:
-            data, target = data.cuda(), target.cuda()
+            data, target = data.to(which_device(model)), target.to(which_device(model))
             output = model(data)
             ent = F.softmax(output, dim=0)
             tmp_A = sum(ent * torch.log(ent+1e-6))
@@ -34,7 +35,7 @@ def test_adv(adv_data, Y_test, model, num_data):
     with torch.no_grad():
         for i in np.arange(num_iter):
             data, target = adv_data[100*i:100*(i+1), :], Y_test[100*i:100*(i+1)]
-            data, target = data.cuda(), target.cuda()
+            data, target = data.to(which_device(model)), target.to(which_device(model))
             output = model(data)
             ent = F.softmax(output, dim=0)
             tmp_A = sum(ent * torch.log(ent+1e-6))

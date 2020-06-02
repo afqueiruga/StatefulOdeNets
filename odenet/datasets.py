@@ -1,29 +1,29 @@
 import torch
 import torchvision
-
+from torchvision import datasets, transforms
 
 def get_dataset(name='FMNIST', batch_size=128, root='.', device=None):
 
     if name=='CIFAR10':
-        transform_train = torchvision.transforms.Compose([
-        torchvision.transforms.RandomCrop(32, padding=4),
-        torchvision.transforms.RandomHorizontalFlip(),
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), 
+        transform_train = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), 
                                          (0.2023, 0.1994, 0.2010)),
         ])
         
-        transform_test = torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), 
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), 
                                          (0.2023, 0.1994, 0.2010)),
         ])        
         
-        refset = torchvision.datasets.CIFAR10(root=root+'/CIFAR10_data', 
+        refset = datasets.CIFAR10(root=root+'/CIFAR10_data', 
                     train=True, download=True, transform=None)
-        trainset = torchvision.datasets.CIFAR10(root=root+'/CIFAR10_data', 
+        trainset = datasets.CIFAR10(root=root+'/CIFAR10_data', 
                     train=True, download=True, transform=transform_train)
-        testset = torchvision.datasets.CIFAR10(root=root+'/CIFAR10_data', 
+        testset = datasets.CIFAR10(root=root+'/CIFAR10_data', 
                     train=False, download=True, transform=transform_test)
         
     elif name=='FMNIST':
@@ -38,6 +38,29 @@ def get_dataset(name='FMNIST', batch_size=128, root='.', device=None):
                 download=True, train=True, transform=transform)
         testset = torchvision.datasets.FashionMNIST(root+'/F_MNIST_data/', 
                 download=True, train=False, transform=transform)    
+    
+    elif name == 'CIFAR100':
+        transform_train = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465),
+                                 (0.2023, 0.1994, 0.2010)),
+        ])
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465),
+                                 (0.2023, 0.1994, 0.2010)),
+        ])
+
+        trainset = datasets.CIFAR100(
+            root=root+'/CIFAR100/', train=True, download=True,
+            transform=transform_train)
+
+        testset = datasets.CIFAR100(
+            root=root+'/CIFAR100/', train=False, download=False,
+            transform=transform_test)
+        refset = None
     else:
         raise RuntimeError('Unknown dataset')
     
@@ -45,8 +68,10 @@ def get_dataset(name='FMNIST', batch_size=128, root='.', device=None):
         trainset = trainset.to(device)
         testnset = testset.to(device)
     trainloader = torch.utils.data.DataLoader(
-        trainset, batch_size=batch_size, shuffle=True, num_workers=2, pin_memory=True)
+        trainset, batch_size=batch_size, shuffle=True, num_workers=2,
+        pin_memory=True)
     testloader = torch.utils.data.DataLoader(
-        testset, batch_size=batch_size, shuffle=True, num_workers=2, pin_memory=True)
+        testset, batch_size=batch_size, shuffle=True, num_workers=2,
+        pin_memory=True)
     
     return refset,trainset,trainloader,testset,testloader

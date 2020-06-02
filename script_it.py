@@ -31,6 +31,9 @@ class Pack:
     refine_variance: float = 0.1
     use_kaiming: bool = False
     shape_function: str = 'piecewise'
+        
+    width: int = None
+    seed: int = 1
     
 cuda0_batch = [
     (2,[40,80]),
@@ -214,9 +217,282 @@ experiment_330May19_list = [
     for scheme in cuda0_batch
 ]
 
+# Experiment at 1800 May 22
+# Wide odenet
+# This was the wrong architecture
+cuda0_batch = ["euler"]
+cuda3_batch = ["rk4_classic"]
+refinements_batch = [
+    (1,[40,80]),
+    (1,[20,50,80]),
+    (1,[20, 40, 60, 70, 80])
+]
+experiment_1800May22_list = [
+    Pack("CIFAR10", "Wide", scheme, 16, initial_time_d,
+         use_skip_init=False,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False,
+         width=16)
+    for initial_time_d, refine in refinements_batch
+    for scheme in cuda0_batch
+]
 
-DEVICE = "cuda:3"
-args_list = experiment_1249May17_list
+# Experiment at 200 May 24
+# Wide odenet
+cuda0_batch = ["euler"]
+cuda3_batch = ["rk4_classic"]
+refinements_batch = [
+#     (1,[40,80]),
+#     (1,[20,50,80]),
+#     (1,[20,40,60,70,80])
+    (4,[]),
+    (8,[])
+]
+experiment_200May24_list = [
+    Pack("CIFAR10", "Wide2", scheme, 16, initial_time_d,
+         use_skip_init=False,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False,
+         width=32)
+    for initial_time_d, refine in refinements_batch
+    for scheme in cuda0_batch
+]
+
+# Experiment at 200 May 24
+# Wide odenet
+cuda0_batch = ["euler"]
+cuda3_batch = ["rk4_classic"]
+refinements_batch = [
+#     (1,[40,80]),
+#     (1,[20,50,80]),
+#     (1,[20,40,60,70,80])
+    (4,[]),
+    (2,[]),
+    (8,[])
+]
+experiment_1800May24_list = [
+    Pack("CIFAR10", "Wide2", scheme, 16, initial_time_d,
+         time_epsilon=4.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False,
+         width=64)
+    for initial_time_d, refine in refinements_batch
+    for scheme in cuda0_batch
+]
+
+
+# Experiment at 200 May 24
+# Wide odenet
+cuda0_batch = ["euler"]
+cuda3_batch = ["rk4_classic"]
+refinements_batch = [
+#     (1,[40,80]),
+#     (1,[20,50,80]),
+#     (1,[20,40,60,70,80])
+    (4,[]),
+    (2,[]),
+    (8,[])
+]
+experiment_1800May24_list = [
+    Pack("CIFAR10", "SingleSegment", scheme, 32, initial_time_d,
+         time_epsilon=4.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False)
+    for initial_time_d, refine in refinements_batch
+    for scheme in cuda0_batch
+]
+
+# Experiment at 1800 May 24
+# Wide odenet
+cuda0_batch = ["euler"]
+cuda3_batch = ["rk4_classic"]
+refinements_batch = [
+#     (1,[40,80]),
+#     (1,[20,50,80]),
+#     (1,[20,40,60,70,80])
+    (2,[]),
+    (4,[]),
+    (8,[])
+]
+experiment_1800May24_list = [
+    Pack("CIFAR10", "Wide2", scheme, 16, initial_time_d,
+         time_epsilon=4.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False,
+         width=32)
+    for initial_time_d, refine in refinements_batch
+    for scheme in cuda0_batch
+]
+
+
+# Experiment at 0100 May 25
+# Wide odenet
+cuda1_batch = ["euler"]
+cuda2_batch = ["rk4_classic"]
+refinements_batch = [
+    (1,[40,70]),
+    (1,[20,50,70]),
+    (1,[20,35,50,70]),
+    # (1,[20,40,50,60,70])
+]
+experiment_1800May24_list = [
+    Pack("CIFAR10", "Wide2", scheme, 16, initial_time_d,
+         time_epsilon=4.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False,
+         width=32)
+    for initial_time_d, refine in refinements_batch
+    for scheme in cuda3_batch
+]
+
+
+# Experiment at 1900 May 25
+# Wide odenet
+cuda1_batch = ["euler"]
+cuda2_batch = ["rk4_classic"]
+refinements_batch = [
+    (32,[])
+]
+experiment_1900May25_list = [
+    Pack("CIFAR10", "SingleSegment", scheme, 16, initial_time_d,
+         time_epsilon=1.0,
+         use_skip_init=False,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False)
+    for initial_time_d, refine in refinements_batch
+    for scheme in cuda1_batch
+]
+
+
+# Experiment at 1219 May 29
+# More seeds
+cuda0_batch = [2, 3, 4]
+cuda1_batch = [5, 6, 7]
+models_batch = [
+    #("euler",32,[]),
+    ("rk4_classic",1,[20, 40, 60, 70, 80])
+]
+experiment_1219May29_list = [
+    Pack("CIFAR10", "SingleSegment", scheme, 16, initial_time_d,
+         time_epsilon=1.0,
+         use_skip_init=False,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False,
+         seed=seed)
+    for scheme,initial_time_d, refine in models_batch
+    for seed in cuda1_batch
+]
+
+# Experiment at 0004 May 30
+# More seeds
+cuda0_batch = [
+    ("rk4_classic",1,[40,80]),
+]
+cuda1_batch = [
+    ("euler",4,[]),
+]
+experiment_0004May30_list = [
+    Pack("CIFAR100", "SingleSegment", scheme, alpha, initial_time_d,
+         time_epsilon=4.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False)
+    for scheme, initial_time_d, refine in cuda0_batch
+    for alpha in [32,64]
+]
+
+
+# Experiment at 0014 May 31
+# More seeds
+cuda0_batch = [
+    ("rk4_classic",1,[40,50,60,80]),
+]
+cuda1_batch = [
+    ("euler",16,[]),
+]
+experiment_0014May31_list = [
+    Pack("CIFAR100", "SingleSegment", scheme, alpha, initial_time_d,
+         time_epsilon=4.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False,
+         seed=seed)
+    for scheme, initial_time_d, refine in cuda0_batch
+    for alpha in [32]
+    for seed in [1,2,3]
+]
+
+# Experiment at 0014 May 31
+# More seeds
+cuda0_batch = [
+    ("rk4_classic",1,[20,50,80]),
+]
+cuda2_batch = [
+    ("euler",8,[]),
+]
+experiment_1538May31_list = [
+    Pack("CIFAR100", "SingleSegment", scheme, alpha, initial_time_d,
+         time_epsilon=4.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False,
+         seed=seed)
+    for scheme, initial_time_d, refine in cuda0_batch
+    for alpha in [64]
+    for seed in [6,7]#[4,]#[1,2,3]
+]
+
+
+DEVICE = "cuda:1"
+args_list = experiment_1538May31_list
 for args in args_list:
     driver.do_a_train_set(
         args.dataset,
@@ -236,6 +512,8 @@ for args in args_list:
         use_adjoint=args.use_adjoint,
         use_kaiming=args.use_kaiming,
         use_skip_init=args.use_skip_init,
+        width=args.width,
         refine_variance=args.refine_variance,
         shape_function=args.shape_function,
+        seed=args.seed,
         device=DEVICE)

@@ -7,7 +7,7 @@ import torch.nn.init as init
 import time
 
 from matplotlib import pylab as plt
-from odenet import datasets
+from odenet.datasets import get_dataset
 from odenet.odenet_cifar10 import ODEResNet
 from odenet import refine_train
 
@@ -16,11 +16,8 @@ importlib.reload(refine_train)
 from odenet.helper import set_seed, get_device, which_device
 #importlib.reload(odenet_cifar10)
 
-import argparse
-
 importlib.reload(refine_train)
 from odenet.helper import set_seed, get_device, which_device
-
 
 from attack_method import *
 from advfuns import *
@@ -28,26 +25,29 @@ import pandas as pd
 from prettytable import PrettyTable
 
 
-from odenet.odenet_cifar10 import ODEResNet
+from odenet.odenet_cifar10 import *
 from odenet import refine_train
 
-for m in ['euler', 'rk4']:
-    path = 'results/resnet_' + m + '.pkl'
-    model = torch.load(path)[-1].eval()
-    
-    
-    
+device = get_device()
+
+
+paths = ['results_attack/odenet-CIFAR10-SingleSegment-ARCH-16-ode-NoSkip-euler-32-1.0-1-piecewise-None-LEARN-0.1-160-[]-0.1-Backprop-NormalInit-SEED-1.pkl',
+ 'results/odenet-CIFAR10-SingleSegment-ARCH-16-ode-NoSkip-rk4_classic-1-1.0-1-piecewise-LEARN-0.1-160-[20, 40, 60, 70, 80]-0.1-Backprop-NormalInit-SEED-1.pkl'
+ ]
+for m in paths:
+    model = torch.load(m)
+    model = model.model_list[-1].eval().to(device) 
     set_seed(1)
+    
     device = get_device()
-    
-    
+
     
     from utils import *
     dataset = 'cifar10'
-    batchSize = 200
-    _, testloader = getData(name=dataset, train_bs=batchSize, test_bs=batchSize)
+    batchSize = 100
+    #_, testloader = getData(name=dataset, train_bs=batchSize, test_bs=batchSize)
     
-    
+    refset,trainset,trainloader,testset,testloader = get_dataset("CIFAR10",root='../data/', batch_size=batchSize)    
     
     
     #================================================
@@ -55,9 +55,9 @@ for m in ['euler', 'rk4']:
     #================================================
     
     runs = 1
-    eps = 0.05
-    iters = 1
-    iter_df = 1
+    eps = 0.01
+    iters = 2
+    iter_df = 2
     
     jump = 0
     
@@ -179,7 +179,6 @@ for m in ['euler', 'rk4']:
             #***********************
             # Print results
             #***********************
-            print('Jump value: ', jump)
             x = PrettyTable()
             x.field_names = [" ", "Clean Data", "IFGSM", "DeepFool_inf", "DeepFool", "TR"]
             x.add_row(np.hstack(('Accuracy: ',   np.round(result_acc[([0,1,2,3,4])], 5))))
@@ -193,8 +192,7 @@ for m in ['euler', 'rk4']:
             #***********************
             
             
-            s = pd.Series({"jump" : jump, 
-                           "clean": np.round(result_acc[0], 3) , 
+            s = pd.Series({"clean": np.round(result_acc[0], 3) , 
                            "IFGSM_inf": np.round(result_acc[1], 3),
                            "IFGSM_two": np.round(result_acc[1], 3), 
     
@@ -207,8 +205,7 @@ for m in ['euler', 'rk4']:
             accuracy = accuracy.append(s, ignore_index=True)    
             
             
-            s = pd.Series({"jump" : jump, 
-                           "clean": np.round(result_dis[0], 3) , 
+            s = pd.Series({"clean": np.round(result_dis[0], 3) , 
                            "IFGSM_inf": np.round(result_dis[1], 3),
                            "IFGSM_two": np.round(result_dis[2], 3), 
     
@@ -221,8 +218,7 @@ for m in ['euler', 'rk4']:
             relative = relative.append(s, ignore_index=True)    
                 
                 
-            s = pd.Series({"jump" : jump, 
-                           "clean": np.round(result_dis_abs[0], 3) , 
+            s = pd.Series({"clean": np.round(result_dis_abs[0], 3) , 
                            "IFGSM_inf": np.round(result_dis_abs[1], 3),
                            "IFGSM_two": np.round(result_dis_abs[2], 3), 
     
@@ -235,8 +231,7 @@ for m in ['euler', 'rk4']:
             absolute = absolute.append(s, ignore_index=True)    
     
     
-            s = pd.Series({"jump": jump, 
-                           "IFGSM": time_ifgsm, 
+            s = pd.Series({"IFGSM": time_ifgsm, 
                            "DeepFool_inf": time_deepfool_inf, 
                            "DeepFool_two": time_deepfool_two})
             attack_time = attack_time.append(s, ignore_index=True)  

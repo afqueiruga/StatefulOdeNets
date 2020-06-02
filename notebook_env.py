@@ -28,6 +28,8 @@ legend_name = lambda fname : re.search(r"ARCH(.*)", fname)[1]
 
 class PostPack:
     """We should've saved Pack instead."""
+    model: str
+    alpha: int
     scheme: str
     use_skip_init: bool
     use_batch_norms: str
@@ -35,17 +37,18 @@ class PostPack:
     n_steps_per: int
     refine: List[int]
     def __init__(self, fname):
-        r = re.search(r"""(SingleSegment|Wide)-ARCH-16-([A-Za-z]*)-([A-Za-z]*)-([a-z4_]*)-([0-9]*)-1.0-([0-9]*)-.*-160-(None|\[.*\])""",fname)
+        r = re.search(r"""(SingleSegment|Wide|Wide2)-ARCH-([0-9]*)-([A-Za-z]*)-([A-Za-z]*)-([a-z4_]*)-([0-9]*)-[14].0-([0-9]*)-.*-160-(None|\[.*\])""",fname)
         self.model = r.group(1)
-        self.use_batch_norms = r.group(2)
-        self.use_skip_init = (r.group(3)!="NoSkip")
-        self.scheme = r.group(4)
-        self.initial_time_d = int(r.group(5))
-        self.n_steps_per = int(r.group(6))
-        if r.group(7) == "None":
+        self.alpha = r.group(2)
+        self.use_batch_norms = r.group(3)
+        self.use_skip_init = (r.group(4)!="NoSkip")
+        self.scheme = r.group(5)
+        self.initial_time_d = int(r.group(6))
+        self.n_steps_per = int(r.group(7))
+        if r.group(8) == "None":
             self.refine = []
         else:
-            self.refine = json.loads(r.group(7))
+            self.refine = json.loads(r.group(8))
         self.final_time_d = self.initial_time_d * 2**len(self.refine)
 
 def set_ode_config(model, n_steps, scheme, use_adjoint=False):
