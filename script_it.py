@@ -491,8 +491,40 @@ experiment_1538May31_list = [
 ]
 
 
-DEVICE = "cuda:1"
-args_list = experiment_1538May31_list
+
+# Experiment at 824 May 30
+# Changing epsilon cifar10
+# epsilon=32, skip=False,True fails
+# epsilon=16, skip=False,True fails
+# epsilon=8, skip=False, fails
+# epsilon=8, skip=True worked
+seed_cudaA_batch = [1, 2, 3]
+seed_cudaB_batch = [4, 5, 6]
+models_cuda1_batch = [
+    ("rk4_classic",1,[20, 40, 60, 70, 80])
+]
+models_cuda2_batch = [
+    ("euler",32,[]),
+]
+
+experiment_824June3_list = [
+    Pack("CIFAR10", "SingleSegment", scheme, 16, initial_time_d,
+         time_epsilon=8.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False,
+         seed=seed)
+    for scheme,initial_time_d, refine in models_cuda2_batch
+    for seed in seed_cudaB_batch
+]
+
+
+DEVICE = "cuda:3"
+args_list = experiment_824June3_list
 for args in args_list:
     driver.do_a_train_set(
         args.dataset,
