@@ -4,7 +4,7 @@ import timeit
 import attr
 import torch
 import torch.nn.init as init
-import pytorch_memlab
+# import pytorch_memlab
 
 from .helper import get_device, which_device
 from .ode_models import refine

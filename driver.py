@@ -9,7 +9,7 @@ import torch.nn.init as init
 
 from odenet import datasets
 from odenet.helper import set_seed, get_device, which_device
-from odenet import odenet_cifar10, wide_odenet_cifar10, wide2_odenet_cifar10
+from odenet import odenet_cifar10, wide_odenet_cifar10
 from odenet import refine_train
 from odenet import refine_net
 
@@ -57,7 +57,7 @@ def do_a_train_set(
         device: which device to use
     """
     
-    fname =  f'results/odenet-{dataset}-{which_model}-ARCH-{ALPHA}-{use_batch_norms}-{"SkipInit" if use_skip_init else "NoSkip"}-{scheme}-{initial_time_d}-{time_epsilon}-{n_time_steps_per}-{shape_function}-{width}-LEARN-{lr}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-{"KaimingInit" if use_kaiming else "NormalInit"}-SEED-{seed}.pkl'
+    fname =  f'results_2/odenet-{dataset}-{which_model}-ARCH-{ALPHA}-{use_batch_norms}-{"SkipInit" if use_skip_init else "NoSkip"}-{scheme}-{initial_time_d}-{time_epsilon}-{n_time_steps_per}-{shape_function}-{width}-LEARN-{lr}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-{"KaimingInit" if use_kaiming else "NormalInit"}-SEED-{seed}.pkl'
     print("Working on ", fname)
     set_seed(seed)
     device = get_device(device)

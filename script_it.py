@@ -523,8 +523,63 @@ experiment_824June3_list = [
 ]
 
 
-DEVICE = "cuda:3"
-args_list = experiment_824June3_list
+
+# Experiment at 1036 Jun 3
+# CIFAR100 with the flipped one
+seed_batch_A = [1,2,3]
+seed_batch_B = [4,5,6]
+scheme_batch_0 = [
+    ("rk4_classic",1,[20,50,80]),
+]
+scheme_batch_1 = [
+    ("euler",8,[]),
+]
+experiment_1036Jun3_list = [
+    Pack("CIFAR100", "RefineNet", scheme, alpha, initial_time_d,
+         time_epsilon=8.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False,
+         seed=seed)
+    for scheme, initial_time_d, refine in scheme_batch_0
+    for alpha in [64]
+    for seed in seed_batch_B
+]
+
+# Experiment at 824 May 30
+# Changing epsilon cifar10
+# epsilon=32, skip=False,True fails
+# epsilon=16, skip=False,True fails
+# epsilon=8, skip=False, fails
+# epsilon=8, skip=True worked
+seed_batch_A = [1,2,3]
+seed_batch_B = [4,5,6]
+scheme_batch_0 = [
+    ("rk4_classic",1,[20,40,60]),
+]
+experiment_613June4_list = [
+    Pack("CIFAR100", "RefineNet", scheme, alpha, initial_time_d,
+         time_epsilon=8.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         use_adjoint=False,
+         seed=seed)
+    for scheme, initial_time_d, refine in scheme_batch_0
+    for alpha in [64]
+    for seed in seed_batch_B
+]
+
+
+DEVICE = "cuda:0"
+args_list = experiment_613June4_list
 for args in args_list:
     driver.do_a_train_set(
         args.dataset,

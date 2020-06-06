@@ -24,7 +24,8 @@ class RefineNet(nn.Module):
                  use_stitch=True,
                  shape_function='piecewise',
                  use_adjoint=False,
-                 activation_before_conv=False):
+                 activation_before_conv=True,
+                 stitch_epsilon=1.0):
         super().__init__()
         self.scheme = scheme
         self.time_d = time_d
@@ -52,7 +53,7 @@ class RefineNet(nn.Module):
         if use_stitch:
             _stitch_macro = lambda _alpha, _beta : \
                 ODEStitch(_alpha, _beta, _beta,
-                          epsilon=time_epsilon,
+                          epsilon=stitch_epsilon,
                           use_batch_norms=use_batch_norms,
                           use_skip_init=use_skip_init)
         else:
