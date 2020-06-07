@@ -138,6 +138,38 @@ def do_a_train_set(
             WIDTH=width,
             use_adjoint=use_adjoint
         ).to(device)
+    elif which_model == "RefineNet":
+        model = refine_net.RefineNet(
+            ALPHA=ALPHA,
+            scheme=scheme,
+            time_d=initial_time_d,
+            in_channels=in_channels,
+            out_classes=10,
+            use_batch_norms=use_batch_norms,
+            time_epsilon=time_epsilon,
+            n_time_steps_per=n_time_steps_per,
+            use_skip_init=use_skip_init,
+            shape_function=shape_function,
+            use_adjoint=use_adjoint,
+            activation_before_conv=False,
+            stitch_epsilon=1.0
+        ).to(device)
+    elif which_model == "RefineNetActFirst":
+        model = refine_net.RefineNet(
+            ALPHA=ALPHA,
+            scheme=scheme,
+            time_d=initial_time_d,
+            in_channels=in_channels,
+            out_classes=10,
+            use_batch_norms=use_batch_norms,
+            time_epsilon=time_epsilon,
+            n_time_steps_per=n_time_steps_per,
+            use_skip_init=use_skip_init,
+            shape_function=shape_function,
+            use_adjoint=use_adjoint,
+            activation_before_conv=True,
+            stitch_epsilon=1.0
+        ).to(device)
     else:
         raise RuntimeError("Unknown model name specified")
     if use_kaiming:

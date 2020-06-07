@@ -523,8 +523,70 @@ experiment_824June3_list = [
 ]
 
 
-DEVICE = "cuda:3"
-args_list = experiment_824June3_list
+# Experiment at 824 May 30
+# fixed stitch epsilon
+seed_cudaA_batch = [1, 2, 3]
+seed_cudaB_batch = [4, 5, 6]
+seed_cudaC_batch = [7, 8, 9]
+seed_cudaD_batch = [10]
+
+models_cuda1_batch = [
+    ("rk4_classic",1,[40, 50, 60, 70, 80])
+]
+models_cuda2_batch = [
+    ("euler",32,[]),
+]
+
+experiment_1127June4_list = [
+    Pack("CIFAR10", "RefineNetActFirst", scheme, 16, initial_time_d,
+         time_epsilon=8.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+          epochs = 150,
+         use_adjoint=False,
+         seed=seed)
+    for scheme,initial_time_d, refine in models_cuda1_batch
+    for seed in seed_cudaD_batch
+]
+
+# Experiment at 824 May 30
+# Changing epsilon cifar10
+# epsilon=32, skip=False,True fails
+# epsilon=16, skip=False,True fails
+# epsilon=8, skip=False, fails
+# epsilon=8, skip=True worked
+seed_cudaA_batch = [1, 2, 3]
+seed_cudaB_batch = [4, 5, 6]
+seed_cudaC_batch = [7, 8, 9]
+
+models_cuda1_batch = [
+    ("midpoint",1,[20, 40, 60, 70, 80])
+]
+
+experiment_613une4_list = [
+    Pack("CIFAR10", "SingleSegment", scheme, 16, initial_time_d,
+         time_epsilon=8.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+          epochs = 150,
+
+         use_adjoint=False,
+         seed=seed)
+    for scheme,initial_time_d, refine in models_cuda1_batch
+    for seed in seed_cudaD_batch
+]
+
+
+DEVICE = "cuda:2"
+args_list = experiment_1127June4_list
 for args in args_list:
     driver.do_a_train_set(
         args.dataset,
