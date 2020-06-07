@@ -24,7 +24,7 @@ class RefineNet(nn.Module):
                  use_stitch=True,
                  shape_function='piecewise',
                  use_adjoint=False,
-                 activation_before_conv=False,
+                 activation_before_conv=True,
                  stitch_epsilon=1.0):
         super().__init__()
         self.scheme = scheme
