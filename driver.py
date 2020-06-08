@@ -86,6 +86,22 @@ def do_a_train_set(
             shape_function=shape_function,
             use_adjoint=use_adjoint
         ).to(device)
+    elif dataset=="tinyimagenet":
+        model = refine_net.RefineNet(
+            ALPHA=ALPHA,
+            scheme=scheme,
+            time_d=initial_time_d,
+            in_channels=in_channels,
+            out_classes=200,
+            use_batch_norms=use_batch_norms,
+            time_epsilon=time_epsilon,
+            n_time_steps_per=n_time_steps_per,
+            use_skip_init=use_skip_init,
+            shape_function=shape_function,
+            activation_before_conv=True,
+            stitch_epsilon=1.0,
+            use_adjoint=use_adjoint
+        ).to(device)
     elif which_model == "ThreePerSegment":
         model = odenet_cifar10.ODEResNet(
             ALPHA=ALPHA,

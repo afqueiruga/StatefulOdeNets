@@ -61,15 +61,13 @@ def get_dataset(name='FMNIST', batch_size=128, root='.', device=None):
             root=root+'/CIFAR100/', train=False, download=False,
             transform=transform_test)
         refset = None
-    else:
-        raise RuntimeError('Unknown dataset')
-    
-    if name == 'tinyimagenet':      
+        
+    elif name == 'tinyimagenet':
         normalize = transforms.Normalize(
             mean=[0.44785526394844055, 0.41693055629730225, 0.36942949891090393],
             std=[0.2928885519504547, 0.28230994939804077, 0.2889912724494934])
-        train_dataset = datasets.ImageFolder(
-            '../data/tiny-imagenet-200/train',
+        trainset = datasets.ImageFolder(
+            root+'/tiny-imagenet-200/train',
             transforms.Compose([
                 transforms.RandomCrop(64, padding=4),
                 transforms.RandomHorizontalFlip(),
@@ -77,14 +75,19 @@ def get_dataset(name='FMNIST', batch_size=128, root='.', device=None):
                 normalize,
             ]))
         # train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=train_bs, shuffle=True, num_workers=4, pin_memory=False)
-        test_dataset = datasets.ImageFolder(
-            '../data/tiny-imagenet-200/val',
+        testset = datasets.ImageFolder(
+            root+'/tiny-imagenet-200/val',
             transforms.Compose([
                 transforms.ToTensor(),
                 normalize,
             ]))
         # test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=test_bs, shuffle=False)
         refset = None
+        
+    else:
+        raise RuntimeError('Unknown dataset')
+    
+    
     
     if device is not None:
         trainset = trainset.to(device)
