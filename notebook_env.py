@@ -37,7 +37,7 @@ class PostPack:
     n_steps_per: int
     refine: List[int]
     def __init__(self, fname):
-        r = re.search(r"""(SingleSegment|Wide|Wide2|RefineNet|RefineNetActFirst)-ARCH-([0-9]*)-([A-Za-z]*)-([A-Za-z]*)-([a-z4_]*)-([0-9]*)-[0-9]*.0-([0-9]*)-.*-160-(None|\[.*\])""",fname)
+        r = re.search(r"""(SingleSegment|Wide|Wide2|RefineNet|RefineNetActFirst)-ARCH-([0-9]*)-([A-Za-z]*)-([A-Za-z]*)-([a-z4_]*)-([0-9]*)-[0-9]*.0-([0-9]*)-.*-[0-9]*-(None|\[.*\])""",fname)
         self.model = r.group(1)
         self.alpha = r.group(2)
         self.use_batch_norms = r.group(3)
