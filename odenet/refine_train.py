@@ -66,7 +66,9 @@ def train_adapt(model,
                 epoch_update=None,
                 weight_decay=1e-5,
                 refine_variance=0.0,
-                device=None):
+                device=None,
+                fname=None,
+                SAVE_DIR=None):
     """I don't know how to control the learning rate"""
     if N_refine is None:
         N_refine = []
@@ -89,6 +91,8 @@ def train_adapt(model,
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
     print('sgd')
     #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    model_single = model
+    model = torch.nn.DataParallel(model_single, device_ids=[0,1,2,3])
     if False:
         print('Random initialization checking accuracy metrics:')
         model.eval()
@@ -105,9 +109,12 @@ def train_adapt(model,
         # Make a new model if the epoch number is in the schedule
         if e in N_refine:
             # memory_profile.report()
+            # Get back from parallel
+            model = model.module
             new_model = model.refine(refine_variance)
             model_list.append(new_model)
-            model = new_model
+            # Make the new one parallel
+            model = torch.nn.DataParallel(new_model, device_ids=[0,1,2,3])
             print('**** Allocated refinment ****')
             print('Total params: %.2fk' % (count_parameters(model)/1000.0))
             print('************')
@@ -153,7 +160,7 @@ def train_adapt(model,
         epoch_times.append(timeit.default_timer() - starting_time)
         print("Epoch took ", epoch_times[-1], " seconds.")
         # Evaluate training and testing accuracy
-        n_print = 1
+        n_print = 5
         if e == 0 or (e+1) % n_print == 0:
             print('After Epoch: ', e)
             model.eval()
@@ -164,7 +171,15 @@ def train_adapt(model,
             te_acc = calculate_accuracy(model, testloader)
             print('Test Accuracy: ', te_acc)
             test_acc.append( (e,te_acc) )
-
+        # Save lots of checkpoints
+        if fname is not None and SAVE_DIR is not None and (e+1)%n_print==0:
+            chckpt = Result(model_list, losses, refine_steps, train_acc, test_acc, epoch_times)
+            try:
+                os.mkdir(SAVE_DIR)
+                print("Making directory ", SAVE_DIR)
+            except:
+                print("Directory ", SAVE_DIR, " already exists.")
+            torch.save(res, fname+f"-CHECKPOINT-{e}".pkl)
         if e in epoch_update:
             lr_current *= lr_decay
 
@@ -225,5 +240,6 @@ def train_for_epochs(model,
             te_acc = calculate_accuracy(model, testloader)
             print('Test Accuracy: ', te_acc)
             test_acc.append(te_acc)
+            
 
     return Result([model], losses, [], train_acc, test_acc)

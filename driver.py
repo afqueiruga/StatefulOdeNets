@@ -13,6 +13,9 @@ from odenet import odenet_cifar10, wide_odenet_cifar10
 from odenet import refine_train
 from odenet import refine_net
 
+SAVE_DIR = 'results_tiny'
+
+
 def init_params(net):
     '''Init layer parameters using a Kaiming scheme.'''
     for m in net.modules():
@@ -57,7 +60,7 @@ def do_a_train_set(
         device: which device to use
     """
     
-    fname =  f'results_2/odenet-{dataset}-{which_model}-ARCH-{ALPHA}-{use_batch_norms}-{"SkipInit" if use_skip_init else "NoSkip"}-{scheme}-{initial_time_d}-{time_epsilon}-{n_time_steps_per}-{shape_function}-{width}-LEARN-{lr}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-{"KaimingInit" if use_kaiming else "NormalInit"}-SEED-{seed}.pkl'
+    fname = SAVE_DIR+f'/odenet-{dataset}-{which_model}-ARCH-{ALPHA}-{use_batch_norms}-{"SkipInit" if use_skip_init else "NoSkip"}-{scheme}-{initial_time_d}-{time_epsilon}-{n_time_steps_per}-{shape_function}-{width}-LEARN-{lr}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-{"KaimingInit" if use_kaiming else "NormalInit"}-SEED-{seed}.pkl'
     print("Working on ", fname)
     set_seed(seed)
     device = get_device(device)
@@ -202,16 +205,14 @@ def do_a_train_set(
         model, trainloader, testloader, torch.nn.CrossEntropyLoss(),
         N_epochs, N_adapt, lr=lr, lr_decay=lr_decay, epoch_update=epoch_update, weight_decay=weight_decay,
         refine_variance=refine_variance,
-        device=device)
+        device=device,
+        SAVE_DIR=SAVE_DIR, fname=fname)
     
     try:
-        os.mkdir('results')
+        os.mkdir(SAVE_DIR)
         print("Making directory ", "results.")
     except:
-        print("Directory ", "results", " already exists.")
+        print("Directory ", SAVE_DIR, " already exists.")
     torch.save(res, fname)
     print("Wrote", fname)
-    #plt.semilogy(res[1])
-    #for r in res[2]:
-    #    plt.axvline(r,color='k')
     return res
