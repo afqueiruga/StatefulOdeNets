@@ -87,7 +87,6 @@ class ShallowConv2DODE(torch.nn.Module):
         self.use_batch_norms = use_batch_norms
         self.use_skip_init = use_skip_init
         self.verbose=False
-        self.shape_function = shape_function
         
         self.L1 = Conv2DODE(time_d, in_features, hidden_features,
                                     width=width, padding=padding)

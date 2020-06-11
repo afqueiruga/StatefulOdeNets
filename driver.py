@@ -43,7 +43,7 @@ def do_a_train_set(
         device: which device to use
     """
     
-    fname = SAVE_DIR+f'/refinenet-{dataset}-{which_model}-ARCH-{ALPHA}-{use_batch_norms}-{"SkipInit" if use_skip_init else "NoSkip"}-{scheme}-{initial_time_d}-{time_epsilon}-{n_time_steps_per}-{shape_function}-{width}-LEARN-{lr}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-{"KaimingInit" if use_kaiming else "NormalInit"}-SEED-{seed}.pkl'
+    fname = SAVE_DIR+f'/refinenet-{dataset}-{which_model}-ARCH-{ALPHA}-{use_batch_norms}-{"SkipInit" if use_skip_init else "NoSkip"}-{scheme}-{initial_time_d}-{time_epsilon}-{n_time_steps_per}-{width}-LEARN-{lr}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-{"KaimingInit" if use_kaiming else "NormalInit"}-SEED-{seed}.pkl'
     print("Working on ", fname)
     set_seed(seed)
     device = get_device(device)
@@ -60,7 +60,7 @@ def do_a_train_set(
     elif dataset=="tinyimagenet":
         out_classes = 200
         in_channels=3
-    elif dataset=="FMNIST"
+    elif dataset=="FMNIST":
         out_classes=10
         in_channels=1
 
@@ -75,7 +75,6 @@ def do_a_train_set(
             time_epsilon=time_epsilon,
             n_time_steps_per=n_time_steps_per,
             use_skip_init=use_skip_init,
-            shape_function=shape_function,
             use_adjoint=use_adjoint,
             activation_before_conv=False,
             stitch_epsilon=1.0
@@ -86,12 +85,11 @@ def do_a_train_set(
             scheme=scheme,
             time_d=initial_time_d,
             in_channels=in_channels,
-            out_classes=10out_classes
+            out_classes=out_classes,
             use_batch_norms=use_batch_norms,
             time_epsilon=time_epsilon,
             n_time_steps_per=n_time_steps_per,
             use_skip_init=use_skip_init,
-            shape_function=shape_function,
             use_adjoint=use_adjoint,
             activation_before_conv=True,
             stitch_epsilon=1.0

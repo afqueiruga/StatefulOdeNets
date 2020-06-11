@@ -103,7 +103,8 @@ def train_adapt(model,
         # Make a new model if the epoch number is in the schedule
         if e in N_refine:
             # Get back from parallel
-            model = model.module
+            if USE_PARALLEL:
+                model = model.module
             new_model = model.refine(refine_variance)
             model_list.append(new_model)
             # Make the new one parallel

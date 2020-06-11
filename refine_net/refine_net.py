@@ -22,7 +22,6 @@ class RefineNet(nn.Module):
                  n_time_steps_per=1,
                  use_skip_init=False,
                  use_stitch=True,
-                 shape_function='piecewise',
                  use_adjoint=False,
                  activation_before_conv=True,
                  stitch_epsilon=1.0):
@@ -45,7 +44,6 @@ class RefineNet(nn.Module):
                     _alpha,
                     epsilon=time_epsilon,
                     use_batch_norms=use_batch_norms,
-                    shape_function=shape_function,
                     use_skip_init=use_skip_init),
                 n_time_steps=time_d*n_time_steps_per,
                 scheme=scheme,
@@ -87,11 +85,6 @@ class RefineNet(nn.Module):
                 n = m.width * m.width * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
                 print('Init Conv2DODE') 
-            elif isinstance(m, Conv2DPolyODE):
-                n = m.width * m.width * m.out_channels
-                m.weight.data[:,:,:,:,:].normal_(0, math.sqrt(2. / n))
-                print(m.weight.data)
-                print('Init Conv2DPolyODE') 
             elif isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
                 if m.bias is not None:

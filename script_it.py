@@ -90,10 +90,34 @@ experiment_cifar100 = [
     for seed in [1, 2, 3, 4, 5]
 ]
 
+# Run an "inetgration test"
+models_test = [
+    ("rk4_classic",1,[1,]),
+    ("euler",4,[]),
+]
+experiment_short_test = [
+    Pack("CIFAR10",
+         "RefineNetActFirst",
+         scheme,
+         4,
+         initial_time_d,
+         time_epsilon=8.0,
+         use_skip_init=True,
+         use_batch_norms="ode",
+         refine=refine,
+         lr=0.1,
+         lr_decay=0.1,
+         lr_update=[80, 120, 140],
+         epochs = 2,
+         use_adjoint=False,
+         seed=seed)
+    for scheme,initial_time_d, refine in models_test
+    for seed in [1]
+]
 
-DEVICE = "cuda:0"
+DEVICE = "cuda:3"
 # Change this to swap experiment
-args_list = experiment_cifar10
+args_list = experiment_short_test
 for args in args_list:
     driver.do_a_train_set(
         args.dataset,
@@ -115,6 +139,5 @@ for args in args_list:
         use_skip_init=args.use_skip_init,
         width=args.width,
         refine_variance=args.refine_variance,
-        shape_function=args.shape_function,
         seed=args.seed,
         device=DEVICE)
