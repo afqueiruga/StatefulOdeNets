@@ -63,7 +63,7 @@ class RefineNet(nn.Module):
         # The full resnet, with three segments of the above macro
         self.net = NoSequential(
             nn.Conv2d(
-                in_channels, ALPHA, kernel_size=3, padding=1,bias=False),
+                in_channels, ALPHA, kernel_size=7, padding=1,bias=False),
             nn.BatchNorm2d(ALPHA) if use_batch_norms else None,
             nn.ReLU(),
             _macro(ALPHA),

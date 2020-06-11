@@ -179,7 +179,7 @@ def train_adapt(model,
                 print("Making directory ", SAVE_DIR)
             except:
                 print("Directory ", SAVE_DIR, " already exists.")
-            torch.save(res, fname+f"-CHECKPOINT-{e}".pkl)
+            torch.save(chckpt, fname+f"-CHECKPOINT-{e}.pkl")
         if e in epoch_update:
             lr_current *= lr_decay
 
