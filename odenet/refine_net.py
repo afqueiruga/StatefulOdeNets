@@ -4,7 +4,7 @@ from .ode_models import *
 
 
 def NoSequential(*args):
-    """Filters Nones as no-ops when making ann.Sequential to allow for architecture toggling."""
+    """Filters Nones as no-ops when making a nn.Sequential to allow for architecture toggling."""
     net = [ arg for arg in args if arg is not None ]
     return nn.Sequential(*net)
 
@@ -60,7 +60,7 @@ class RefineNet(nn.Module):
             _stitch_macro = lambda _alpha, _beta : \
                 nn.Conv2d(_alpha, _beta, kernel_size=1, padding=1, stride=2, bias=False)
 
-        # The full resnet, with three segments of the above macro
+        # The full network, with three OdeBlocks (_macro)
         self.net = NoSequential(
             nn.Conv2d(
                 in_channels, ALPHA, kernel_size=7, padding=1,bias=False),
@@ -68,10 +68,8 @@ class RefineNet(nn.Module):
             nn.ReLU(),
             _macro(ALPHA),
             _stitch_macro(ALPHA, 2*ALPHA),
-            #nn.BatchNorm2d(2*ALPHA) if use_batch_norms else None,
             _macro(2*ALPHA),
             _stitch_macro(2*ALPHA, 4*ALPHA),
-            #nn.BatchNorm2d(4*ALPHA) if use_batch_norms else None,
             _macro(4*ALPHA),
             nn.BatchNorm2d(4*ALPHA) if activation_before_conv else None,
             nn.ReLU() if activation_before_conv else None,
@@ -79,12 +77,12 @@ class RefineNet(nn.Module):
             nn.Flatten(),
             nn.Linear(4*ALPHA,out_classes),
         )
+        
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
                 print('Init Conv2d')
-
             elif isinstance(m, Conv2DODE):
                 n = m.width * m.width * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
@@ -92,8 +90,6 @@ class RefineNet(nn.Module):
             elif isinstance(m, Conv2DPolyODE):
                 n = m.width * m.width * m.out_channels
                 m.weight.data[:,:,:,:,:].normal_(0, math.sqrt(2. / n))
-                # m.weight.data[0,:,:,:,:].normal_(0, math.sqrt(2. / n))
-                # m.weight.data[1,:,:,:,:].normal_(0, 1.0e-5*math.sqrt(2. / n))
                 print(m.weight.data)
                 print('Init Conv2DPolyODE') 
             elif isinstance(m, nn.Linear):
@@ -101,7 +97,6 @@ class RefineNet(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0.0)
                 print('Init Linear') 
-                
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()  
@@ -111,7 +106,7 @@ class RefineNet(nn.Module):
         return self.net(x)
     
     def refine(self, variance=0.0):
-        new = copy.deepcopy(self)  # ODEResNet.__new__(ODEResNet)
+        new = copy.deepcopy(self)
         new.time_d = 2*self.time_d
         new.scheme = self.scheme
         new.net = nn.Sequential(*[ refine(mod, variance) for mod in self.net])

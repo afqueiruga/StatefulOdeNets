@@ -4,14 +4,14 @@ import timeit
 import attr
 import torch
 import torch.nn.init as init
-# import pytorch_memlab
 
 from .helper import get_device, which_device
 from .ode_models import refine
 
+
 @attr.s(auto_attribs=True)
 class Result:
-    """A container class to collect tuples"""
+    """A container class to collect training state"""
     model_list: List[Any]
     losses: Any
     refine_steps: Any
@@ -19,11 +19,10 @@ class Result:
     test_acc: Any
     epoch_times: List[Any]
 
-#
-# helper functions to examine models
-#
+
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 
 def exp_lr_scheduler(optimizer, epoch, lr_decay_rate=0.8, decayEpoch=[]):
     """Decay learning rate by a factor of lr_decay_rate every lr_decay_epoch epochs"""
@@ -35,11 +34,13 @@ def exp_lr_scheduler(optimizer, epoch, lr_decay_rate=0.8, decayEpoch=[]):
     else:
         return optimizer  
 
+
 def reset_lr(optimizer, lr):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
         print('reset lr', param_group['lr'])
     return optimizer
+
 
 @torch.no_grad()
 def calculate_accuracy(model, loader):
@@ -69,7 +70,7 @@ def train_adapt(model,
                 device=None,
                 fname=None,
                 SAVE_DIR=None):
-    """I don't know how to control the learning rate"""
+    """Adaptive Refinement Training for RefineNets"""
     if N_refine is None:
         N_refine = []
     if epoch_update is None:
@@ -89,26 +90,14 @@ def train_adapt(model,
     want_train_acc = False
 
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
-    print('sgd')
-    #optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     model_single = model
     model = torch.nn.DataParallel(model_single, device_ids=[0,1,2,3])
-    if False:
-        print('Random initialization checking accuracy metrics:')
-        model.eval()
-        tr_acc = calculate_accuracy(model, loader)
-        print('Train Accuracy: ', tr_acc)
-        train_acc.append(tr_acc)
-        te_acc = calculate_accuracy(model, testloader)
-        print('Test Accuracy: ', te_acc)
-        test_acc.append(te_acc)
-    # memory_profile = pytorch_memlab.MemReporter(model)
+
     for e in range(N_epochs):
         model.train()
 
         # Make a new model if the epoch number is in the schedule
         if e in N_refine:
-            # memory_profile.report()
             # Get back from parallel
             model = model.module
             new_model = model.refine(refine_variance)
@@ -126,17 +115,8 @@ def train_adapt(model,
                 print('Train Accuracy after refinement: ', tr_acc)
                 train_acc.append( (e,tr_acc) )
             print(model)
-#            torch.save(model.state_dict(), 'temp' + '.pkl')                    
-#            model = ODEResNet2(method='euler')    
-#
-#            device = get_device()
-#            model.load_state_dict(torch.load('temp.pkl'))
-#            model.to(device = device)
-#            model.train() 
-             # We need to reset the optimizer to point to the new weights
+            # We need to reset the optimizer to point to the new weights
             optimizer = torch.optim.SGD(model.parameters(), lr=lr_current, momentum=0.9, weight_decay=weight_decay)
-            # Reset state
-            # optimizer.state = collections.defaultdict(dict) 
             refine_steps.append(step_count)
             
         starting_time = timeit.default_timer()
@@ -154,11 +134,11 @@ def train_adapt(model,
                 print("Hit a NaN, returning early.")
                 return Result(model_list, losses, refine_steps, train_acc, test_acc, epoch_times)
             _loss = L.detach().cpu().item()
-            # print(_loss)
             losses.append(_loss)
             step_count+=1
         epoch_times.append(timeit.default_timer() - starting_time)
         print("Epoch took ", epoch_times[-1], " seconds.")
+
         # Evaluate training and testing accuracy
         n_print = 5
         if e == 0 or (e+1) % n_print == 0:
@@ -171,7 +151,7 @@ def train_adapt(model,
             te_acc = calculate_accuracy(model, testloader)
             print('Test Accuracy: ', te_acc)
             test_acc.append( (e,te_acc) )
-        # Save lots of checkpoints
+        # Save checkpoint
         if fname is not None and SAVE_DIR is not None and (e+1)%n_print==0:
             chckpt = Result(model_list, losses, refine_steps, train_acc, test_acc, epoch_times)
             try:
@@ -180,10 +160,11 @@ def train_adapt(model,
             except:
                 print("Directory ", SAVE_DIR, " already exists.")
             torch.save(chckpt, fname+f"-CHECKPOINT-{e}.pkl")
+
+        # learnin rate schedule
         if e in epoch_update:
             lr_current *= lr_decay
 
         optimizer = exp_lr_scheduler(
             optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
-    # memory_profile.report()
     return Result(model_list, losses, refine_steps, train_acc, test_acc, epoch_times)
