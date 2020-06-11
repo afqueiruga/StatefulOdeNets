@@ -90,8 +90,12 @@ def train_adapt(model,
     want_train_acc = False
 
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
-    model_single = model
-    model = torch.nn.DataParallel(model_single, device_ids=[0,1,2,3])
+
+    # Uncomment to use 4 gpus
+    USE_PARALLEL = False
+    if USE_PARALLEL:
+        model_single = model
+        model = torch.nn.DataParallel(model_single, device_ids=[0,1,2,3])
 
     for e in range(N_epochs):
         model.train()
@@ -103,7 +107,10 @@ def train_adapt(model,
             new_model = model.refine(refine_variance)
             model_list.append(new_model)
             # Make the new one parallel
-            model = torch.nn.DataParallel(new_model, device_ids=[0,1,2,3])
+            if USE_PARALLEL:
+                model = torch.nn.DataParallel(new_model, device_ids=[0,1,2,3])
+            else:
+                model = new_model
             print('**** Allocated refinment ****')
             print('Total params: %.2fk' % (count_parameters(model)/1000.0))
             print('************')

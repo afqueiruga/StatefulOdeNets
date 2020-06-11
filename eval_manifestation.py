@@ -33,7 +33,7 @@ refset,trainset,trainloader,testset,testloader = \
 # How many time steps to use
 N_time_max = 96
 # Which files to load
-dirs = glob('results_tiny/odenet-CIFAR10*')
+dirs = glob('results/odenet-CIFAR10*')
 dirs = sorted(dirs, key = lambda x : os.stat(x).st_mtime)[:]
 # Load the torch pickles, and load them onto one device
 DEV = "cuda:0"
@@ -84,5 +84,5 @@ def calculate_plot(nt_max):
 
 # Do it
 test_sweep = calculate_plot(N_time_max)
-
-
+# Save a pickle to plot it later.
+torch.save("manifestation_plot_points.pkl", test_sweep)
