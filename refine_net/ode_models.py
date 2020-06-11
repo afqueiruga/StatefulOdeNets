@@ -30,23 +30,6 @@ def refine(net, variance=0.0):
         else:
             raise e
 
-
-class SkipInitODE(nn.Module):
-    def __init__(self, time_d):
-        super().__init__()
-        self.time_d = time_d
-        self.weight = nn.Parameter(torch.zeros(time_d).float())
-
-    def forward(self, t, x):
-        t_idx = int(t*self.time_d)
-        if t_idx==self.time_d: t_idx = self.time_d-1
-        return self.weight[t_idx] * x
-    def refine(self, variance=0.0):
-        new = SkipInitODE(2*self.time_d)
-        for t in range(self.time_d):
-            new.weight.data[2*t:2*t+2] = self.weight.data[t]
-        return new
-
 class Conv2DODE(torch.nn.Module):
     def __init__(self, time_d, in_channels, out_channels,
                 width=1, padding=1):
@@ -92,7 +75,8 @@ class ShallowConv2DODE(torch.nn.Module):
                  epsilon=1.0,
                  use_batch_norms="None",
                  use_skip_init=True):
-        """
+        """The main R(x,theta(t)) used by RefineNet.
+
         Args:
         
         use_batch_norms: options are False, "nn", "ode"
@@ -178,6 +162,7 @@ class ShallowConv2DODE(torch.nn.Module):
 
 
 class ShallowConv2DODE_Flipped(ShallowConv2DODE):
+    """Activaction-first variation of R"""
     def forward(self, t, x):
         if self.verbose: print("shallow @ ",t)
         if self.use_batch_norms=="nn":
@@ -284,9 +269,28 @@ class BatchNorm2DODE(nn.Module):
         return new
 
 
+class SkipInitODE(nn.Module):
+    """Time-depdent skip-initialization for ResNets"""
+    def __init__(self, time_d):
+        super().__init__()
+        self.time_d = time_d
+        self.weight = nn.Parameter(torch.zeros(time_d).float())
+
+    def forward(self, t, x):
+        t_idx = int(t*self.time_d)
+        if t_idx==self.time_d: t_idx = self.time_d-1
+        return self.weight[t_idx] * x
+    def refine(self, variance=0.0):
+        new = SkipInitODE(2*self.time_d)
+        for t in range(self.time_d):
+            new.weight.data[2*t:2*t+2] = self.weight.data[t]
+        return new
+
+
 class ODEBlock(torch.nn.Module):
-    """Wraps an ode-model with the odesolve to fit into standard 
-    models."""
+    """The building block of RefineNet.
+
+    Wraps an ode-model with the odesolve to fit into standard models."""
     def __init__(self, net, n_time_steps=1, scheme='euler',
                  use_adjoint=False):
         super(ODEBlock,self).__init__()

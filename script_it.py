@@ -4,6 +4,7 @@ CIFAR100 to reproduce Table 1 and Figure 4.
 """
 from typing import List
 import attr
+
 import driver
 
 

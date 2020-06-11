@@ -7,10 +7,10 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 
-from odenet import datasets
-from odenet.helper import set_seed, get_device, which_device
-from odenet import refine_train
-from odenet import refine_net
+from refine_net import datasets
+from refine_net.helper import set_seed, get_device, which_device
+from refine_net import refine_train
+from refine_net import refine_net
 
 SAVE_DIR = 'results'
 
@@ -43,7 +43,7 @@ def do_a_train_set(
         device: which device to use
     """
     
-    fname = SAVE_DIR+f'/odenet-{dataset}-{which_model}-ARCH-{ALPHA}-{use_batch_norms}-{"SkipInit" if use_skip_init else "NoSkip"}-{scheme}-{initial_time_d}-{time_epsilon}-{n_time_steps_per}-{shape_function}-{width}-LEARN-{lr}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-{"KaimingInit" if use_kaiming else "NormalInit"}-SEED-{seed}.pkl'
+    fname = SAVE_DIR+f'/refinenet-{dataset}-{which_model}-ARCH-{ALPHA}-{use_batch_norms}-{"SkipInit" if use_skip_init else "NoSkip"}-{scheme}-{initial_time_d}-{time_epsilon}-{n_time_steps_per}-{shape_function}-{width}-LEARN-{lr}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-{"KaimingInit" if use_kaiming else "NormalInit"}-SEED-{seed}.pkl'
     print("Working on ", fname)
     set_seed(seed)
     device = get_device(device)
