@@ -1,12 +1,13 @@
 # RefineNet: A Continuous-in-Depth Neural Network
-## Supplementary Material
+Alejandro F. Queiruga
+N. Ben Erichson
+2019-2020
 
-This directory contains the implementation of RefineNet.
+This directory contains the implementation of RefineNet to accompany an upcoming paper. (It will be linked right here if you come back in few days!)
 
 ## Requirements
 
-This implementation is based on PyTorch.
-It requires a fork `torchdiffeq` with slight modifications to expose additional solver options. The patched version is included in this supplementary material for anonymity. (Pull requests will be submitted after paper review.)
+This implementation is based on PyTorch. It requires a fork `torchdiffeq` with slight modifications to expose additional solver options: `github.com/afqueiruga/torchdiffeq`
 
 ## Training
 
@@ -22,5 +23,14 @@ The training script outputs models to Python pickles. The script,
 ```
 python3 eval_manifestation.py
 ```
-produces the plots shown by Figure 4 in the main text, wherein a "convergence test" is performed for given models by altering their integrator settings to illustrate the manifestation invariance property.
+performs a "convergence test" for given models by altering their integrator settings to illustrate the manifestation invariance property.
 
+## License
+
+This implementation is released under the GPL 3, as per LICENSE.
+
+## Acknowledgements
+
+A. Queiruga initially developed this code by while at Lawrence Berkeley National Lab with support from the U.S. Department of Energy.
+
+N.B. Erichson is supported by U.C. Berkeley and I.C.S.I.
