@@ -1,6 +1,6 @@
 # RefineNet: A Continuous-in-Depth Neural Network
-Alejandro F. Queiruga
-N. Ben Erichson
+Alejandro F. Queiruga  
+N. Ben Erichson  
 2019-2020
 
 This directory contains the implementation of RefineNet to accompany an upcoming paper. (It will be linked right here if you come back in few days!)
