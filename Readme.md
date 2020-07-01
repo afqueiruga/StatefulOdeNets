@@ -3,6 +3,8 @@ Alejandro F. Queiruga
 N. Ben Erichson  
 2019-2020
 
+![/refinenet_graph_manifestation.png](A RefineNet manifests as a family of graphs using basis functions)
+
 This directory contains the implementation of RefineNet to accompany an upcoming paper. (It will be linked right here if you come back in few days!)
 
 ## Requirements
