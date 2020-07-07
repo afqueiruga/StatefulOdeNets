@@ -1,7 +1,4 @@
-# RefineNet: A Continuous-in-Depth Neural Network
-Alejandro F. Queiruga  
-N. Ben Erichson  
-2019-2020
+# NoNet: Continuous-in-Depth Neural Networks
 
 <img src="https://raw.githubusercontent.com/afqueiruga/RefineNet/head/refinenet_graph_manifestation.jpg" height=600px></img>
 
@@ -31,8 +28,5 @@ performs a "convergence test" for given models by altering their integrator sett
 
 This implementation is released under the GPL 3, as per LICENSE.
 
-## Acknowledgements
-
-A. Queiruga initially developed this code by while at Lawrence Berkeley National Lab with support from the U.S. Department of Energy.
-
-N.B. Erichson is supported by U.C. Berkeley and I.C.S.I.
+## Reference
+[soon]()
