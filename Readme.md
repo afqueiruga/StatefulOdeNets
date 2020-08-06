@@ -14,7 +14,7 @@ The file `script_it.py` contains configurations to generate the results presente
 ```
 python3 script_it.py
 ```
-The training routine can also be executed via `cli.py`. Both are wrappers to `driver.py`, which in turn calls `continuous_net/continuous_train.py`.
+The training routine can also be executed via `cli.py`. Both are wrappers to `driver.py`, which in turn calls `continuous_net/refine_train.py`.
 
 ## Evaluation
 
