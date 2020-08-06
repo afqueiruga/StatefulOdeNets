@@ -21,11 +21,11 @@ try:
 except ModuleNotFoundError:
     progress = lambda x, *args : x
 
-from refine_net import refine_train
-from refine_net import ode_models
-from refine_net import datasets
-from refine_net import plotting
-from refine_net import helper
+from continuous_net import refine_train
+from continuous_net import ode_models
+from continuous_net import datasets
+from continuous_net import plotting
+from continuous_net import helper
 
 # The dataset used for testing
 refset,trainset,trainloader,testset,testloader = \
@@ -33,7 +33,7 @@ refset,trainset,trainloader,testset,testloader = \
 # How many time steps to use
 N_time_max = 4
 # Which files to load
-dirs = glob('results/refinenet-CIFAR10*')
+dirs = glob('results/continuousnet-CIFAR10*')
 dirs = sorted(dirs, key = lambda x : os.stat(x).st_mtime)[:]
 # Load the torch pickles, and load them onto one device
 DEV = "cuda:3"

@@ -9,7 +9,7 @@ def NoSequential(*args):
     return nn.Sequential(*net)
 
 
-class RefineNet(nn.Module):
+class ContinuousNet(nn.Module):
     """Uses one OdeBlock per segment."""
     def __init__(self,
                  ALPHA=16,

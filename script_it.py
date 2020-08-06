@@ -1,5 +1,5 @@
 """
-This script replicates the parameters for RefineNet applied to CIFAR10 and
+This script replicates the parameters for ContinuousNet applied to CIFAR10 and
 CIFAR100 to reproduce Table 1 and Figure 4.
 """
 from typing import List
@@ -46,7 +46,7 @@ models_cifar10 = [
 ]
 experiment_cifar10 = [
     Pack("CIFAR10",
-         "RefineNetActFirst",
+         "ContinuousNetActFirst",
          scheme,
          16,
          initial_time_d,
@@ -73,7 +73,7 @@ models_cifar100 = [
 ]
 experiment_cifar100 = [
     Pack("CIFAR100",
-         "RefineNetActFirst",
+         "ContinuousNetActFirst",
          scheme,
          64,
          initial_time_d,
@@ -97,7 +97,7 @@ models_test = [
 ]
 experiment_short_test = [
     Pack("CIFAR10",
-         "RefineNetActFirst",
+         "ContinuousNetActFirst",
          scheme,
          4,
          initial_time_d,
@@ -115,7 +115,7 @@ experiment_short_test = [
     for seed in [1]
 ]
 
-DEVICE = "cuda:3"
+DEVICE = "cpu"
 # Change this to swap experiment
 args_list = experiment_short_test
 for args in args_list:

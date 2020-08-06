@@ -1,8 +1,8 @@
-# NoNet: Continuous-in-Depth Neural Networks
+# Continuous-in-Depth Neural Networks
 
-<img src="https://raw.githubusercontent.com/afqueiruga/RefineNet/head/refinenet_graph_manifestation.jpg" height=600px></img>
+<img src="https://raw.githubusercontent.com/afqueiruga/ContinuousNet/head/continuous_graph_manifestation.jpg" height=600px></img>
 
-This directory contains the implementation of RefineNet to accompany an upcoming paper. (It will be linked right here if you come back in few days!)
+This directory contains the implementation of ContinuousNet to accompany an upcoming paper. (It will be linked right here if you come back in few days!)
 
 ## Requirements
 
@@ -14,7 +14,7 @@ The file `script_it.py` contains configurations to generate the results presente
 ```
 python3 script_it.py
 ```
-The training routine can also be executed via `cli.py`. Both are wrappers to `driver.py`, which in turn calls `refine_net/refine_train.py`.
+The training routine can also be executed via `cli.py`. Both are wrappers to `driver.py`, which in turn calls `continuous_net/continuous_train.py`.
 
 ## Evaluation
 
