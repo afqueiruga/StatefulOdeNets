@@ -1,6 +1,6 @@
 # Continuous-in-Depth Neural Networks
 
-<img src="https://raw.githubusercontent.com/afqueiruga/ContinuousNet/head/continuous_graph_manifestation.jpg" height=600px></img>
+<img src="https://raw.githubusercontent.com/afqueiruga/ContinuousNet/head/continuousnet_graph_manifestation.jpg" height=600px></img>
 
 This directory contains the implementation of ContinuousNet to accompany an upcoming paper. (It will be linked right here if you come back in few days!)
 
