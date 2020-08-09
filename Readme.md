@@ -2,7 +2,8 @@
 
 <img src="https://raw.githubusercontent.com/afqueiruga/ContinuousNet/head/continuousnet_graph_manifestation.jpg" height=600px></img>
 
-This directory contains the implementation of ContinuousNet to accompany an upcoming paper. (It will be linked right here if you come back in few days!)
+This directory contains the implementation of ContinuousNet to accompany the preprint
+> [Queiruga, Alejandro F., N. Benjamin Erichson, Dane Taylor and Michael W. Mahoney. “Continuous-in-Depth Neural Networks.” ArXiv abs/2008.02389 (2020)](https://arxiv.org/abs/2008.02389)
 
 ## Requirements
 
@@ -28,5 +29,7 @@ performs a "convergence test" for given models by altering their integrator sett
 
 This implementation is released under the GPL 3, as per LICENSE.
 
-## Reference
-[soon]()
+## Additional References
+
+There is a video recording of an acompanying presentation available at [Queiruga, A. F., "Continuous-in-Depth Neural Networks," 1st Workshop on Scientific-Driven Deep Learning, July 1, 2020.](https://www.youtube.com/watch?v=_aX3T1Smg54)
+
