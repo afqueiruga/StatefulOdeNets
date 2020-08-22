@@ -18,7 +18,7 @@ import timeit
 import os
 
 from utils import *
-from resnet import ResNetv2, WideResNet
+from residual_net import ResNetv2, WideResNet
 
 
 
