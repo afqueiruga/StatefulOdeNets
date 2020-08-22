@@ -96,11 +96,9 @@ class WideResNet(nn.Module):
         
         out = self.relu(self.bn1(out))
         
-        #out = F.avg_pool2d(out, 8)
         out = F.adaptive_avg_pool2d(out, output_size=1)
         
         out = self.linear(out)
-        output_list.append(deepcopy(out.data))
 
         return out
     
