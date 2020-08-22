@@ -81,10 +81,8 @@ class WideResNet(nn.Module):
 
 
     def forward(self, x):
-        bs = x.size(0)
-        
-        out = self.conv1(x)
-        
+        bs = x.size(0)        
+        out = self.conv1(x)        
         for i in range(len(self.layer1)):
             out = self.layer1[i](out)
         
@@ -97,8 +95,8 @@ class WideResNet(nn.Module):
         out = self.relu(self.bn1(out))
         
         out = F.adaptive_avg_pool2d(out, output_size=1)
+        out = out.view(out.size(0), -1)
         
         out = self.linear(out)
 
-        return out
-    
+        return out     
