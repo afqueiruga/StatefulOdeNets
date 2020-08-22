@@ -7,7 +7,6 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 
 
-#from odenet.odenet_cifar10 import ODEResNet, ODEResNet2
 from odenet.odenet_cifar10 import *
 from odenet.helper import set_seed, get_device, which_device
 
