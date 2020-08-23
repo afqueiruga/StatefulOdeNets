@@ -13,6 +13,11 @@ from continuous_net import refine_train
 from continuous_net import continuous_net
 
 SAVE_DIR = 'results'
+#******************************************************************************
+# Create folder to save results
+#******************************************************************************
+if not os.path.isdir(SAVE_DIR):
+    os.mkdir(SAVE_DIR)
 
 
 def do_a_train_set(
