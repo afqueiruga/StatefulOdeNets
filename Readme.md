@@ -61,7 +61,7 @@ standard arguments:
 
 After training the model checkpoint is saved in a folder called results.
 
-## Examples
+## Examples and Performance
 
 (todo)
 
@@ -69,6 +69,11 @@ After training the model checkpoint is saved in a folder called results.
 python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --lr 0.1 --wd 5e-4 --epochs 180 --lr_decay 0.1 --lr_update 80 120 160  --n_time_steps_per 1 --initial_time_d 8 --time_epsilon 8 --seed 0 --use_skipinit 0
 ```
 
+| Model        |  Depth           | #parameters  | Test Accuracy |
+| ------------- |:-------------:| :-----:|:-----:|
+| ResNet (v2)     | 8-8-8   |
+| ContinuousNet   | 8-8-8   |      |    | |
+| ContinuousNet |   8-8-8    |    | |
 
 
 ## Evaluation
