@@ -24,7 +24,7 @@ Note, this implementation best works with [PyTorch 1.6](https://pytorch.org/).
 
 ## Training
 
-ContinuousNets can be trained similar to ResNets:
+ContinuousNets can be trained similar to ResNets via a command line interface:
 ```
 python3 cli.py [--dataset] [--batch-size] [--test-batch-size] [--epochs] [--lr] [--lr-decay] [--lr-decay-epoch] [--weight-decay] [--batch-norm] [--device] [--seed]
 
@@ -45,7 +45,7 @@ standard arguments:
 
 
 
-ContinuousNets provide some some extras (todo):
+ContinuousNet provides some some extras (todo):
 ```
 python3 cli.py [--model] [--scheme] [--n_time_steps_per] [--initial_time_d] [--time_epsilon] [--use_skipinit]
 
@@ -66,7 +66,7 @@ After training the model checkpoint is saved in a folder called results.
 (todo)
 
 ```
-python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --lr 0.1 --wd 5e-4 --epochs 180 --lr_decay 0.1 --lr_update 80 120 160  --n_time_steps_per 1 --initial_time_d 8 --time_epsilon 8 --seed 0 --use_skipinit 0
+python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --lr 0.1 --weight_decay  5e-4 --epochs 180 --lr_decay 0.1 --lr_decay_epoch 80 120 160  --n_time_steps_per 1 --initial_time_d 8 --time_epsilon 8 --seed 0
 ```
 
 | Model        | Activation            |  Depth  | Scheme      | #parms  | Test Accuracy |
@@ -78,15 +78,16 @@ python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --lr 0.1 -
 
 
 
+
+
 ## Examples and Performance on CIFAR-100
 
 (todo)
 
 | Model             | Activation            |  Depth  | Scheme      | #parms  | Test Accuracy |
 | ------------------|:---------------------:|:-------:|:----------: |:-------:|:-------------:|
-| Wide-ResNet       | ReLU before addition  | 8-8-8   | -           |   |         |
-| Wide-ContinuousNet| ReLU before addition  | 8-8-8   | Euler       |         |               |
-| Wide-ContinuousNet| full pre-activation   | 8-8-8   | Euler       |    |         |
+| Wide-ResNet       | full pre-activation   | 8-8-8   | -           |  13.63M       |         |
+| Wide-ContinuousNet| full pre-activation   | 8-8-8   | Euler       |  13.57M |         |
 
 
 
