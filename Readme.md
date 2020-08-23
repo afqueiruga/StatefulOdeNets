@@ -26,7 +26,7 @@ Note, this implementation best works with [PyTorch 1.6](https://pytorch.org/).
 
 ContinuousNets can be trained similar to ResNets:
 ```
-python3 cli.py [--dataset]  [--batch-size] [--test-batch-size] [--epochs] [--lr] [--lr-decay] [--lr-decay-epoch] [--seed] [--weight-decay] [--batch-norm] [--device]
+python3 cli.py [--dataset] [--batch-size] [--test-batch-size] [--epochs] [--lr] [--lr-decay] [--lr-decay-epoch] [--weight-decay] [--batch-norm] [--device] [--seed]
 
 standard arguments:
 --dataset                   you can train on CIFAR10, or CIFAR100 (default: CIFAR10)	
@@ -36,10 +36,10 @@ standard arguments:
 --lr                        initial learning rate (default: 0.1)
 --lr-decay                  learning rate decay ratio (default: 0.1)
 --lr-decay-epoch            epoch for the learning rate decaying (default: 80, 120)
---seed                      used to reproduce the results (default: 1)
 --weight-decay              weight decay value (default: 5e-4)
 --batch-norm                do we need batch norm in ResNet or not (default: True)
---device                    do we use gpu or not (default: True)
+--device                    do we use gpu or not (default: 'gpu')
+--seed                      used to reproduce the results (default: 0)
 ```
 
 
@@ -47,7 +47,7 @@ standard arguments:
 
 ContinuousNets provide some some extras (todo):
 ```
-python3 cli.py [--model] [--scheme]
+python3 cli.py [--model] [--scheme] [--n_time_steps_per] [--initial_time_d] [--time_epsilon] [--use_skipinit]
 
 standard arguments:
 --model
