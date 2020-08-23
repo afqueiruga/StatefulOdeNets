@@ -21,7 +21,7 @@ if not os.path.isdir(SAVE_DIR):
 
 
 def do_a_train_set(
-    dataset, which_model, ALPHA, scheme, use_batch_norms,
+    dataset, which_model, ALPHA, widen_factor, scheme, use_batch_norms,
     initial_time_d, time_epsilon, n_time_steps_per,
     N_epochs, N_adapt, lr,
     lr_decay=0.1, epoch_update=None, weight_decay=1e-5,
@@ -29,10 +29,9 @@ def do_a_train_set(
     use_kaiming=False,
     use_skip_init=False,
     refine_variance=0.0,
-    width=None,
     seed=1, device=None):
     """Set up and train one model, and save it.
-    
+
     Args:
         dataset: Which dataset to load
         ALPHA: Multiplier for inner width of resnet units
@@ -47,8 +46,8 @@ def do_a_train_set(
         seed: a seed
         device: which device to use
     """
-    
-    fname = SAVE_DIR+f'/continuousnet-{dataset}-{which_model}-ARCH-{ALPHA}-{use_batch_norms}-{"SkipInit" if use_skip_init else "NoSkip"}-{scheme}-{initial_time_d}-{time_epsilon}-{n_time_steps_per}-{width}-LEARN-{lr}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-{"KaimingInit" if use_kaiming else "NormalInit"}-SEED-{seed}.pkl'
+
+    fname = SAVE_DIR+f'/continuousnet-{dataset}-{which_model}-ARCH-{ALPHA}-widen_factor{widen_factor}-{use_batch_norms}-{"SkipInit" if use_skip_init else "NoSkip"}-{scheme}-{initial_time_d}-{time_epsilon}-{n_time_steps_per}-LEARN-{lr}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-{"KaimingInit" if use_kaiming else "NormalInit"}-SEED-{seed}.pkl'
     print("Working on ", fname)
     set_seed(seed)
     device = get_device(device)
@@ -71,7 +70,7 @@ def do_a_train_set(
 
     if which_model == "ContinuousNet":
         model = continuous_net.ContinuousNet(
-            ALPHA=ALPHA,
+            ALPHA=ALPHA, widen_factor=widen_factor,
             scheme=scheme,
             time_d=initial_time_d,
             in_channels=in_channels,
@@ -85,7 +84,7 @@ def do_a_train_set(
         ).to(device)
     elif which_model == "ContinuousNetActFirst":
         model = continuous_net.ContinuousNet(
-            ALPHA=ALPHA,
+            ALPHA=ALPHA, widen_factor=widen_factor,
             scheme=scheme,
             time_d=initial_time_d,
             in_channels=in_channels,
@@ -101,20 +100,20 @@ def do_a_train_set(
         raise RuntimeError("Unknown model name specified")
     if use_kaiming:
         model.apply(init_params)
-    
+
     print(model)
     print('**** Setup ****')
     n_params = sum(p.numel() for p in model.parameters())
     print('Total params: %.2fk ; %.2fM' % (n_params*10**-3, n_params*10**-6))
     print('************')
-    
+
     res = refine_train.train_adapt(
         model, trainloader, testloader, torch.nn.CrossEntropyLoss(),
         N_epochs, N_adapt, lr=lr, lr_decay=lr_decay, epoch_update=epoch_update, weight_decay=weight_decay,
         refine_variance=refine_variance,
         device=device,
         SAVE_DIR=SAVE_DIR, fname=fname)
-    
+
     try:
         os.mkdir(SAVE_DIR)
         print("Making directory ", "results.")
