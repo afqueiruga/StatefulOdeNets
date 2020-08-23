@@ -7,7 +7,10 @@ This directory contains the implementation of ContinuousNet to accompany the pre
 
 ## Requirements
 
-This implementation is based on PyTorch. It requires a fork `torchdiffeq` with slight modifications to expose additional solver options: `github.com/afqueiruga/torchdiffeq`
+This implementation is based on [PyTorch 1.6](https://pytorch.org/). Further, it requires a fork `torchdiffeq` with slight modifications to expose additional solver options: 
+```
+pip install git+https://github.com/afqueiruga/torchdiffeq
+```
 
 ## Training
 
