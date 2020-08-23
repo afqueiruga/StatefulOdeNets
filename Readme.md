@@ -20,7 +20,7 @@ Also, you need a fork of `torchdiffeq` that is slightly modified in order to exp
 pip install git+https://github.com/afqueiruga/torchdiffeq
 ```
 
-Note, this implementation is based on [PyTorch 1.6](https://pytorch.org/).
+Note, this implementation best works with [PyTorch 1.6](https://pytorch.org/).
 
 ## Training
 
