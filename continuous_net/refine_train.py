@@ -83,8 +83,6 @@ def train_adapt(model,
     refine_steps = []
     epoch_times = []
     model_list = [model]
-    N_print= 1
-    lr_init = lr
     lr_current = lr
     step_count = 0
     want_train_acc = False
@@ -145,7 +143,10 @@ def train_adapt(model,
             losses.append(_loss)
             step_count+=1
         epoch_times.append(timeit.default_timer() - starting_time)
-        print("Epoch took ", epoch_times[-1], " seconds.")
+        #print("Epoch took ", epoch_times[-1], " seconds.")
+
+
+
 
         # Evaluate training and testing accuracy
         n_print = 5
@@ -175,4 +176,8 @@ def train_adapt(model,
 
         optimizer = exp_lr_scheduler(
             optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
+        
+        
+    print('Average time (without eval): ', np.mean(epoch_times))
+    print('Total time (without eval): ', np.sum(epoch_times))        
     return Result(model_list, losses, refine_steps, train_acc, test_acc, epoch_times)
