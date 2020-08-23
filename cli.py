@@ -24,10 +24,17 @@ parser.add_argument('--n_time_steps_per', type=int, default=1, help="number of t
 parser.add_argument('--time_epsilon', type=float, default=1.0, help="How long is the depth-time")
 parser.add_argument('--use_batch_norms', default=True, help='include batch norm layers', action='store_true')
 parser.add_argument('--use_kaiming', default=False, help='include kaiming', action='store_true')
+parser.add_argument('--use_skipinit', type=int, default=0, help="use skip init")
 parser.add_argument('--seed', type=int, default='1',  help='Seed value')
 parser.add_argument('--device', type=str, default=None, help='Which pytorch device?')
 
 args = parser.parse_args()
+
+if args.use_skipinit == 1:
+    use_skipinit = True
+else:
+    use_skipinit = False
+
 
 print(args.use_batch_norms)
 
@@ -47,6 +54,7 @@ def drive_by_args(args):
         lr_decay=args.lr_decay,
         epoch_update=args.lr_update,
         use_kaiming=args.use_kaiming,
+        use_skip_init=use_skipinit,
         weight_decay=args.wd,
         seed=args.seed,
         device=args.device)
