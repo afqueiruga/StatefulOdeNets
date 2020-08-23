@@ -30,15 +30,12 @@ class ContinuousNet(nn.Module):
         self.use_batch_norms = use_batch_norms
         self.stitch_epsilon = time_epsilon / (time_d*n_time_steps_per)
         
-        
-        
         if activation_before_conv:
             _OdeUnit = ShallowConv2DODE_Flipped
             _ODEStitch = ODEStitch_Flipped
         else:
             _OdeUnit = ShallowConv2DODE
             _ODEStitch = ODEStitch
-
             
         # This macro lets us make 3 of them concisely without typos
         _macro = lambda _alpha : \
@@ -100,8 +97,6 @@ class ContinuousNet(nn.Module):
                 m.bias.data.zero_()  
                 print('Init BatchNorm2d')                 
                 
-                
-        
     def forward(self,x):
         return self.net(x)
     
