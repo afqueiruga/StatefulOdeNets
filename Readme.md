@@ -5,7 +5,7 @@ Introduction (todo).
 This directory contains the implementation of ContinuousNet to accompany the preprint
 > [Queiruga, Alejandro F., N. Benjamin Erichson, Dane Taylor and Michael W. Mahoney. “Continuous-in-Depth Neural Networks.” ArXiv abs/2008.02389 (2020)](https://arxiv.org/abs/2008.02389)
 
-<img src="https://github.com/erichson/data/blob/master/img/ContinuousNet_overview.png" width="650">
+<img src="https://github.com/erichson/data/blob/master/img/ContinuousNet_overview.png" width="750">
 
 ## Requirements
 
