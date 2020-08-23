@@ -218,7 +218,6 @@ class ODEStitch(nn.Module):
         if self.use_batch_norms:
             h = self.bn1(h)   
         h = self.L2(h)
-        
         h = self.act(h, inplace=True)
           
         if self.use_skip_init:
@@ -230,6 +229,90 @@ class ODEStitch(nn.Module):
 
     def refine(self, variance=0):
         return copy.deepcopy(self)
+
+
+
+
+class ODEStitch_Flipped(nn.Module):
+    """Perfoms a downsampling stitch with the ResNet non-ode version.
+    ODEs require in_features to be equal to out_features. This performs that one-time
+    reshaping needing in spacial dimensions.
+    """
+    def __init__(self, in_features, out_features, hidden_features, 
+                 width=3, padding=1,
+                 act=torch.nn.functional.relu,
+                 epsilon=1.0,
+                 use_batch_norms=False,
+                 use_skip_init=True,
+                 stride=2):
+        super().__init__()
+        self.act = act
+        self.epsilon = epsilon
+        self.use_batch_norms = use_batch_norms
+        self.use_skip_init = use_skip_init
+        self.verbose=False
+        self.downsample = nn.Conv2d(
+                in_features, out_features, kernel_size=1, padding=0, stride=stride, bias=False)
+        self.L1 = nn.Conv2d(
+            in_features, hidden_features, stride=stride, kernel_size=width, padding=padding)
+        self.L2 = nn.Conv2d(
+            hidden_features, out_features, kernel_size=width, padding=padding)
+        if use_skip_init:
+            self.skip_init = nn.Parameter(torch.zeros(1))
+        if use_batch_norms:
+            self.bn1 = torch.nn.BatchNorm2d(in_features)
+            self.bn2 = torch.nn.BatchNorm2d(out_features)
+
+    def forward(self, x):        
+        residual = x 
+        
+        if self.use_batch_norms:
+            h = self.bn1(x)
+        h = self.act(h, inplace=True)
+        h = self.L1(h)
+        
+        if self.use_batch_norms:
+            h = self.bn2(h)
+            
+        h = self.act(h, inplace=True)
+        h = self.L2(h)
+        
+        if self.use_skip_init:
+            x = self.skip_init * h
+            
+        x_down = self.downsample(residual)
+
+        return x_down + self.epsilon * h
+
+    def refine(self, variance=0):
+        return copy.deepcopy(self)
+
+
+
+#class ODEStitch_Flipped(ODEStitch):
+#    """Activaction-first variation of R"""
+#    def forward(self, x):        
+#        residual = x 
+#        
+#        if self.use_batch_norms:
+#            h = self.bn1(x)
+#        h = self.act(h, inplace=True)
+#        h = self.L1(h)
+#        
+#        if self.use_batch_norms:
+#            h = self.bn2(h)
+#            
+#        h = self.act(h, inplace=True)
+#        h = self.L2(h)
+#        
+#        if self.use_skip_init:
+#            x = self.skip_init * h
+#            
+#        x_down = self.downsample(residual)
+#
+#        return x_down + self.epsilon * h
+
+
 
 
 class BatchNorm2DODE(nn.Module):

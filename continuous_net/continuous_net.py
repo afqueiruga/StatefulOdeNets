@@ -34,8 +34,11 @@ class ContinuousNet(nn.Module):
         
         if activation_before_conv:
             _OdeUnit = ShallowConv2DODE_Flipped
+            _ODEStitch = ODEStitch_Flipped
         else:
             _OdeUnit = ShallowConv2DODE
+            _ODEStitch = ODEStitch
+
             
         # This macro lets us make 3 of them concisely without typos
         _macro = lambda _alpha : \
@@ -52,7 +55,7 @@ class ContinuousNet(nn.Module):
                 use_adjoint=use_adjoint)
         if use_stitch:
             _stitch_macro = lambda _alpha, _beta : \
-                ODEStitch(_alpha, _beta, _beta,
+                _ODEStitch(_alpha, _beta, _beta,
                           epsilon=self.stitch_epsilon,
                           use_batch_norms=use_batch_norms,
                           use_skip_init=use_skip_init)
