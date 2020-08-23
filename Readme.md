@@ -7,12 +7,6 @@ This directory contains the implementation of ContinuousNet to accompany the pre
 
 <img src="https://github.com/erichson/data/blob/master/img/ContinuousNet_overview.png" width="750">
 
-## Requirements
-
-This implementation is based on [PyTorch 1.6](https://pytorch.org/). Further, it requires a fork `torchdiffeq` with slight modifications to expose additional solver options: 
-```
-pip install git+https://github.com/afqueiruga/torchdiffeq
-```
 
 ## Get Started
 
@@ -21,6 +15,12 @@ Just clone the ContinuousNet repository to your local system and you are ready t
 git clone https://github.com/afqueiruga/ContinuousNet
 ```
 
+Also, you need a fork of `torchdiffeq` that is slightly modified in order to expose additional solver options: 
+```
+pip install git+https://github.com/afqueiruga/torchdiffeq
+```
+
+Note, this implementation is based on [PyTorch 1.6](https://pytorch.org/).
 
 ## Training
 
