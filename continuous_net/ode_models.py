@@ -95,12 +95,7 @@ class ShallowConv2DODE(torch.nn.Module):
         if use_skip_init:
             self.skip_init = SkipInitODE(time_d)
 
-        if use_batch_norms=="nn":
-            self.bn1 = nn.BatchNorm2d(
-                hidden_features, affine=True, track_running_stats=True)
-            self.bn2 = nn.BatchNorm2d(
-                in_features, affine=True, track_running_stats=True)
-        elif use_batch_norms=="ode":
+        if use_batch_norms==True:
             self.bn1 = BatchNorm2DODE(
                 time_d, hidden_features, affine=True, track_running_stats=True)
             self.bn2 = BatchNorm2DODE(
@@ -110,16 +105,10 @@ class ShallowConv2DODE(torch.nn.Module):
         if self.verbose: print("shallow @ ",t)
         x = self.L1(t, x)
         x = self.act(x, inplace=True)
-        if self.use_batch_norms=="nn":
-            x = self.bn1(x)
-        elif self.use_batch_norms=="ode":
-            x = self.bn1(t,x)
+        if self.use_batch_norms==True: x = self.bn1(t,x)
         x = self.L2(t, x)
         x = self.act(x, inplace=True)
-        if self.use_batch_norms=="nn":
-            x = self.bn2(x)
-        elif self.use_batch_norms=="ode":
-            x = self.bn2(t,x)
+        if self.use_batch_norms==True: x = self.bn2(t,x)
         if self.use_skip_init:
             x = self.skip_init(t, x)
             
@@ -135,12 +124,7 @@ class ShallowConv2DODE(torch.nn.Module):
         else:
             r_skip_init = None
 
-        if self.use_batch_norms=="nn":
-            self.bn1.track_running_stats = False
-            self.bn2.track_running_stats = False
-            r_bn1 = copy.deepcopy(self.bn1)
-            r_bn2 = copy.deepcopy(self.bn2)
-        elif self.use_batch_norms=="ode":
+        if self.use_batch_norms==True:
             r_bn1 = self.bn1.refine()
             r_bn2 = self.bn2.refine()
         else:
@@ -154,9 +138,6 @@ class ShallowConv2DODE(torch.nn.Module):
         new.bn1 = r_bn1
         new.bn2 = r_bn2
         
-        if self.use_batch_norms=="nn":
-            self.bn1.track_running_stats = True
-            self.bn2.track_running_stats = True
 
         return new
 
@@ -165,16 +146,11 @@ class ShallowConv2DODE_Flipped(ShallowConv2DODE):
     """Activaction-first variation of R"""
     def forward(self, t, x):
         if self.verbose: print("shallow @ ",t)
-        if self.use_batch_norms=="nn":
-            x = self.bn1(x)
-        elif self.use_batch_norms=="ode":
-            x = self.bn1(t,x)
+
+        if self.use_batch_norms==True: x = self.bn1(t,x)
         x = self.act(x, inplace=True)
         x = self.L1(t, x)
-        if self.use_batch_norms=="nn":
-            x = self.bn2(x)
-        elif self.use_batch_norms=="ode":
-            x = self.bn2(t,x)
+        if self.use_batch_norms==True: x = self.bn2(t,x)
         x = self.act(x, inplace=True)
         x = self.L2(t, x)
         if self.use_skip_init:
@@ -266,14 +242,11 @@ class ODEStitch_Flipped(nn.Module):
     def forward(self, x):        
         residual = x 
         
-        if self.use_batch_norms:
-            h = self.bn1(x)
+        if self.use_batch_norms: h = self.bn1(x)
         h = self.act(h, inplace=True)
         h = self.L1(h)
         
-        if self.use_batch_norms:
-            h = self.bn2(h)
-            
+        if self.use_batch_norms: h = self.bn2(h)
         h = self.act(h, inplace=True)
         h = self.L2(h)
         
@@ -342,6 +315,7 @@ class BatchNorm2DODE(nn.Module):
         else:
             self.bns = nn.ModuleList(_force_bns)
 
+ 
     def forward(self, t, x):
         tdx = piecewise_index(t, self.time_d)
         return self.bns[tdx](x)

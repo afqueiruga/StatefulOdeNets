@@ -98,7 +98,9 @@ class ContinuousNet(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()  
-                print('Init BatchNorm2d')   
+                print('Init BatchNorm2d')                 
+                
+                
         
     def forward(self,x):
         return self.net(x)
