@@ -77,7 +77,6 @@ def do_a_train_set(
             use_skip_init=use_skip_init,
             use_adjoint=use_adjoint,
             activation_before_conv=False,
-            stitch_epsilon=1.0
         ).to(device)
     elif which_model == "ContinuousNetActFirst":
         model = continuous_net.ContinuousNet(
@@ -92,7 +91,6 @@ def do_a_train_set(
             use_skip_init=use_skip_init,
             use_adjoint=use_adjoint,
             activation_before_conv=True,
-            stitch_epsilon=1.0
         ).to(device)
     else:
         raise RuntimeError("Unknown model name specified")

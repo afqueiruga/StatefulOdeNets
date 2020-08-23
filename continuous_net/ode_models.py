@@ -122,6 +122,7 @@ class ShallowConv2DODE(torch.nn.Module):
             x = self.bn2(t,x)
         if self.use_skip_init:
             x = self.skip_init(t, x)
+            
         return self.epsilon*x
     
     @torch.no_grad()
@@ -217,13 +218,16 @@ class ODEStitch(nn.Module):
         if self.use_batch_norms:
             h = self.bn1(h)   
         h = self.L2(h)
+        
         h = self.act(h, inplace=True)
-        if self.use_batch_norms:
-            h = self.bn2(h)           
+          
         if self.use_skip_init:
             h = self.skip_init * h
+            
         x_down = self.downsample(x)
-        return x_down + h
+        
+        return x_down + self.epsilon * h
+
     def refine(self, variance=0):
         return copy.deepcopy(self)
 

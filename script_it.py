@@ -38,7 +38,7 @@ class Pack:
     seed: int = 1
     
 
-# Results for CIFAR1
+# Results for CIFAR10
 # 16 wide, Nt=32 deep
 models_cifar10 = [
     ("rk4_classic",1,[40, 50, 60, 70, 80]),
@@ -57,7 +57,7 @@ experiment_cifar10 = [
          lr=0.1,
          lr_decay=0.1,
          lr_update=[80, 120, 140],
-          epochs = 150,
+         epochs = 150,
          use_adjoint=False,
          seed=seed)
     for scheme,initial_time_d, refine in models_cifar10

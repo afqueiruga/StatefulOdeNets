@@ -23,12 +23,14 @@ class ContinuousNet(nn.Module):
                  use_skip_init=False,
                  use_stitch=True,
                  use_adjoint=False,
-                 activation_before_conv=True,
-                 stitch_epsilon=1.0):
+                 activation_before_conv=True):
         super().__init__()
         self.scheme = scheme
         self.time_d = time_d
         self.use_batch_norms = use_batch_norms
+        self.stitch_epsilon = time_epsilon / (time_d*n_time_steps_per)
+        
+        
         
         if activation_before_conv:
             _OdeUnit = ShallowConv2DODE_Flipped
@@ -51,7 +53,7 @@ class ContinuousNet(nn.Module):
         if use_stitch:
             _stitch_macro = lambda _alpha, _beta : \
                 ODEStitch(_alpha, _beta, _beta,
-                          epsilon=stitch_epsilon,
+                          epsilon=self.stitch_epsilon,
                           use_batch_norms=use_batch_norms,
                           use_skip_init=use_skip_init)
         else:
