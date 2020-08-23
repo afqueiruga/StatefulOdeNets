@@ -1,3 +1,4 @@
+import numpy as np
 import collections
 from typing import List, Any
 import timeit
@@ -32,7 +33,7 @@ def exp_lr_scheduler(optimizer, epoch, lr_decay_rate=0.8, decayEpoch=[]):
             print('lr decay update', param_group['lr'])
         return optimizer
     else:
-        return optimizer  
+        return optimizer
 
 
 def reset_lr(optimizer, lr):
@@ -124,7 +125,7 @@ def train_adapt(model,
             # We need to reset the optimizer to point to the new weights
             optimizer = torch.optim.SGD(model.parameters(), lr=lr_current, momentum=0.9, weight_decay=weight_decay)
             refine_steps.append(step_count)
-            
+
         starting_time = timeit.default_timer()
         # Train one epoch over the new model
         model.train()
@@ -176,8 +177,8 @@ def train_adapt(model,
 
         optimizer = exp_lr_scheduler(
             optimizer, e, lr_decay_rate=lr_decay, decayEpoch=epoch_update)
-        
-        
+
+
     print('Average time (without eval): ', np.mean(epoch_times))
-    print('Total time (without eval): ', np.sum(epoch_times))        
+    print('Total time (without eval): ', np.sum(epoch_times))
     return Result(model_list, losses, refine_steps, train_acc, test_acc, epoch_times)
