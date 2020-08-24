@@ -51,11 +51,12 @@ class ContinuousNet(nn.Module):
                 scheme=scheme,
                 use_adjoint=use_adjoint)
         if use_stitch:
-            _stitch_macro = lambda _alpha, _beta : \
+            _stitch_macro = lambda _alpha, _beta, stride=2 : \
                 _ODEStitch(_alpha, _beta, _beta,
                           epsilon=self.stitch_epsilon,
                           use_batch_norms=use_batch_norms,
-                          use_skip_init=use_skip_init)
+                          use_skip_init=use_skip_init,
+                          stride=stride)
         else:
             _stitch_macro = lambda _alpha, _beta : \
                 nn.Conv2d(_alpha, _beta, kernel_size=1, padding=1, stride=2, bias=False)
@@ -63,9 +64,12 @@ class ContinuousNet(nn.Module):
         # The full network, with three OdeBlocks (_macro)
         self.net = NoSequential(
             nn.Conv2d(
-                in_channels, ALPHA*widen_factor, kernel_size=7, padding=1,bias=False),
-            nn.BatchNorm2d(ALPHA*widen_factor) if use_batch_norms else None,
+                in_channels, ALPHA, kernel_size=7, padding=1,bias=False),
+            nn.BatchNorm2d(ALPHA) if use_batch_norms else None,
             nn.ReLU(),
+
+            _stitch_macro(ALPHA, ALPHA*widen_factor, stride=1) if widen_factor > 1 else None,
+
             _macro(ALPHA*widen_factor),
             _stitch_macro(ALPHA*widen_factor, 2*ALPHA*widen_factor),
             _macro(2*ALPHA*widen_factor),
