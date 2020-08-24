@@ -69,11 +69,11 @@ After training the model checkpoint is saved in a folder called results.
 python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --lr 0.1 --weight_decay  5e-4 --epochs 180 --lr_decay 0.1 --lr_decay_epoch 80 120 160  --n_time_steps_per 1 --initial_time_d 8 --time_epsilon 8 --seed 0
 ```
 
-| Model        | Activation            |  Units  | Scheme      | #parms  | Test Accuracy | Time |
-| -------------|:---------------------:|:-------:|:----------: |:-------:|:-------------:|:----:|
-| ResNet (v2)  | ReLU before addition  | 8-8-8   | -           | 0.85M   | 93.11%        |105 (m)|
-| ContinuousNet| ReLU before addition  | 8-8-8   | Euler       | 0.85M   | 93.11%        |85 (m)|
-| ContinuousNet| full pre-activation   | 8-8-8   | Euler       | 0.85M   | 93.21%        |83 (m) |
+| Model           | Activation            |  Units  | Scheme      | #parms  | Test Accuracy | Time |
+| ----------------|:---------------------:|:-------:|:----------: |:-------:|:-------------:|:----:|
+| ResNet-52 (v2)  | ReLU before addition  | 8-8-8   | -           | 0.85M   | 93.11%        |105 (m)|
+| ContinuousNet   | ReLU before addition  | 8-8-8   | Euler       | 0.85M   | 93.11%        |85 (m)|
+| ContinuousNet   | full pre-activation   | 8-8-8   | Euler       | 0.85M   | 93.21%        |83 (m) |
 
 
 
@@ -86,8 +86,8 @@ python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --lr 0.1 -
 
 | Model             | Activation            |  Units  | Scheme      | #parms  | Test Accuracy | Time  |
 | ------------------|:---------------------:|:-------:|:----------: |:-------:|:-------------:|:-----:|
-| Wide-ResNet       | full pre-activation   | 8-8-8   | -           |  13.63M |   78.87%      |193 (m)|
-| Wide-ContinuousNet| full pre-activation   | 8-8-8   | Euler       |  13.57M |   77.82%      |141 (m)|
+| WideResNet-58     | full pre-activation   | 8-8-8   | -           |  13.63M |   78.87%      |193 (m)|
+| WideContinuousNet | full pre-activation   | 8-8-8   | Euler       |  13.63M |   77.82%      |141 (m)|
 
 
 
