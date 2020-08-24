@@ -87,11 +87,11 @@ class ContinuousNet(nn.Module):
                 n = m.width * m.width * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
                 print('Init Conv2DODE')
-            elif isinstance(m, nn.Linear):
-                nn.init.xavier_normal_(m.weight)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0.0)
-                print('Init Linear')
+#            elif isinstance(m, nn.Linear):
+#                nn.init.xavier_normal_(m.weight)
+#                if m.bias is not None:
+#                    nn.init.constant_(m.bias, 0.0)
+#                print('Init Linear')
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
