@@ -69,11 +69,11 @@ After training the model checkpoint is saved in a folder called results.
 python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --lr 0.1 --weight_decay  5e-4 --epochs 180 --lr_decay 0.1 --lr_decay_epoch 80 120 160  --n_time_steps_per 1 --initial_time_d 8 --time_epsilon 8 --seed 0
 ```
 
-| Model        | Activation            |  Depth  | Scheme      | #parms  | Test Accuracy |
-| -------------|:---------------------:|:-------:|:----------: |:-------:|:-------------:|
-| ResNet (v2)  | ReLU before addition  | 8-8-8   | -           | 0.85M   | 93.74%        |
-| ContinuousNet| ReLU before addition  | 8-8-8   | Euler       |         | 92.45%        |
-| ContinuousNet| full pre-activation   | 8-8-8   | Euler       | 0.85M   | 93.08%        |
+| Model        | Activation            |  Depth  | Scheme      | #parms  | Test Accuracy | Time |
+| -------------|:---------------------:|:-------:|:----------: |:-------:|:-------------:|:----:|
+| ResNet (v2)  | ReLU before addition  | 8-8-8   | -           | 0.85M   | 93.74%        |      |
+| ContinuousNet| ReLU before addition  | 8-8-8   | Euler       |         | 92.63%        |85 (m)|
+| ContinuousNet| full pre-activation   | 8-8-8   | Euler       | 0.85M   | 93.08%        |          |
 
 
 
@@ -84,10 +84,10 @@ python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --lr 0.1 -
 
 (todo)
 
-| Model             | Activation            |  Depth  | Scheme      | #parms  | Test Accuracy |
-| ------------------|:---------------------:|:-------:|:----------: |:-------:|:-------------:|
-| Wide-ResNet       | full pre-activation   | 8-8-8   | -           |  13.63M       |         |
-| Wide-ContinuousNet| full pre-activation   | 8-8-8   | Euler       |  13.57M |         |
+| Model             | Activation            |  Depth  | Scheme      | #parms  | Test Accuracy | Time  |
+| ------------------|:---------------------:|:-------:|:----------: |:-------:|:-------------:|:-----:|
+| Wide-ResNet       | full pre-activation   | 8-8-8   | -           |  13.63M |   78.87%      |193 (m)|
+| Wide-ContinuousNet| full pre-activation   | 8-8-8   | Euler       |  13.57M |   77.14%      |141 (m)|
 
 
 
