@@ -71,9 +71,9 @@ python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --lr 0.1 -
 
 | Model        | Activation            |  Units  | Scheme      | #parms  | Test Accuracy | Time |
 | -------------|:---------------------:|:-------:|:----------: |:-------:|:-------------:|:----:|
-| ResNet (v2)  | ReLU before addition  | 8-8-8   | -           | 0.85M   | 93.11%        |105(m)|
-| ContinuousNet| ReLU before addition  | 8-8-8   | Euler       | 0.85M   | 92.63%        |85 (m)|
-| ContinuousNet| full pre-activation   | 8-8-8   | Euler       | 0.85M   | 93.08%        |      |
+| ResNet (v2)  | ReLU before addition  | 8-8-8   | -           | 0.85M   | 93.11%        |105 (m)|
+| ContinuousNet| ReLU before addition  | 8-8-8   | Euler       | 0.85M   | 93.11%        |85 (m)|
+| ContinuousNet| full pre-activation   | 8-8-8   | Euler       | 0.85M   | 93.21%        |83 (m) |
 
 
 
@@ -87,7 +87,7 @@ python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --lr 0.1 -
 | Model             | Activation            |  Units  | Scheme      | #parms  | Test Accuracy | Time  |
 | ------------------|:---------------------:|:-------:|:----------: |:-------:|:-------------:|:-----:|
 | Wide-ResNet       | full pre-activation   | 8-8-8   | -           |  13.63M |   78.87%      |193 (m)|
-| Wide-ContinuousNet| full pre-activation   | 8-8-8   | Euler       |  13.57M |   77.14%      |141 (m)|
+| Wide-ContinuousNet| full pre-activation   | 8-8-8   | Euler       |  13.57M |   77.82%      |141 (m)|
 
 
 
