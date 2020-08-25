@@ -64,7 +64,7 @@ class ContinuousNet(nn.Module):
         # The full network, with three OdeBlocks (_macro)
         self.net = NoSequential(
             nn.Conv2d(
-                in_channels, ALPHA, kernel_size=7, padding=1,bias=False),
+                in_channels, ALPHA, kernel_size=3, padding=1,bias=False),
             nn.BatchNorm2d(ALPHA) if use_batch_norms else None,
             nn.ReLU(),
 
@@ -75,8 +75,8 @@ class ContinuousNet(nn.Module):
             _macro(2*ALPHA*widen_factor),
             _stitch_macro(2*ALPHA*widen_factor, 4*ALPHA*widen_factor),
             _macro(4*ALPHA*widen_factor),
-            nn.BatchNorm2d(4*ALPHA*widen_factor) if activation_before_conv else None,
-            nn.ReLU() if activation_before_conv else None,
+            nn.BatchNorm2d(4*ALPHA*widen_factor, momentum=0.9) if activation_before_conv else None,
+            #nn.ReLU() if activation_before_conv else None,
             nn.AdaptiveAvgPool2d(1),
             nn.Flatten(),
             nn.Linear(4*ALPHA*widen_factor,out_classes),
