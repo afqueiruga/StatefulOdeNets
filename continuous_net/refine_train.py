@@ -152,7 +152,7 @@ def train_adapt(model,
         # Evaluate training and testing accuracy
         n_print = 5
         if e == 0 or (e+1) % n_print == 0:
-            print('After Epoch: ', e)
+            print('After Epoch: ', e+1)
             model.eval()
             if want_train_acc:
                 tr_acc = calculate_accuracy(model, loader)

@@ -64,9 +64,10 @@ class ContinuousNet(nn.Module):
         # The full network, with three OdeBlocks (_macro)
         self.net = NoSequential(
             nn.Conv2d(
-                in_channels, ALPHA, kernel_size=3, padding=1,bias=False),
+                in_channels, ALPHA, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(ALPHA) if use_batch_norms else None,
             nn.ReLU(),
+            _stitch_macro(ALPHA, ALPHA, stride=1),
             _macro(ALPHA),
             _stitch_macro(ALPHA, 2*ALPHA),
             _macro(2*ALPHA),
