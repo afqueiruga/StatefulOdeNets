@@ -12,7 +12,7 @@ def NoSequential(*args):
 class ContinuousNet(nn.Module):
     """Uses one OdeBlock per segment."""
     def __init__(self,
-                 ALPHA=16, widen_factor=1,
+                 ALPHA=16,
                  scheme='euler',
                  time_d=1,
                  in_channels=3,
@@ -23,7 +23,7 @@ class ContinuousNet(nn.Module):
                  use_skip_init=False,
                  use_stitch=True,
                  use_adjoint=False,
-                 activation_before_conv=True):
+                 activation_before_conv=False):
         super().__init__()
         self.scheme = scheme
         self.time_d = time_d
@@ -67,19 +67,15 @@ class ContinuousNet(nn.Module):
                 in_channels, ALPHA, kernel_size=3, padding=1,bias=False),
             nn.BatchNorm2d(ALPHA) if use_batch_norms else None,
             nn.ReLU(),
-
-            _stitch_macro(ALPHA, ALPHA*widen_factor, stride=1) if widen_factor > 1 else None,
-
-            _macro(ALPHA*widen_factor),
-            _stitch_macro(ALPHA*widen_factor, 2*ALPHA*widen_factor),
-            _macro(2*ALPHA*widen_factor),
-            _stitch_macro(2*ALPHA*widen_factor, 4*ALPHA*widen_factor),
-            _macro(4*ALPHA*widen_factor),
-            nn.BatchNorm2d(4*ALPHA*widen_factor, momentum=0.9) if activation_before_conv else None,
-            #nn.ReLU() if activation_before_conv else None,
+            _macro(ALPHA),
+            _stitch_macro(ALPHA, 2*ALPHA),
+            _macro(2*ALPHA),
+            _stitch_macro(2*ALPHA, 4*ALPHA),
+            _macro(4*ALPHA),
+            nn.BatchNorm2d(4*ALPHA, momentum=0.9) if activation_before_conv else None,
             nn.AdaptiveAvgPool2d(1),
             nn.Flatten(),
-            nn.Linear(4*ALPHA*widen_factor,out_classes),
+            nn.Linear(4*ALPHA,out_classes),
         )
 
         for m in self.modules():
@@ -91,11 +87,6 @@ class ContinuousNet(nn.Module):
                 n = m.width * m.width * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
                 print('Init Conv2DODE')
-#            elif isinstance(m, nn.Linear):
-#                nn.init.xavier_normal_(m.weight)
-#                if m.bias is not None:
-#                    nn.init.constant_(m.bias, 0.0)
-#                print('Init Linear')
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()

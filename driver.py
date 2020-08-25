@@ -10,7 +10,7 @@ import torch.nn.init as init
 from continuous_net import datasets
 from continuous_net.helper import set_seed, get_device, which_device
 from continuous_net import refine_train
-from continuous_net import continuous_net
+from continuous_net import continuous_net, wide_continuous_net
 
 SAVE_DIR = 'results'
 #******************************************************************************
@@ -70,7 +70,7 @@ def do_a_train_set(
 
     if which_model == "ContinuousNet":
         model = continuous_net.ContinuousNet(
-            ALPHA=ALPHA, widen_factor=widen_factor,
+            ALPHA=ALPHA,
             scheme=scheme,
             time_d=initial_time_d,
             in_channels=in_channels,
@@ -84,6 +84,20 @@ def do_a_train_set(
         ).to(device)
     elif which_model == "ContinuousNetActFirst":
         model = continuous_net.ContinuousNet(
+            ALPHA=ALPHA,
+            scheme=scheme,
+            time_d=initial_time_d,
+            in_channels=in_channels,
+            out_classes=out_classes,
+            use_batch_norms=use_batch_norms,
+            time_epsilon=time_epsilon,
+            n_time_steps_per=n_time_steps_per,
+            use_skip_init=use_skip_init,
+            use_adjoint=use_adjoint,
+            activation_before_conv=True,
+        ).to(device)
+    elif which_model == "WideContinuousNet":
+        model = wide_continuous_net.WideContinuousNet(
             ALPHA=ALPHA, widen_factor=widen_factor,
             scheme=scheme,
             time_d=initial_time_d,
@@ -96,6 +110,7 @@ def do_a_train_set(
             use_adjoint=use_adjoint,
             activation_before_conv=True,
         ).to(device)
+
     else:
         raise RuntimeError("Unknown model name specified")
     if use_kaiming:
