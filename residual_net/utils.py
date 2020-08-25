@@ -16,59 +16,6 @@ device = get_device()
 def getData(name='cifar10', batch_size=128, test_batch_size=512):
 
 
-    if name == 'svhn':
-        train_loader = torch.utils.data.DataLoader(
-    datasets.SVHN('./data', split='extra', download=True,
-                   transform=transforms.Compose([
-                       transforms.ToTensor()
-                   ])),
-    batch_size=train_bs, shuffle=True)
-        test_loader = torch.utils.data.DataLoader(
-    datasets.SVHN('./data', split='test', download=True,transform=transforms.Compose([
-                       transforms.ToTensor()
-                   ])),
-    batch_size=test_bs, shuffle=False)
-
-
-
-
-    if name == 'mnist':
-
-        train_loader = torch.utils.data.DataLoader(
-            datasets.MNIST('./data', train=True, download=True,
-                           transform=transforms.Compose([
-                               transforms.ToTensor(),
-                               transforms.Normalize((0.1307,), (0.3081,))
-                           ])),
-            batch_size=train_bs, shuffle=True)
-        test_loader = torch.utils.data.DataLoader(
-            datasets.MNIST('./data', train=False, transform=transforms.Compose([
-                               transforms.ToTensor(),
-                               transforms.Normalize((0.1307,), (0.3081,))
-                           ])),
-            batch_size=test_bs, shuffle=False)
-
-
-    if name == 'emnist':
-
-        train_loader = torch.utils.data.DataLoader(
-            datasets.EMNIST('./data', train=True, download=True, split='balanced',
-                           transform=transforms.Compose([
-                               transforms.ToTensor(),
-                               transforms.Normalize((0.1751,), (0.3267,))
-                           ])),
-            batch_size=train_bs, shuffle=True)
-
-        test_loader = torch.utils.data.DataLoader(
-            datasets.EMNIST('./data', train=False, split='balanced', transform=transforms.Compose([
-                               transforms.ToTensor(),
-                               transforms.Normalize((0.1751,), (0.3267,))
-                           ])),
-            batch_size=test_bs, shuffle=False)
-
-
-
-
     if name == 'cifar10':
         transform_train = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
@@ -83,10 +30,10 @@ def getData(name='cifar10', batch_size=128, test_batch_size=512):
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),])
 
         trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
-        train_loader = torch.utils.data.DataLoader(trainset, batch_size=train_bs, shuffle=True)
+        train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True)
 
         testset = datasets.CIFAR10(root='./data', train=False, download=False, transform=transform_test)
-        test_loader = torch.utils.data.DataLoader(testset, batch_size=test_bs, shuffle=False)
+        test_loader = torch.utils.data.DataLoader(testset, batch_size=test_batch_size, shuffle=False)
 
 
 
@@ -105,10 +52,10 @@ def getData(name='cifar10', batch_size=128, test_batch_size=512):
     ])
 
         trainset = datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
-        train_loader = torch.utils.data.DataLoader(trainset, batch_size=train_bs, shuffle=True)
+        train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True)
 
         testset = datasets.CIFAR100(root='./data', train=False, download=False, transform=transform_test)
-        test_loader = torch.utils.data.DataLoader(testset, batch_size=test_bs, shuffle=False)
+        test_loader = torch.utils.data.DataLoader(testset, batch_size=test_batch_size, shuffle=False)
 
 
 
@@ -124,7 +71,7 @@ def getData(name='cifar10', batch_size=128, test_batch_size=512):
             normalize,
         ]))
 
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=train_bs, shuffle=True, num_workers=4, pin_memory=False)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=False)
 
         test_dataset = datasets.ImageFolder(
         './data/tiny-imagenet-200/val',
@@ -133,7 +80,7 @@ def getData(name='cifar10', batch_size=128, test_batch_size=512):
             normalize,
         ]))
 
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=test_bs, shuffle=False)
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=test_batch_size, shuffle=False)
 
     return train_loader, test_loader
 
@@ -143,7 +90,6 @@ def getData(name='cifar10', batch_size=128, test_batch_size=512):
 
 def exp_lr_scheduler(epoch, optimizer, strategy=True, decay_eff=0.1, decayEpoch=[]):
     """Decay learning rate by a factor of lr_decay every lr_decay_epoch epochs"""
-    print(strategy)
 
     if strategy=='normal':
         if epoch in decayEpoch:
