@@ -21,15 +21,28 @@ if not os.path.isdir(SAVE_DIR):
 
 
 def do_a_train_set(
-    dataset, which_model, ALPHA, widen_factor, scheme, use_batch_norms,
-    initial_time_d, time_epsilon, n_time_steps_per,
-    N_epochs, N_adapt, lr,
-    lr_decay=0.1, epoch_update=None, weight_decay=1e-5,
+    dataset,
+    which_model,
+    ALPHA,
+    widen_factor,
+    scheme,
+    use_batch_norms,
+    initial_time_d,
+    time_epsilon,
+    n_time_steps_per,
+    N_epochs,
+    N_adapt,
+    lr,
+    lr_decay=0.1,
+    epoch_update=None,
+    weight_decay=5e-4,
+    batch_size = 128,
+    test_batch_size = 512,
     use_adjoint=False,
-    use_kaiming=False,
     use_skip_init=False,
     refine_variance=0.0,
-    seed=1, device=None):
+    seed=1,
+    device=None):
     """Set up and train one model, and save it.
 
     Args:
@@ -47,13 +60,14 @@ def do_a_train_set(
         device: which device to use
     """
 
-    fname = SAVE_DIR+f'/continuousnet-{dataset}-{which_model}-ARCH-{ALPHA}-widen_factor{widen_factor}-{use_batch_norms}-{"SkipInit" if use_skip_init else "NoSkip"}-{scheme}-{initial_time_d}-{time_epsilon}-{n_time_steps_per}-LEARN-{lr}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-{"KaimingInit" if use_kaiming else "NormalInit"}-SEED-{seed}.pkl'
+    fname = SAVE_DIR+f'/continuousnet-{dataset}-{which_model}-{scheme}-{initial_time_d}-{n_time_steps_per}-{N_epochs}-{N_adapt}-{refine_variance}-{"Adjoint" if use_adjoint else "Backprop"}-SEED-{seed}.pkl'
+
     print("Working on ", fname)
     set_seed(seed)
     device = get_device(device)
 
     refset,trainset,trainloader,testset,testloader = \
-        datasets.get_dataset(dataset,root='../data/')
+        datasets.get_dataset(dataset,root='../data/', batch_size=batch_size, test_batch_size=test_batch_size)
 
     if dataset=="CIFAR10":
         out_classes = 10
@@ -98,7 +112,8 @@ def do_a_train_set(
         ).to(device)
     elif which_model == "WideContinuousNet":
         model = wide_continuous_net.WideContinuousNet(
-            ALPHA=ALPHA, widen_factor=widen_factor,
+            ALPHA=ALPHA,
+            widen_factor=widen_factor,
             scheme=scheme,
             time_d=initial_time_d,
             in_channels=in_channels,
@@ -113,8 +128,7 @@ def do_a_train_set(
 
     else:
         raise RuntimeError("Unknown model name specified")
-    if use_kaiming:
-        model.apply(init_params)
+
 
     print(model)
     print('**** Setup ****')

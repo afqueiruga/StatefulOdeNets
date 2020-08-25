@@ -13,36 +13,36 @@ from continuous_net.helper import set_seed, get_device, which_device
 device = get_device()
 
 
-def getData(name='cifar10', train_bs=128, test_bs=512):
+def getData(name='cifar10', batch_size=128, test_batch_size=512):
 
 
     if name == 'svhn':
         train_loader = torch.utils.data.DataLoader(
-    datasets.SVHN('../data', split='extra', download=True,
+    datasets.SVHN('./data', split='extra', download=True,
                    transform=transforms.Compose([
                        transforms.ToTensor()
                    ])),
     batch_size=train_bs, shuffle=True)
         test_loader = torch.utils.data.DataLoader(
-    datasets.SVHN('../data', split='test', download=True,transform=transforms.Compose([
+    datasets.SVHN('./data', split='test', download=True,transform=transforms.Compose([
                        transforms.ToTensor()
                    ])),
     batch_size=test_bs, shuffle=False)
 
 
-    
+
 
     if name == 'mnist':
 
         train_loader = torch.utils.data.DataLoader(
-            datasets.MNIST('../data', train=True, download=True,
+            datasets.MNIST('./data', train=True, download=True,
                            transform=transforms.Compose([
                                transforms.ToTensor(),
                                transforms.Normalize((0.1307,), (0.3081,))
                            ])),
             batch_size=train_bs, shuffle=True)
         test_loader = torch.utils.data.DataLoader(
-            datasets.MNIST('../data', train=False, transform=transforms.Compose([
+            datasets.MNIST('./data', train=False, transform=transforms.Compose([
                                transforms.ToTensor(),
                                transforms.Normalize((0.1307,), (0.3081,))
                            ])),
@@ -52,7 +52,7 @@ def getData(name='cifar10', train_bs=128, test_bs=512):
     if name == 'emnist':
 
         train_loader = torch.utils.data.DataLoader(
-            datasets.EMNIST('../data', train=True, download=True, split='balanced',
+            datasets.EMNIST('./data', train=True, download=True, split='balanced',
                            transform=transforms.Compose([
                                transforms.ToTensor(),
                                transforms.Normalize((0.1751,), (0.3267,))
@@ -60,7 +60,7 @@ def getData(name='cifar10', train_bs=128, test_bs=512):
             batch_size=train_bs, shuffle=True)
 
         test_loader = torch.utils.data.DataLoader(
-            datasets.EMNIST('../data', train=False, split='balanced', transform=transforms.Compose([
+            datasets.EMNIST('./data', train=False, split='balanced', transform=transforms.Compose([
                                transforms.ToTensor(),
                                transforms.Normalize((0.1751,), (0.3267,))
                            ])),
@@ -82,10 +82,10 @@ def getData(name='cifar10', train_bs=128, test_bs=512):
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),])
 
-        trainset = datasets.CIFAR10(root='../data', train=True, download=True, transform=transform_train)
+        trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
         train_loader = torch.utils.data.DataLoader(trainset, batch_size=train_bs, shuffle=True)
 
-        testset = datasets.CIFAR10(root='../data', train=False, download=False, transform=transform_test)
+        testset = datasets.CIFAR10(root='./data', train=False, download=False, transform=transform_test)
         test_loader = torch.utils.data.DataLoader(testset, batch_size=test_bs, shuffle=False)
 
 
@@ -104,10 +104,10 @@ def getData(name='cifar10', train_bs=128, test_bs=512):
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
 
-        trainset = datasets.CIFAR100(root='../data', train=True, download=True, transform=transform_train)
+        trainset = datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
         train_loader = torch.utils.data.DataLoader(trainset, batch_size=train_bs, shuffle=True)
 
-        testset = datasets.CIFAR100(root='../data', train=False, download=False, transform=transform_test)
+        testset = datasets.CIFAR100(root='./data', train=False, download=False, transform=transform_test)
         test_loader = torch.utils.data.DataLoader(testset, batch_size=test_bs, shuffle=False)
 
 
@@ -116,7 +116,7 @@ def getData(name='cifar10', train_bs=128, test_bs=512):
         normalize = transforms.Normalize(mean=[0.44785526394844055, 0.41693055629730225, 0.36942949891090393],
                                      std=[0.2928885519504547, 0.28230994939804077, 0.2889912724494934])
         train_dataset = datasets.ImageFolder(
-        '../data/tiny-imagenet-200/train',
+        './data/tiny-imagenet-200/train',
         transforms.Compose([
             transforms.RandomCrop(64, padding=4),
             transforms.RandomHorizontalFlip(),
@@ -127,7 +127,7 @@ def getData(name='cifar10', train_bs=128, test_bs=512):
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=train_bs, shuffle=True, num_workers=4, pin_memory=False)
 
         test_dataset = datasets.ImageFolder(
-        '../data/tiny-imagenet-200/val',
+        './data/tiny-imagenet-200/val',
         transforms.Compose([
             transforms.ToTensor(),
             normalize,
