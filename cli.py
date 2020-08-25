@@ -20,7 +20,7 @@ parser.add_argument('--lr_decay', type=float, default='0.1',  help='learning rat
 parser.add_argument('--refine', type=int, nargs='+', default=[], help='refine the network at these epochs')
 parser.add_argument('--initial_time_d', type=int, default=3, help="initial time refinement--ie, number of layers--of each segment")
 parser.add_argument('--n_time_steps_per', type=int, default=1, help="number of time-steps per time_d to take during forward pass")
-parser.add_argument('--time_epsilon', type=float, default=1.0, help="How long is the depth-time")
+parser.add_argument('--time_epsilon', type=float, default=None, help="How long is the depth-time")
 parser.add_argument('--batch_norm', default=True, help='include batch norm layers', action='store_true')
 parser.add_argument('--use_skipinit', default=False, help='use skip init', action='store_true')
 parser.add_argument('--seed', type=int, default='1',  help='Seed value')

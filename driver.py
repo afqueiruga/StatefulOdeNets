@@ -66,6 +66,9 @@ def do_a_train_set(
     set_seed(seed)
     device = get_device(device)
 
+    if time_epsilon is None:
+        time_epsilon = initial_time_d
+
     refset,trainset,trainloader,testset,testloader = \
         datasets.get_dataset(dataset,root='../data/', batch_size=batch_size, test_batch_size=test_batch_size)
 
