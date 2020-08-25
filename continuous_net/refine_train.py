@@ -162,14 +162,14 @@ def train_adapt(model,
             print('Test Accuracy: ', te_acc)
             test_acc.append( (e,te_acc) )
         # Save checkpoint
-        if fname is not None and SAVE_DIR is not None and (e+1)%n_print==0:
-            chckpt = Result(model_list, losses, refine_steps, train_acc, test_acc, epoch_times)
-            try:
-                os.mkdir(SAVE_DIR)
-                print("Making directory ", SAVE_DIR)
-            except:
-                print("Directory ", SAVE_DIR, " already exists.")
-            torch.save(chckpt, fname+f"-CHECKPOINT-{e}.pkl")
+        # if fname is not None and SAVE_DIR is not None and (e+1)%n_print==0:
+        #     chckpt = Result(model_list, losses, refine_steps, train_acc, test_acc, epoch_times)
+        #     try:
+        #         os.mkdir(SAVE_DIR)
+        #         print("Making directory ", SAVE_DIR)
+        #     except:
+        #         print("Directory ", SAVE_DIR, " already exists.")
+        #     torch.save(chckpt, fname+f"-CHECKPOINT-{e}.pkl")
 
         # learnin rate schedule
         if e in epoch_update:
