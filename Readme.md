@@ -79,12 +79,12 @@ python3 cli.py --model ContinuousNet --scheme rk4_classic --dataset CIFAR10 --ep
 
 
 | Model           |  Units           | Refined     | Scheme      | #parms  | Test Accuracy | Time |
-| ----------------|:----------------:|:-----------: |:----------: |:-------:|:-------------:|:----:|
+| ----------------|:----------------:|:----------: |:----------: |:-------:|:-------------:|:----:|
 | ResNet-20 (v2)  | 2-2-2            |  -          | -           | 0.27M   | 91.31%        |48 (m)|
 | ContinuousNet   | 2-2-2            |  -          | Euler       | 0.27M   | 91.41%        |20 (m)|
-| ContinuousNet   | 2-2-2            |  -          |RK4-classic  | 0.27M   | 91.01%        |50 (m)|
-| ContinuousNet   | 1-1-1 -> 2-2-2   | 25          |RK4-classic  | 0.27M   |               | (m)|
-
+| ContinuousNet   | 2-2-2            |  -          | RK4-classic | 0.27M   | 91.01%        |50 (m)|
+| ContinuousNet   | 1-1-1 -> 2-2-2   | 25          | RK4-classic | 0.27M   | 91.09%        |47 (m)|
+| ContinuousNet   | 1-1-1 -> 2-2-2   | 25          | Midpoint    | 0.27M   | 90.67%        |29 (m)|
 
 
 
