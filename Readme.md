@@ -78,23 +78,22 @@ python3 cli.py --model ContinuousNet --scheme rk4_classic --dataset CIFAR10 --ep
 ```
 
 
-| Model           |  Units  | Refined | Scheme      | #parms  | Test Accuracy | Time |
-| ----------------|:-------:|:-------:|:----------: |:-------:|:-------------:|:----:|
-| ResNet-20 (v2)  | 2-2-2   | - |-           | 0.27M   | 91.31%        |48 (m)|
-| ContinuousNet   | 2-2-2   | -|Euler       | 0.27M   | 91.41%        |20 (m)|
-| ContinuousNet   | 1-1-1 -> 8-8-8   | 30, 50, 70|RK4-classic | 0.27M   | 91.01%        |50 (m)|
+| Model           |  Units           | Refined     | Scheme      | #parms  | Test Accuracy | Time |
+| ----------------|:----------------:|:-----------: |:----------: |:-------:|:-------------:|:----:|
+| ResNet-20 (v2)  | 2-2-2            |  -          | -           | 0.27M   | 91.31%        |48 (m)|
+| ContinuousNet   | 2-2-2            |  -          | Euler       | 0.27M   | 91.41%        |20 (m)|
+| ContinuousNet   | 2-2-2            |  -          |RK4-classic  | 0.27M   | 91.01%        |50 (m)|
+| ContinuousNet   | 1-1-1 -> 2-2-2   | 25          |RK4-classic  | 0.27M   |               | (m)|
 
 
 
 
-
-| Model           |  Units  | Scheme      | #parms  | Test Accuracy | Time  |
-| ----------------|:-------:|:----------: |:-------:|:-------------:|:-----:|
-| ResNet-52 (v2)  | 8-8-8   | -           | 0.85M   | 93.11%        |105 (m)|
-| ContinuousNet   | 8-8-8   | Euler       | 0.86M   | 93.11%        | 83 (m)|
-| ContinuousNet   | 8-8-8   | RK4-classic | 0.86M   | 93.29%        |279 (m)|
-| ContinuousNet   | 8-8-8   | RK4-classic | 0.86M   | 93.29%        |199 (m)|
-
+| Model           |  Units          |Refined     | Scheme      | #parms  | Test Accuracy | Time  |
+| ----------------|:---------------:|:----------:|:----------: |:-------:|:-------------:|:-----:|
+| ResNet-52 (v2)  | 8-8-8           | -          | -           | 0.85M   | 93.11%        |105 (m)|
+| ContinuousNet   | 8-8-8           | -          | Euler       | 0.86M   | 93.11%        | 83 (m)|
+| ContinuousNet   | 8-8-8           | -          | RK4-classic | 0.86M   | 93.29%        |279 (m)|
+| ContinuousNet   | 1-1-1 -> 8-8-8  | 30, 50, 70 | RK4-classic | 0.86M   | 93.06%        |199 (m)|
 
 
 
