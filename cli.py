@@ -7,7 +7,7 @@ import driver
 parser = argparse.ArgumentParser(description='PyTorch Example')
 parser.add_argument('--model', type=str, default='ContinuousNet', metavar='N', help='model architecture (default: "ContinuousNet")')
 parser.add_argument('--alpha', type=int, default=16, help="width of the first's segment hidden layer")
-parser.add_argument('--widen_factor', type=int, default=1, metavar='E', help='widen factor (default: 1)')
+parser.add_argument('--widen_factor', type=int, default=4, metavar='E', help='widen factor (default: 1)')
 parser.add_argument('--scheme', type=str, default='euler', metavar='N', help='integrator scheme (default: "euler")' )
 parser.add_argument('--dataset', type=str, default='CIFAR10', metavar='N', help='dataset. Options are "CIFAR10" or "CIFAR100".')
 parser.add_argument('--lr', type=float, default=1e-1, metavar='N', help='learning rate (default: 0.1)')

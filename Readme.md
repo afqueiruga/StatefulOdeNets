@@ -66,16 +66,34 @@ After training the model checkpoint is saved in a folder called results.
 (todo)
 
 ```
-python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --lr 0.1 --weight_decay  5e-4 --epochs 180 --lr_decay 0.1 --lr_decay_epoch 80 120 160  --n_time_steps_per 1 --initial_time_d 8 --time_epsilon 8 --seed 0
+python train_resnet.py --name cifar10 --epochs 120 --arch ResNet --lr_decay_epoch 30 60 90 --depth_res 20
 ```
 
-| Model           | Activation            |  Units  | Scheme      | #parms  | Test Accuracy | Time |
-| ----------------|:---------------------:|:-------:|:----------: |:-------:|:-------------:|:----:|
-| ResNet-52 (v2)  | ReLU before addition  | 8-8-8   | -           | 0.85M   | 93.11%        |105 (m)|
-| ContinuousNet   | ReLU before addition  | 8-8-8   | Euler       | 0.85M   | 93.11%        |85 (m)|
-| ContinuousNet   | full pre-activation   | 8-8-8   | Euler       | 0.85M   | 93.21%        |83 (m) |
-| ContinuousNet   | ReLU before addition  | 8-8-8   | RK4-classic | 0.85M   | 93.21%        |83 (m) |
+```
+python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --epochs 120  --lr_decay_epoch 30 60 90 --initial_time_d 2
+```
 
+```
+python3 cli.py --model ContinuousNet --scheme rk4_classic --dataset CIFAR10 --epochs 120  --lr_decay_epoch 30 60 90 --initial_time_d 2 --weight_decay 1e-4
+```
+
+
+| Model           |  Units  | Refined | Scheme      | #parms  | Test Accuracy | Time |
+| ----------------|:-------:|:-------:|:----------: |:-------:|:-------------:|:----:|
+| ResNet-20 (v2)  | 2-2-2   | - |-           | 0.27M   | 91.31%        |48 (m)|
+| ContinuousNet   | 2-2-2   | -|Euler       | 0.27M   | 91.41%        |20 (m)|
+| ContinuousNet   | 1-1-1 -> 8-8-8   | 30, 50, 70|RK4-classic | 0.27M   | 91.01%        |50 (m)|
+
+
+
+
+
+| Model           |  Units  | Scheme      | #parms  | Test Accuracy | Time  |
+| ----------------|:-------:|:----------: |:-------:|:-------------:|:-----:|
+| ResNet-52 (v2)  | 8-8-8   | -           | 0.85M   | 93.11%        |105 (m)|
+| ContinuousNet   | 8-8-8   | Euler       | 0.86M   | 93.11%        | 83 (m)|
+| ContinuousNet   | 8-8-8   | RK4-classic | 0.86M   | 93.29%        |279 (m)|
+| ContinuousNet   | 8-8-8   | RK4-classic | 0.86M   | 93.29%        |199 (m)|
 
 
 
@@ -84,10 +102,10 @@ python3 cli.py --model ContinuousNet --scheme euler --dataset CIFAR10 --lr 0.1 -
 
 (todo)
 
-| Model             | Activation            |  Units  | Scheme      | #parms  | Test Accuracy | Time  |
-| ------------------|:---------------------:|:-------:|:----------: |:-------:|:-------------:|:-----:|
-| WideResNet-58     | full pre-activation   | 8-8-8   | -           |  13.63M |   79.16%      |193 (m)|
-| WideContinuousNet | full pre-activation   | 8-8-8   | Euler       |  13.63M |   78.05%      |141 (m)|
+| Model             |  Units  | Scheme      | #parms  | Test Accuracy | Time  |
+| ------------------|:-------:|:----------: |:-------:|:-------------:|:-----:|
+| WideResNet-58     | 8-8-8   | -           |  13.63M |   79.16%      |193 (m)|
+| WideContinuousNet | 8-8-8   | Euler       |  13.63M |   78.45%      |159 (m)|
 
 
 
