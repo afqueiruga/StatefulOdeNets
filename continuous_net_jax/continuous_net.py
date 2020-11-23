@@ -3,8 +3,9 @@ import jax
 import jax.numpy as jnp
 
 import flax
+import flax.linen as nn
 
-from .nonauto_ode_solvers import Euler, RK4, params_of_t_
+from .nonauto_ode_solvers import *
 from .residual_modules import ShallowNet
 
 
@@ -20,85 +21,72 @@ def copy_and_perturb(params, n_basis):
     return [jax.tree_map(lambda x: _map(x, k), params) for k in subkeys]
 
 
-def init_ode_by_shape(prng_key, ode_model, n_basis, shape, *args):
-    """Make multiple coefficients from params using a flax model."""
-    _, params = ode_model.init_by_shape(prng_key, shape, *args)
-    return copy_and_perturb(params, n_basis)
+class ContinuousNet(nn.Module):
+    """A continuously deep network block, aka "OdeBlock".
+
+    It obeys the equation:
+      dh/dt = R(theta(t), h(t))
+    where
+      theta(t) = sum phi^a(t) theta^a for a=(0, n_basis)
+    With scheme=Euler and basis=piecewise_constant, this network degenerates
+    into a residual network.
+
+    Attributes:
+      R_module: the module to use as the rate equation.
+      ode_dim: how many dimensions is the hidden continua.
+      hidden_dim: how many dimensions inside of R_module.
+      n_step: how many time steps.
+      basis: what basis function is theta?
+      n_basis: how many basis function nodes are initialized?
+    """
+    R: nn.Module
+    n_step: int
+    basis: BasisFunction = piecewise_constant
+    n_basis: int = None  # Only needed by init
+
+    def make_param_nodes(self, key, x):
+        p = self.R.init(key, x)
+        return copy_and_perturb(p, self.n_basis)
+
+    @nn.compact
+    def __call__(self, x):
+        ode_params = self.param('ode_params', self.make_param_nodes, x)
+        params_of_t = params_of_t_(ode_params, piecewise_constant)
+        #r_of_theta = lambda t_, x_: self.R(params_of_t(t_), x_)
+        return OdeIntegrateFast(params_of_t, x, self.R.apply)
 
 
-class OdeBlock(flax.nn.Module):
+class ContinuousClassifier(nn.Module):
+    """A basic fully-connected continuously deep classifier.
 
-    @classmethod
-    def init_by_shape(cls,
-                      _rng,
-                      input_specs,
-                      R,
-                      n_basis,
-                      *args,
-                      name=None,
-                      **kwargs):
-        R.init_by_shape(_rng,
-                        input_specs=input_specs,
-                        *args,
-                        name=name,
-                        **kwargs)
-        return {f'ode': copy_and_perturb(params, n_basis)}
+    It obeys the equation:
+      h(0)  = W x
+      dh/dt = R(theta(t), h(t))
+      y = sigma(D h(1))
 
-    def apply(x, R, basis_set, n_step, scheme, *args, **kwargs):
-        params_of_t = params_of_t_(self.params['ode'], basis_set)
-        f = jax.partial(R.call, *args, **kwargs)
-        dt = 1.0 / n_step
-        for t in onp.linspace(0, 1, n_step):
-            h = scheme(params_of_t, h, t, f, dt)
-        return h
+    Attributes:
+      R_module: the module to use as the rate equation.
+      ode_dim: how many dimensions is the hidden continua.
+      hidden_dim: how many dimensions inside of R_module.
+      n_step: how many time steps.
+      basis: what basis function is theta?
+      n_basis: how many basis function nodes are initialized?
+    """
+    R_module: nn.Module = ShallowNet
+    ode_dim: int = 3
+    hidden_dim: int = 1
+    n_step: int = 10
+    basis: BasisFunction = piecewise_constant
+    n_basis: int = None  # Only needed by init
 
+    # def setup(self):
+    #     self.R = self.R_module(hidden_dim=self.hidden_dim,
+    #                            output_dim=self.ode_dim)
 
-def SimpleContinuousNet(params,
-                        x,
-                        ode_dim,
-                        h_dim,
-                        out_dim,
-                        n_step=10,
-                        scheme=Euler):
-    """Toy version of a continuous net.
-
-    This function is agnostic to the number of basis functions: it is 
-    discovered by n_basis = len(params['ode])."""
-    # First, linear transform up to the ode dimenions,
-    h = flax.nn.Dense.call(params['front'], x, features=ode_dim, bias=False)
-    # Create the two functions:
-    params_of_t = params_of_t_(params['ode'])  # theta(t)
-    f = jax.partial(ShallowNet.call, h_dim=h_dim,
-                    out_dim=ode_dim)  # f(theta, x)
-    # Now loop over depth-time. This happens **statically**
-    dt = 1.0 / n_step
-    for t in onp.linspace(0, 1, n_step):
-        # A 'ResNet' is just this...
-        # h = h + dt*ShallowNet.call(params_of_t(t), h, h_dim, h_dim)
-        # But the general famility is this: (note how params_of_t is a function)
-        h = scheme(params_of_t, h, t, f, dt)
-    # Now do a linear classifier on the features of h(t=1)
-    y = flax.nn.Dense.call(params['back'], h, features=out_dim, bias=False)
-    return jax.nn.sigmoid(y)
-
-
-def init_SimpleContinuousNet(ode_dim=3,
-                             h_dim=1,
-                             n_step=9,
-                             n_basis=3,
-                             scheme=RK4):
-    prng_key = jax.random.PRNGKey(0)
-    key, *subkeys = jax.random.split(prng_key, 3)
-    params = {
-        'front':
-            flax.nn.Dense.init_by_shape(prng_key, [(2,)],
-                                        features=ode_dim,
-                                        bias=False)[1],
-        'ode':
-            init_ode_by_shape(prng_key, ShallowNet, n_basis, [(ode_dim,)],
-                              h_dim, ode_dim),
-        'back':
-            flax.nn.Dense.init_by_shape(prng_key, [(ode_dim,)],
-                                        features=1,
-                                        bias=False)[1],
-    }
+    @nn.compact
+    def __call__(self, x):
+        R = self.R_module(hidden_dim=self.hidden_dim,
+                               output_dim=self.ode_dim)
+        h = nn.Dense(self.ode_dim)(x)
+        h = ContinuousNet(R, self.n_step, self.basis, self.n_basis)(h)
+        return nn.sigmoid(nn.Dense(1)(h))

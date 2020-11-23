@@ -1,20 +1,15 @@
 import flax
+import flax.linen as nn
 import jax
 
 
-class ShallowNet(flax.nn.Module):
+class ShallowNet(nn.Module):
+    hidden_dim: int
+    output_dim: int
+    use_bias: bool = True
 
-    def apply(self, x, h_dim=5, out_dim=1):
-        """A shallow fully connected tanh network.
-
-        Args:
-            x: input signal.
-            h_dim: the number of hidden dimensions.
-            out_dim: the output dimension.
-
-        Returns:
-            The network output.
-        """
-        h = flax.nn.tanh(flax.nn.Dense(x, features=h_dim, bias=True))
-        y = flax.nn.tanh(flax.nn.Dense(h, features=out_dim, bias=True))
-        return y
+    @nn.compact
+    def __call__(self, x):
+        h = nn.Dense(self.hidden_dim, use_bias=self.use_bias)(x)
+        h = nn.tanh(h)
+        return nn.tanh(nn.Dense(self.output_dim, use_bias=self.use_bias)(h))
