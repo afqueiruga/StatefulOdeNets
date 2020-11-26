@@ -30,7 +30,7 @@ def piecewise_constant(param_nodes: Iterable[JaxTreeType], t: float,
     return param_nodes[idx]
 
 
-def params_of_t_(
+def params_of_t(
         param_nodes: Iterable[JaxTreeType],
         basis: BasisFunction = piecewise_constant) -> ContinuousParameters:
     """Creates a closure on the parameters and bases as function of t."""

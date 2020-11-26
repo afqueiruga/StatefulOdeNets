@@ -32,17 +32,18 @@ class ContinuousNet(nn.Module):
     into a residual network.
 
     Attributes:
-      R_module: the module to use as the rate equation.
-      ode_dim: how many dimensions is the hidden continua.
-      hidden_dim: how many dimensions inside of R_module.
+      R: the module to use as the rate equation.
+      #ode_dim: how many dimensions is the hidden continua.
+      #hidden_dim: how many dimensions inside of R_module.
       n_step: how many time steps.
       basis: what basis function is theta?
       n_basis: how many basis function nodes are initialized?
     """
     R: nn.Module
-    n_step: int
-    basis: BasisFunction = piecewise_constant
+    n_step: int = 1
+    scheme: IntegrationScheme = Euler
     n_basis: int = None  # Only needed by init
+    basis: BasisFunction = piecewise_constant
 
     def make_param_nodes(self, key, x):
         p = self.R.init(key, x)
@@ -51,9 +52,8 @@ class ContinuousNet(nn.Module):
     @nn.compact
     def __call__(self, x):
         ode_params = self.param('ode_params', self.make_param_nodes, x)
-        params_of_t = params_of_t_(ode_params, piecewise_constant)
-        #r_of_theta = lambda t_, x_: self.R(params_of_t(t_), x_)
-        return OdeIntegrateFast(params_of_t, x, self.R.apply)
+        params_of_t_ = params_of_t(ode_params, piecewise_constant)
+        return OdeIntegrateFast(params_of_t_, x, self.R.apply)
 
 
 class ContinuousClassifier(nn.Module):
