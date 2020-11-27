@@ -19,7 +19,6 @@ class ShallowNet(nn.Module):
 
 class ResidualUnit(nn.Module):
     hidden_features: int
-    output_features: int
     # norm: nn.Module = nn.BatchNorm
     activation: Callable = nn.relu
 
@@ -27,7 +26,7 @@ class ResidualUnit(nn.Module):
     def __call__(self, x):
         h = nn.Conv(self.hidden_features, (3,3))(x)
         h = self.activation(h)
-        h = nn.Conv(self.output_features, (3,3))(h)
+        h = nn.Conv(h.shape[-1], (3,3))(h)
         h = self.activation(h)
         return h
 
