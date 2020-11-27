@@ -1,9 +1,9 @@
 from typing import Any, Iterable, List, Tuple
 
+from flax.training.common_utils import onehot
 import jax
 import jax.numpy as jnp
 import tqdm
-
 
 Array = Any
 
@@ -15,18 +15,15 @@ class Metrics():
         self.losses = []
 
 
-def onehot(labels, num_classes=10):
-    x = (labels[..., None] == jnp.arange(num_classes)[None])
-    return x.astype(jnp.float32)
-
-
 def cross_entropy_loss(y_label, logp_y_pred):
-    return -jnp.mean(jnp.sum(onehot(y_label) * logp_y_pred, axis=-1))
+    return -jnp.mean(jnp.sum(onehot(y_label, logp_y_pred.shape[-1]) * logp_y_pred, axis=-1))
 
 
 def decojit(*args, **kwargs):
+
     def closedjit(f):
         return jax.jit(f, *args, **kwargs)
+
     return closedjit
 
 
@@ -45,6 +42,7 @@ class Trainer():
         def train_step(optimizer, X, Y):
             """Train for a single step using self.model."""
             print('tracing train_step')
+
             def loss_fn(params):
                 logp_y_pred = self.model.apply({'params': params}, X)
                 loss = cross_entropy_loss(Y, logp_y_pred)
@@ -54,6 +52,7 @@ class Trainer():
             (loss, logits), grad = grad_fn(optimizer.target)
             optimizer = optimizer.apply_gradient(grad)
             return optimizer, loss
+
         self.train_step = train_step
 
         @jax.jit
@@ -62,8 +61,9 @@ class Trainer():
             logp_y_pred = self.model.apply({'params': params}, X)
             # loss = cross_entropy_loss(Y, logp_y_pred)
             return jnp.mean(jnp.argmax(logp_y_pred, -1) == Y)
+
         self.test_metrics = test_metrics
-    
+
     def train_epoch(self, optimizer):
         """Loop over train_data once, applying the optimizer."""
         metrics = Metrics()
@@ -72,7 +72,6 @@ class Trainer():
             metrics.losses.append(loss)
         return optimizer, metrics
 
-    
     def metrics_over_test_set(self, params):
         accuracies = []
         for X, Y in self.test_data:
