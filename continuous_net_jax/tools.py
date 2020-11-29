@@ -1,3 +1,6 @@
+import json
+import os
+
 from flax.linen import Module
 
 
@@ -35,3 +38,16 @@ def module_to_single_line(module: Module):
     name = next(iter(dict_repr.keys()))  # There's only one at the top.
     attrs = ",".join(f"{k}={v}" for k, v in dict_repr[name].items())
     return f"{name}_{attrs}"
+
+
+def parse_model_dict(dict_repr, scope):
+    """Turn a dict into an instantiated model."""
+    assert len(dict_repr) == 1
+    for k, v in dict_repr.items():
+        return eval(k, scope)(**v)  # TODO security
+
+
+def load_model_dict_from_json(fname, scope):
+    with open(fname, 'r') as f:
+        dict_repr = json.loads(f.read())
+    return parse_model_dict(dict_repr, scope)
