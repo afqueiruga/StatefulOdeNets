@@ -86,6 +86,12 @@ def RK4(params_of_t: ContinuousParameters,
                      1.0 / 6.0 * k4)
 
 
+SCHEME_TABLE = {
+    'Euler': Euler,
+    'Midpoint': Midpoint,
+    'RK4': RK4,
+}
+
 def OdeIntegrateFast(params_of_t: ContinuousParameters,
                      x: ArrayType,
                      f: RateEquation,
