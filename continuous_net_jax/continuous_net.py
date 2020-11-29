@@ -6,7 +6,7 @@ import flax
 import flax.linen as nn
 
 from .nonauto_ode_solvers import *
-from .residual_modules import ShallowNet
+from .residual_modules import ShallowNet, ResidualUnit, ResidualStitch
 
 
 # Initialize tools
@@ -85,8 +85,43 @@ class ContinuousClassifier(nn.Module):
 
     @nn.compact
     def __call__(self, x):
-        R = self.R_module(hidden_dim=self.hidden_dim,
-                               output_dim=self.ode_dim)
+        R = self.R_module(hidden_dim=self.hidden_dim, output_dim=self.ode_dim)
         h = nn.Dense(self.ode_dim)(x)
         h = ContinuousNet(R, self.n_step, self.basis, self.n_basis)(h)
         return nn.sigmoid(nn.Dense(1)(h))
+
+
+class ContinuousImageClassifer(nn.Module):
+    """Analogue of the 3-block resnet architecture."""
+    alpha: int = 8
+    n_classes: int = 10
+    n_step: int = 2
+    scheme: str = "Euler"
+    n_basis: int = 2
+
+    @nn.compact
+    def __call__(self, x):
+        alpha = self.alpha
+        h = nn.Conv(features=alpha, kernel_size=(3, 3))(x)
+        h = ContinuousNet(R=ResidualUnit(hidden_features=alpha),
+                          scheme=SCHEME_TABLE[self.scheme],
+                          n_step=self.n_step,
+                          n_basis=self.n_basis)(h)
+        h = ResidualStitch(hidden_features=alpha,
+                           output_features=2 * alpha,
+                           strides=(2, 2))(h)
+        h = ContinuousNet(R=ResidualUnit(hidden_features=2 * alpha),
+                          scheme=SCHEME_TABLE[self.scheme],
+                          n_step=self.n_step,
+                          n_basis=self.n_basis)(h)
+        h = ResidualStitch(hidden_features=2 * alpha,
+                           output_features=4 * alpha,
+                           strides=(2, 2))(h)
+        h = ContinuousNet(R=ResidualUnit(hidden_features=4 * alpha),
+                          scheme=SCHEME_TABLE[self.scheme],
+                          n_step=self.n_step,
+                          n_basis=self.n_basis)(h)
+        h = nn.pooling.avg_pool(h, (h.shape[-3], h.shape[-2]))
+        h = h.reshape(h.shape[0], -1)
+        h = nn.Dense(features=self.n_classes)(h)
+        return nn.log_softmax(h)  # no softmax
