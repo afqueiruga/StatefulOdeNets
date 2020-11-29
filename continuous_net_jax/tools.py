@@ -1,8 +1,8 @@
 from flax.linen import Module
 
 
-def module_to_dict(module: 'Module'):
-    """Returns a pretty printed representation of the module"""
+def module_to_dict(module: Module):
+    """Generate a dict representation of a module's arguments."""
     cls = type(module)
     cls_name = cls.__name__
     description = {}
@@ -26,3 +26,12 @@ def module_to_dict(module: 'Module'):
             child_description = module_dict(child, num_spaces)
             description[name] = child_description
     return {cls_name: description}
+
+
+def module_to_single_line(module: Module):
+    """Make a filename-friendly string of a module."""
+    # TODO support nested modules
+    dict_repr = module_to_dict(module)
+    name = next(iter(dict_repr.keys()))  # There's only one at the top.
+    attrs = ",".join(f"{k}={v}" for k, v in dict_repr[name].items())
+    return f"{name}_{attrs}"
