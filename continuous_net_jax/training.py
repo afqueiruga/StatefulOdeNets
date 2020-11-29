@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List, Tuple
+from typing import Any, Callable, Iterable, List, Tuple
 
 from flax.training.common_utils import onehot
 import jax
@@ -64,13 +64,12 @@ class Trainer():
 
         self.test_metrics = test_metrics
 
-    def train_epoch(self, optimizer):
+    def train_epoch(self, optimizer: Any, loss_saver: Callable[[int, Any], None]):
         """Loop over train_data once, applying the optimizer."""
-        metrics = Metrics()
-        for X, Y in tqdm.tqdm(self.train_data, desc="Epoch"):
+        for i, (X, Y) in tqdm.tqdm(enumerate(self.train_data), desc="Epoch"):
             optimizer, loss = self.train_step(optimizer, X, Y)
-            metrics.losses.append(loss)
-        return optimizer, metrics
+            loss_saver(i, loss)
+        return optimizer
 
     def metrics_over_test_set(self, params):
         accuracies = []

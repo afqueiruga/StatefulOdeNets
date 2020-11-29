@@ -8,6 +8,7 @@ from .tools import module_to_dict
 
 
 class Experiment():
+    """Manages saving and loading checkpoints and descriptions."""
     name: str
     model: nn.Module
 
@@ -21,7 +22,7 @@ class Experiment():
 
     def save_model_description(self):
         try:
-            os.mkdir(self.name)
+            os.makedirs(self.name)
         except FileExistsError:
             print(f"In danger of overwriting {self.name}/")
         with open(f"{self.name}/model_repr.txt", "w") as f:
