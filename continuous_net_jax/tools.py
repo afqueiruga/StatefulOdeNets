@@ -51,3 +51,7 @@ def load_model_dict_from_json(fname, scope):
     with open(fname, 'r') as f:
         dict_repr = json.loads(f.read())
     return parse_model_dict(dict_repr, scope)
+
+
+def full_typename(obj):
+    return f"{type(obj).__module__}.{type(obj).__name__}"

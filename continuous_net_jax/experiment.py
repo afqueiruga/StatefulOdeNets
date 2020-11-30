@@ -8,6 +8,10 @@ from flax.training import checkpoints
 from .tools import module_to_dict, module_to_single_line, load_model_dict_from_json
 
 
+def _full_typename(obj):
+    return f"{type(obj).__module__}.{type(obj).__name__}"
+
+
 class Experiment():
     """Manages saving and loading checkpoints and descriptions."""
     model: nn.Module
@@ -35,12 +39,13 @@ class Experiment():
         with open(os.path.join(self.path, "model.json"), "w") as f:
             f.write(json.dumps(module_to_dict(self.model), indent=4))
 
-    def save_optimizer_hyper_params(self, optimizer, seed):
+    def save_optimizer_hyper_params(self, optimizer_def, seed):
         h_dict = {"seed": seed}
-        h_dict.update(optimizer.hyper_params.__dict__)
+        h_dict[_full_typename(
+            optimizer_def)] = optimizer_def.hyper_params.__dict__
         with open(os.path.join(self.path, "optimizer_hyper_params.txt"),
                   "w") as f:
-            f.write(f"{repr(optimizer.hyper_params)}\nseed = {seed}")
+            f.write(f"{repr(optimizer_def.hyper_params)}\nseed = {seed}")
         with open(os.path.join(self.path, "optimizer_hyper_params.json"),
                   "w") as f:
             f.write(json.dumps(h_dict, indent=4))
