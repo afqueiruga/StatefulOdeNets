@@ -4,6 +4,10 @@ import os
 from flax.linen import Module
 
 
+def full_typename(obj):
+    return f"{type(obj).__module__}.{type(obj).__name__}"
+
+
 def module_to_dict(module: Module):
     """Generate a dict representation of a module's arguments."""
     cls = type(module)
@@ -53,5 +57,13 @@ def load_model_dict_from_json(fname, scope):
     return parse_model_dict(dict_repr, scope)
 
 
-def full_typename(obj):
-    return f"{type(obj).__module__}.{type(obj).__name__}"
+def optimizer_def_to_dict(optimizer_def):
+    return {full_typename(optimizer_def): optimizer_def.hyper_params.__dict__}
+
+
+def parse_optimizer_def_dict(dict_repr, scope):
+    return parse_model_dict(dict_repr, scope)
+
+
+def load_optimizer_def_dict_from_json(fname, scope):
+    return load_model_dict_from_json(fname, scope)

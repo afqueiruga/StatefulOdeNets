@@ -32,19 +32,20 @@ def load_for_test(path):
     # params = flax.core.FrozenDict(dd['target'])
     return exp, params
 
-def perform_convergence_test(exp, params):
+def perform_convergence_test(exp, params, train_data, test_data):
     @SimDataDB2(os.path.join(exp.path, "convergence.sqlite"), "convergence")
     def infer_test_error(scheme: str, n_step: int) -> Tuple[float]:
         model = exp.model.clone(n_step=n_step)
-        trainer = Trainer(model, DataTransform(data_train), DataTransform(data_test))
+        trainer = Trainer(model, train_data, test_data)
         err = trainer.metrics_over_test_set(params)
         return float(err),
     errs = []
-    for n_step in range(10):
+    for n_step in range(1,10):
         err = infer_test_error("Euler", n_step)
         errs.append((n_step, err))
     return errs
 
-def perfom_tests_for_path(path: str):
+def perfom_tests_for_path(path: str, train_data, test_data):
     exp, params = load_for_test(path)
-    return perform_convergence_test(exp, params)
+    errors = perform_convergence_test(exp, params, train_data, test_data)
+    return exp, errors
