@@ -21,6 +21,12 @@ def copy_and_perturb(params, n_basis):
     return [jax.tree_map(lambda x: _map(x, k), params) for k in subkeys]
 
 
+def initialize_multiple_times(prng_key, module, x, n_basis):
+    """Initilize module on x multiple times by splitting prng_key."""
+    key, *subkeys = jax.random.split(prng_key, 1 + n_basis)
+    return [module.init(k, x) for k in subkeys]
+    
+
 class ContinuousNet(nn.Module):
     """A continuously deep network block, aka "OdeBlock".
 
@@ -46,14 +52,16 @@ class ContinuousNet(nn.Module):
     basis: BasisFunction = piecewise_constant
 
     def make_param_nodes(self, key, x):
-        p = self.R.init(key, x)
-        return copy_and_perturb(p, self.n_basis)
+        # p = self.R.init(key, x)
+        # return copy_and_perturb(p, self.n_basis)
+        return initialize_multiple_times(key, self.R, x, self.n_basis)
 
     @nn.compact
     def __call__(self, x):
         ode_params = self.param('ode_params', self.make_param_nodes, x)
         params_of_t_ = params_of_t(ode_params, piecewise_constant)
-        return OdeIntegrateFast(params_of_t_, x, self.R.apply)
+        return OdeIntegrateFast(params_of_t_, x, self.R.apply,
+                                scheme=self.scheme, n_step=self.n_step)
 
 
 class ContinuousClassifier(nn.Module):
