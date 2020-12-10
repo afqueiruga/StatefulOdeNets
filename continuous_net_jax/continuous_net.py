@@ -25,7 +25,7 @@ def initialize_multiple_times(prng_key, module, x, n_basis):
     """Initilize module on x multiple times by splitting prng_key."""
     key, *subkeys = jax.random.split(prng_key, 1 + n_basis)
     return [module.init(k, x) for k in subkeys]
-    
+
 
 class ContinuousNet(nn.Module):
     """A continuously deep network block, aka "OdeBlock".
@@ -102,6 +102,7 @@ class ContinuousClassifier(nn.Module):
 class ContinuousImageClassifer(nn.Module):
     """Analogue of the 3-block resnet architecture."""
     alpha: int = 8
+    hidden: int = 8
     n_classes: int = 10
     n_step: int = 2
     scheme: str = "Euler"
@@ -110,22 +111,23 @@ class ContinuousImageClassifer(nn.Module):
     @nn.compact
     def __call__(self, x):
         alpha = self.alpha
+        hidden = self.hidden
         h = nn.Conv(features=alpha, kernel_size=(3, 3))(x)
-        h = ContinuousNet(R=ResidualUnit(hidden_features=alpha),
+        h = ContinuousNet(R=ResidualUnit(hidden_features=hidden),
                           scheme=SCHEME_TABLE[self.scheme],
                           n_step=self.n_step,
                           n_basis=self.n_basis)(h)
-        h = ResidualStitch(hidden_features=alpha,
+        h = ResidualStitch(hidden_features=hidden,
                            output_features=2 * alpha,
                            strides=(2, 2))(h)
-        h = ContinuousNet(R=ResidualUnit(hidden_features=2 * alpha),
+        h = ContinuousNet(R=ResidualUnit(hidden_features=2 * hidden),
                           scheme=SCHEME_TABLE[self.scheme],
                           n_step=self.n_step,
                           n_basis=self.n_basis)(h)
-        h = ResidualStitch(hidden_features=2 * alpha,
+        h = ResidualStitch(hidden_features=2 * hidden,
                            output_features=4 * alpha,
                            strides=(2, 2))(h)
-        h = ContinuousNet(R=ResidualUnit(hidden_features=4 * alpha),
+        h = ContinuousNet(R=ResidualUnit(hidden_features=4 * hidden),
                           scheme=SCHEME_TABLE[self.scheme],
                           n_step=self.n_step,
                           n_basis=self.n_basis)(h)

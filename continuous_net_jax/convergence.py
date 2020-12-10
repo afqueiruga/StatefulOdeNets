@@ -21,8 +21,7 @@ def load_for_test(path):
     prng_key = jax.random.PRNGKey(0)
     x = jnp.ones((1, 28, 28, 1), jnp.float32)
     ode_params = exp.model.init(prng_key, x)['params']
-    optimizer_def = optim.Adam(learning_rate=0.001)
-    optimizer = optimizer_def.create(ode_params)
+    optimizer = exp.optimizer_def.create(ode_params)
     # Load the final checkpoint, using the dict structure.
     optimizer = exp.load_checkpoint(optimizer)
     params = optimizer.target
@@ -33,7 +32,7 @@ def load_for_test(path):
     return exp, params
 
 def perform_convergence_test(exp, params, train_data, test_data):
-    @SimDataDB2(os.path.join(exp.path, "convergence.sqlite"), "convergence")
+    @SimDataDB2(os.path.join(exp.path, "convergence.sqlite"))
     def infer_test_error(scheme: str, n_step: int) -> Tuple[float]:
         model = exp.model.clone(n_step=n_step)
         trainer = Trainer(model, train_data, test_data)
