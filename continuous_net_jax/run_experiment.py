@@ -10,7 +10,7 @@ from flax import optim
 import flax.training.checkpoints
 from matplotlib import pylab as plt
 import numpy as np
-import tensorflow.summary as tf_summary
+
 import tqdm
 
 jax.config.enable_omnistaging()
@@ -18,34 +18,8 @@ jax.config.enable_omnistaging()
 from continuous_net import datasets
 from continuous_net_jax import *
 from continuous_net_jax.baselines import ResNet
-
-
-def make_optimizer(optimizer: str, learning_rate: float = 0.001):
-    if optimizer == 'SGD':
-        return optim.Optimizer(lerning_rate=learning_rate)
-    elif optimizer == 'Momentum':
-        return optim.Momentum(learning_rate=learning_rate)
-    elif optimizer == 'Adam':
-        return optim.Adam(learning_rate=learning_rate)
-    else:
-        raise ValueError('Unknown optimizer spec.')
-
-
-class TbWriter:
-
-    def __init__(self, path: str):
-        self.summary_writer = tf_summary.create_file_writer(path)
-
-    def Writer(self, name: str):
-        step_counter = 0
-
-        def saver(val):
-            nonlocal step_counter
-            with self.summary_writer.as_default():
-                tf_summary.scalar('loss', val, step=step_counter)
-            step_counter += 1
-
-        return saver
+from .tensorboard_writer import *
+from .optimizer_factory import *
 
 
 def run_an_experiment(train_data,
@@ -69,7 +43,7 @@ def run_an_experiment(train_data,
     exp = Experiment(model, path=save_dir)
     optimizer_def = optim.Adam(learning_rate=learning_rate)
     exp.save_optimizer_hyper_params(optimizer_def, seed)
-    tb_writer = TbWriter(exp.path)
+    tb_writer = TensorboardWriter(exp.path)
     loss_saver = tb_writer.Writer('loss')
     accuracy_writer = tb_writer.Writer('accuracy')
 
