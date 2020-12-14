@@ -68,7 +68,7 @@ class Trainer():
         """Loop over train_data once, applying the optimizer."""
         for i, (X, Y) in tqdm.tqdm(enumerate(self.train_data), desc="Epoch"):
             optimizer, loss = self.train_step(optimizer, X, Y)
-            loss_saver(i, loss)
+            loss_saver(loss)
         return optimizer
 
     def metrics_over_test_set(self, params):

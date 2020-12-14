@@ -20,16 +20,46 @@ from continuous_net_jax import *
 from continuous_net_jax.baselines import ResNet
 
 
+def make_optimizer(optimizer: str, learning_rate: float = 0.001):
+    if optimizer == 'SGD':
+        return optim.Optimizer(lerning_rate=learning_rate)
+    elif optimizer == 'Momentum':
+        return optim.Momentum(learning_rate=learning_rate)
+    elif optimizer == 'Adam':
+        return optim.Adam(learning_rate=learning_rate)
+    else:
+        raise ValueError('Unknown optimizer spec.')
+
+
+class TbWriter:
+
+    def __init__(self, path: str):
+        self.summary_writer = tf_summary.create_file_writer(path)
+
+    def Writer(self, name: str):
+        step_counter = 0
+
+        def saver(val):
+            nonlocal step_counter
+            with self.summary_writer.as_default():
+                tf_summary.scalar('loss', val, step=step_counter)
+            step_counter += 1
+
+        return saver
+
+
 def run_an_experiment(train_data,
-                        test_data,
-                        save_dir: str = './runs',
-                        seed: int = 0,
-                        alpha: int = 8,
-                        hidden: int = 8,
-                        n_step: int = 3,
-                        n_basis: int = 3,
-                        scheme: str = 'Euler',
-                        learning_rate: float = 0.001):
+                      test_data,
+                      save_dir: str = './runs',
+                      seed: int = 0,
+                      alpha: int = 8,
+                      hidden: int = 8,
+                      n_step: int = 3,
+                      n_basis: int = 3,
+                      scheme: str = 'Euler',
+                      optimizer: str = 'SGD',
+                      learning_rate: float = 0.001,
+                      n_epoch: int = 15):
     model = ContinuousImageClassifer(alpha=alpha,
                                      hidden=hidden,
                                      n_step=n_step,
@@ -39,32 +69,25 @@ def run_an_experiment(train_data,
     exp = Experiment(model, path=save_dir)
     optimizer_def = optim.Adam(learning_rate=learning_rate)
     exp.save_optimizer_hyper_params(optimizer_def, seed)
-    summary_writer = tf_summary.create_file_writer(exp.path)
+    tb_writer = TbWriter(exp.path)
+    loss_saver = tb_writer.Writer('loss')
+    accuracy_writer = tb_writer.Writer('accuracy')
 
     prng_key = jax.random.PRNGKey(seed)
-    x = jnp.ones((1, 28, 28, 1), jnp.float32)
+    x, _ = next(iter(train_data))
     ode_params = exp.model.init(prng_key, x)['params']
     optimizer = optimizer_def.create(ode_params)
     trainer = Trainer(exp.model, train_data, test_data)
 
-    loss_int = 0
-
-    def loss_saver(step, val):
-        nonlocal loss_int
-        with summary_writer.as_default():
-            tf_summary.scalar('loss', val, step=loss_int)
-        loss_int += 1
-
     test_accs = [trainer.metrics_over_test_set(optimizer.target)]
-    with summary_writer.as_default():
-        tf_summary.scalar('accuracy', test_accs[-1], step=0)
-    for epoch in range(1, 16):
+    accuracy_writer(test_accs[-1])
+    for epoch in range(1, 1 + n_epoch):
         print("Working on epoch ", epoch)
         optimizer = trainer.train_epoch(optimizer, loss_saver)
         test_accs.append(trainer.metrics_over_test_set(optimizer.target))
-        with summary_writer.as_default():
-            tf_summary.scalar('accuracy', test_accs[-1], step=epoch)
+        accuracy_writer(test_accs[-1])
         exp.save_checkpoint(optimizer, epoch)
+
     tf_summary.flush()
     plt.plot([l for l in test_accs], '-o')
     plt.show()
