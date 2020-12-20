@@ -108,10 +108,10 @@ def StateOdeIntegrateFast(params_of_t: ContinuousParameters,
                           n_step: int = 10) -> ArrayType:
     dt = 1.0 / n_step
     states = []
-    for t in onp.linspace(0, 1, n_step):
-        state, x = scheme(params_of_t, x, t, f, dt)
+    for t in onp.arange(0, 1, dt):
+        x, state = scheme(params_of_t, x, t, f, dt)
         states.extend(state)
-    return states, x
+    return x, states
 
 
 def StateOdeIntegrateWithPoints(params_of_t: ContinuousParameters,
@@ -121,7 +121,7 @@ def StateOdeIntegrateWithPoints(params_of_t: ContinuousParameters,
                                 n_step: int = 10) -> List[ArrayType]:
     dt = 1.0 / n_step
     xs = [onp.array(x)]
-    for t in onp.linspace(0, 1, n_step):
+    for t in onp.arange(0, 1, dt):
         state, x = scheme(params_of_t, x, t, f, dt)
         xs.append(onp.array(x))
     return xs
