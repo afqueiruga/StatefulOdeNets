@@ -7,6 +7,7 @@ from jax.config import config
 config.enable_omnistaging()
 
 from .continuous_net import *
+from .residual_modules import ResidualUnit
 
 
 class MyMod(nn.Module):
@@ -15,7 +16,7 @@ class MyMod(nn.Module):
         return nn.Dense(1)(x)
 
 
-class BasisFunctionTests(unittest.TestCase):
+class InitializeHelperTests(unittest.TestCase):
     def testInitialize(self):
         prng_key = jax.random.PRNGKey(0)
         x = jnp.array([1.0])
@@ -23,6 +24,16 @@ class BasisFunctionTests(unittest.TestCase):
         params = initialize_multiple_times(prng_key, MyMod(), x, n_basis)
         self.assertEqual(len(params), n_basis)
 
+
+class ContinuousNetTests(unittest.TestCase):
+    def testInitNoState(self):
+        pass
+    def testInitState(self):
+        prng_key = jax.random.PRNGKey(0)
+        x = jnp.ones((1,12,12,1))
+        model = ContinuousNet(ResidualUnit(3), n_basis=2)
+        var = model.init(prng_key, x)
+        self.assertTrue(True)
 
 if __name__ == "__main__":
     unittest.main()

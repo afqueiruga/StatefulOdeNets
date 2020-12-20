@@ -1,7 +1,7 @@
 import unittest
 import jax.numpy as jnp
 
-from data_transform import *
+from .data_transform import *
 
 
 class DataTransformTest(unittest.TestCase):
