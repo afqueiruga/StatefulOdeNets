@@ -6,40 +6,7 @@ import numpy as onp
 
 import flax
 
-# JAX doesn't have a good type system yet, so this is for readability.
-ArrayType = Any
-JaxTreeType = Union[ArrayType, Iterable['JaxTreeType'], Dict[Union[str, int],
-                                                             'JaxTreeType']]
-
-# Just the type signature of a normal jax function, or a flax.nn.Module.call.
-RateEquation = Callable[[JaxTreeType, ArrayType], ArrayType]
-# A general depth basis function.
-BasisFunction = Callable[[Iterable[JaxTreeType], float, int], JaxTreeType]
-# An instance of a depth function.
-ContinuousParameters = Callable[[float], JaxTreeType]
-# Integration scheme function.
-IntegrationScheme = Callable[[ContinuousParameters, float, RateEquation, float],
-                             JaxTreeType]
-
-
-# Basis functions
-def piecewise_constant(param_nodes: Iterable[JaxTreeType], t: float,
-                       n_basis: int) -> JaxTreeType:
-    """A piecewise constant basis set."""
-    idx = min(int(n_basis * t), n_basis - 1)
-    return param_nodes[idx]
-
-
-def params_of_t(
-        param_nodes: Iterable[JaxTreeType],
-        basis: BasisFunction = piecewise_constant) -> ContinuousParameters:
-    """Creates a closure on the parameters and bases as function of t."""
-
-    def theta(t):
-        return basis(param_nodes, t, len(param_nodes))
-
-    return theta
-
+from .continuous_types import *
 
 # Integrators
 # Rigorously, one step only evaluates f on the open set [t0, t0+Dt). We substract
