@@ -1,5 +1,3 @@
-from typing import Any, Callable, Dict, List, Iterable, NamedTuple, Tuple, Union
-
 import jax
 import jax.numpy as jnp
 import numpy as onp
@@ -83,7 +81,7 @@ def OdeIntegrateFast(params_of_t: ContinuousParameters,
                      scheme: IntegrationScheme = Euler,
                      n_step: int = 10) -> ArrayType:
     dt = 1.0 / n_step
-    for t in onp.linspace(0, 1, n_step):
+    for t in onp.arange(0, 1, dt):
         x = scheme(params_of_t, x, t, f, dt)
     return x
 
@@ -95,7 +93,7 @@ def OdeIntegrateWithPoints(params_of_t: ContinuousParameters,
                            n_step: int = 10) -> List[ArrayType]:
     dt = 1.0 / n_step
     xs = [onp.array(x)]
-    for t in onp.linspace(0, 1, n_step):
+    for t in onp.arange(0, 1, dt):
         x = scheme(params_of_t, x, t, f, dt)
         xs.append(onp.array(x))
     return xs

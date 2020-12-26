@@ -7,10 +7,10 @@ JaxTreeType = Union[ArrayType, Iterable['JaxTreeType'], Dict[Union[str, int],
 
 # Just the type signature of a normal jax function, or a flax.nn.Module.call.
 RateEquation = Callable[[JaxTreeType, ArrayType], ArrayType]
-# A general depth basis function.
-BasisFunction = Callable[[Iterable[JaxTreeType], float, int], JaxTreeType]
 # An instance of a depth function.
 ContinuousParameters = Callable[[float], JaxTreeType]
+# A general depth basis function, that returns depth functions.
+BasisFunction = Callable[[Iterable[JaxTreeType]], ContinuousParameters]
 # Integration scheme function.
 IntegrationScheme = Callable[[ContinuousParameters, float, RateEquation, float],
                              JaxTreeType]

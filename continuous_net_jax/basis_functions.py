@@ -5,21 +5,16 @@ from .continuous_types import *
 
 
 # Basis functions
-def piecewise_constant(param_nodes: Iterable[JaxTreeType], t: float,
-                       n_basis: int) -> JaxTreeType:
-    """A piecewise constant basis set."""
-    idx = min(int(n_basis * t), n_basis - 1)
-    return param_nodes[idx]
+def piecewise_constant(param_nodes: Iterable[JaxTreeType]) -> ContinuousParameters:
+    """A piecewise constant basis set.
 
-
-def params_of_t(
-        param_nodes: Iterable[JaxTreeType],
-        basis: BasisFunction = piecewise_constant) -> ContinuousParameters:
-    """Creates a closure on the parameters and bases as function of t."""
-
-    def theta(t):
-        return basis(param_nodes, t, len(param_nodes))
-
+    Returns:
+      A closure on the parameters and bases as function of t.
+    """
+    n_basis = len(param_nodes)
+    def theta(t: float) -> JaxTreeType:
+        idx = min(int(n_basis * t), n_basis - 1)
+        return param_nodes[idx]
     return theta
 
 
@@ -30,7 +25,7 @@ def hessian(f):
 def point_loss(params, basis, ts, ys):
     losses = []
     for t_i, y_i in zip(ts, ys):
-        loss = (params_of_t(params, basis=basis)(t_i) - y_i)**2
+        loss = (basis(params)(t_i) - y_i)**2
         losses.append(loss)
     return jnp.sum(jnp.array(losses))
 
