@@ -5,6 +5,12 @@ import flax.linen as nn
 import jax
 
 
+NORMS = {
+    'None': lambda : (lambda x: x),
+    'BatchNorm': nn.BatchNorm
+}
+
+
 class ShallowNet(nn.Module):
     hidden_dim: int
     output_dim: int
@@ -19,14 +25,16 @@ class ShallowNet(nn.Module):
 
 class ResidualUnit(nn.Module):
     hidden_features: int
-    # norm: nn.Module = nn.BatchNorm
+    norm: str = 'BatchNorm'
     activation: Callable = nn.relu
 
     @nn.compact
     def __call__(self, x):
         h = nn.Conv(self.hidden_features, (3,3))(x)
+        h = NORMS[self.norm]()(h)
         h = self.activation(h)
         h = nn.Conv(x.shape[-1], (3,3))(h)
+        h = NORMS[self.norm]()(h)
         h = self.activation(h)
         return h
 
@@ -34,15 +42,17 @@ class ResidualUnit(nn.Module):
 class ResidualStitch(nn.Module):
     hidden_features: int
     output_features: int
-    # norm: nn.Module = nn.BatchNorm
+    norm: str = 'BatchNorm'
     activation: Callable = nn.relu
     strides: Tuple[int] = (2, 2)
 
     @nn.compact
     def __call__(self, x):
         h = nn.Conv(self.hidden_features, (3,3))(x)
+        h = NORMS[self.norm]()(h)
         h = self.activation(h)
         h = nn.Conv(self.output_features, (3,3), strides=self.strides)(h)
+        h = NORMS[self.norm]()(h)
         h = self.activation(h)
         x_down = nn.Conv(self.output_features, (1, 1), strides=self.strides)(x)
         return x_down + h

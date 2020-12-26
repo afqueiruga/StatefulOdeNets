@@ -58,8 +58,6 @@ class ContinuousNetTests(unittest.TestCase):
         var = model.init(prng_key, x)
         state, params = var.pop('params')
         y, out_state = model.apply(var, x, mutable=state.keys())
-        print(y)
-        print(state)
         self.assertEqual(y.shape, x.shape)
         self.assertEqual(state.keys(), out_state.keys())
 

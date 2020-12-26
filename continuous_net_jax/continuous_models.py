@@ -46,28 +46,32 @@ class ContinuousImageClassifier(nn.Module):
     n_step: int = 2
     scheme: str = "Euler"
     n_basis: int = 2
+    norm: str = "BatchNorm"
 
     @nn.compact
     def __call__(self, x):
         alpha = self.alpha
         hidden = self.hidden
+        R_ = lambda hidden_ : ResidualUnit(hidden_features=hidden_, norm=self.norm)
         h = nn.Conv(features=alpha, kernel_size=(3, 3))(x)
-        h = ContinuousNet(R=ResidualUnit(hidden_features=hidden),
-                          scheme=SCHEME_TABLE[self.scheme],
+        h = ContinuousNet(R=R_(hidden),
+                          scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis)(h)
         h = ResidualStitch(hidden_features=hidden,
                            output_features=2 * alpha,
-                           strides=(2, 2))(h)
-        h = ContinuousNet(R=ResidualUnit(hidden_features=2 * hidden),
-                          scheme=SCHEME_TABLE[self.scheme],
+                           strides=(2, 2),
+                           norm=self.norm)(h)
+        h = ContinuousNet(R=R_(2 * hidden),
+                          scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis)(h)
         h = ResidualStitch(hidden_features=2 * hidden,
                            output_features=4 * alpha,
-                           strides=(2, 2))(h)
-        h = ContinuousNet(R=ResidualUnit(hidden_features=4 * hidden),
-                          scheme=SCHEME_TABLE[self.scheme],
+                           strides=(2, 2),
+                           norm=self.norm)(h)
+        h = ContinuousNet(R=R_(4 * hidden),
+                          scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis)(h)
         h = nn.pooling.avg_pool(h, (h.shape[-3], h.shape[-2]))
