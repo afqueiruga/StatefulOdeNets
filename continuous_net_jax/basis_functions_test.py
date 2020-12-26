@@ -44,5 +44,6 @@ class BasisFunctionsTests(unittest.TestCase):
         for val in nodes:
             self.assertEqual(jax.tree_structure(val), jax.tree_structure(points[0]))
 
+
 if __name__ == "__main__":
     unittest.main()

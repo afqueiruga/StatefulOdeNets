@@ -99,8 +99,12 @@ SCHEME_TABLE = {
 
 def StateOdeIntegrateFast(f: RateEquation,
                           x: ArrayType,
-                          scheme: IntegrationScheme = Euler,
+                          scheme: Union[str, IntegrationScheme] = Euler,
                           n_step: int = 10) -> ArrayType:
+    try:
+        scheme = SCHEME_TABLE[scheme]
+    except:
+        pass
     dt = 1.0 / n_step
     all_ts, states = [], []
     for t in onp.arange(0, 1, dt):
@@ -112,8 +116,12 @@ def StateOdeIntegrateFast(f: RateEquation,
 
 def StateOdeIntegrateWithPoints(f: RateEquation,
                                 x: ArrayType,
-                                scheme: IntegrationScheme = Euler,
+                                scheme: Union[str, IntegrationScheme] = Euler,
                                 n_step: int = 10) -> List[ArrayType]:
+    try:
+        scheme = SCHEME_TABLE[scheme]
+    except:
+        pass
     dt = 1.0 / n_step
     xs = [onp.array(x)]
     for t in onp.arange(0, 1, dt):

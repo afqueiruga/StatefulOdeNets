@@ -70,8 +70,12 @@ SCHEME_TABLE = {
 
 def OdeIntegrateFast(f: RateEquation,
                      x: ArrayType,
-                     scheme: IntegrationScheme = Euler,
+                     scheme: Union[str, IntegrationScheme] = Euler,
                      n_step: int = 10) -> ArrayType:
+    try:
+        scheme = SCHEME_TABLE[scheme]
+    except:
+        pass
     dt = 1.0 / n_step
     for t in onp.arange(0, 1, dt):
         x = scheme(f, x, t, dt)
@@ -80,8 +84,12 @@ def OdeIntegrateFast(f: RateEquation,
 
 def OdeIntegrateWithPoints(f: RateEquation,
                            x: ArrayType,
-                           scheme: IntegrationScheme = Euler,
+                           scheme: Union[str, IntegrationScheme] = Euler,
                            n_step: int = 10) -> List[ArrayType]:
+    try:
+        scheme = SCHEME_TABLE[scheme]
+    except:
+        pass
     dt = 1.0 / n_step
     xs = [onp.array(x)]
     for t in onp.arange(0, 1, dt):

@@ -5,7 +5,11 @@ import jax.numpy as jnp
 import flax
 import flax.linen as nn
 
-from .nonauto_ode_solvers import *
+from . import nonauto_ode_solvers, stateful_ode_solvers
+from .nonauto_ode_solvers import OdeIntegrateFast
+from .stateful_ode_solvers import StateOdeIntegrateFast
+
+from .basis_functions import *
 from .residual_modules import ShallowNet, ResidualUnit, ResidualStitch
 
 
@@ -21,10 +25,30 @@ def copy_and_perturb(params, n_basis):
     return [jax.tree_map(lambda x: _map(x, k), params) for k in subkeys]
 
 
+# deprecated
 def initialize_multiple_times(prng_key, module, x, n_basis):
     """Initilize module on x multiple times by splitting prng_key."""
     key, *subkeys = jax.random.split(prng_key, 1 + n_basis)
     return [module.init(k, x) for k in subkeys]
+
+
+def initialize_multiple_times_split_state(prng_key, module, x, n_basis):
+    """Initilize module on x multiple times by splitting prng_key."""
+    key, *subkeys = jax.random.split(prng_key, 1 + n_basis)
+    params = {}
+    states = {}
+    for i, k in enumerate(subkeys):
+        inits = module.init(key, x)
+        states[i], p = inits.pop('params')
+        params[i] = {'params': p}
+    return params, states
+
+
+def zip_time_dicts(params, states):
+    zipped = {}
+    for i in params.keys():
+        zipped[i] = {**params[i], **states[i]}
+    return zipped
 
 
 class ContinuousNet(nn.Module):
@@ -47,19 +71,36 @@ class ContinuousNet(nn.Module):
     """
     R: nn.Module
     n_step: int = 1
-    scheme: IntegrationScheme = Euler
-    n_basis: int = None  # Only needed by init
+    scheme: str = 'Euler'
+    n_basis: int = 1
     basis: BasisFunction = piecewise_constant
 
     def make_param_nodes(self, key, x):
-        # p = self.R.init(key, x)
-        # return copy_and_perturb(p, self.n_basis)
-        return initialize_multiple_times(key, self.R, x, self.n_basis)
+        return initialize_multiple_times_split_state(key, self.R, x,
+                                                     self.n_basis)[0]
+
+    def make_state_nodes(self, x):
+        key = jax.random.PRNGKey(0)
+        return initialize_multiple_times_split_state(key, self.R, x,
+                                                     self.n_basis)[1]
 
     @nn.compact
     def __call__(self, x):
         ode_params = self.param('ode_params', self.make_param_nodes, x)
-        params_of_t_ = params_of_t(ode_params, piecewise_constant)
-        return OdeIntegrateFast(params_of_t_, x, self.R.apply,
-                                scheme=self.scheme, n_step=self.n_step)
-
+        ode_states = self.variable('ode_state', 'state', self.make_state_nodes,
+                                   x)
+        if ode_states.value[0].keys():
+            full_params = zip_time_dicts(ode_params, ode_states.value)
+            params_of_t = piecewise_constant(full_params)
+            r = lambda t, x: self.R.apply(
+                params_of_t(t), x, mutable=ode_states.value[0].keys())
+            y, t_points, state_points = StateOdeIntegrateFast(
+                r, x, scheme=self.scheme, n_step=self.n_step)
+            new_state = point_project_tree(state_points, t_points, self.n_basis,
+                                           self.basis)
+            ode_states.value = new_state
+        else:
+            params_of_t = piecewise_constant(ode_params)
+            r = lambda t, x: self.R.apply(params_of_t(t), x)
+            y = OdeIntegrateFast(r, x, scheme=self.scheme, n_step=self.n_step)
+        return y

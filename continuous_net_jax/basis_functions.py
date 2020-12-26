@@ -9,7 +9,7 @@ def piecewise_constant(param_nodes: Iterable[JaxTreeType]) -> ContinuousParamete
     """A piecewise constant basis set.
 
     Returns:
-      A closure on the parameters and bases as function of t.
+      theta(t) A closure on the parameters and bases as function of t.
     """
     n_basis = len(param_nodes)
     def theta(t: float) -> JaxTreeType:
