@@ -12,6 +12,6 @@ ContinuousParameters = Callable[[float], JaxTreeType]
 # A general depth basis function, that returns depth functions.
 BasisFunction = Callable[[Iterable[JaxTreeType]], ContinuousParameters]
 # Integration scheme function.
-IntegrationScheme = Callable[[ContinuousParameters, float, RateEquation, float],
+IntegrationScheme = Callable[[float, RateEquation, float],
                              JaxTreeType]
 
