@@ -34,7 +34,15 @@ def point_project(ys, ts, n_basis, basis):
     params = jnp.zeros(n_basis)
     vG = jax.grad(point_loss)(params, basis, ts, ys)
     mH = hessian(point_loss)(params, basis, ts, ys)
-    # vG = jnp.stack(G)
-    # mH = jnp.stack([jnp.stack(row) for row in H])
-    d_params = jnp.linalg.solve(mH, vG)
+    d_params = -jnp.linalg.solve(mH, vG)
     return d_params
+
+
+def point_project_tree(tree_point_cloud, ts, n_basis, basis):
+    def point_project_list(*args):
+        return list(point_project(args, ts, n_basis, basis))
+    out = jax.tree_multimap(point_project_list, *tree_point_cloud)
+    original_struct = jax.tree_structure(tree_point_cloud[0])
+    mapped_struct = jax.tree_structure(list(range(n_basis)))
+    return jax.tree_transpose(original_struct, mapped_struct, out)
+
