@@ -52,8 +52,11 @@ class ContinuousImageClassifier(nn.Module):
     def __call__(self, x):
         alpha = self.alpha
         hidden = self.hidden
+        # Helper macro.
         R_ = lambda hidden_ : ResidualUnit(hidden_features=hidden_, norm=self.norm)
+        # First filter to make features.
         h = nn.Conv(features=alpha, kernel_size=(3, 3))(x)
+        # 3 stages of continuous segments:
         h = ContinuousNet(R=R_(hidden),
                           scheme=self.scheme,
                           n_step=self.n_step,
@@ -74,6 +77,7 @@ class ContinuousImageClassifier(nn.Module):
                           scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis)(h)
+        # Pool and linearly classify:
         h = nn.pooling.avg_pool(h, (h.shape[-3], h.shape[-2]))
         h = h.reshape(h.shape[0], -1)
         h = nn.Dense(features=self.n_classes)(h)

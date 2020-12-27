@@ -35,19 +35,21 @@ def initialize_multiple_times(prng_key, module, x, n_basis):
 def initialize_multiple_times_split_state(prng_key, module, x, n_basis):
     """Initilize module on x multiple times by splitting prng_key."""
     key, *subkeys = jax.random.split(prng_key, 1 + n_basis)
-    params = {}
-    states = {}
+    params = []
+    states = []
     for i, k in enumerate(subkeys):
         inits = module.init(key, x)
-        states[i], p = inits.pop('params')
-        params[i] = {'params': p}
+        state_i, p = inits.pop('params')
+        states.append(state_i)
+        param_i = {'params': p}
+        params.append(param_i)
     return params, states
 
 
 def zip_time_dicts(params, states):
-    zipped = {}
-    for i in params.keys():
-        zipped[i] = {**params[i], **states[i]}
+    zipped = []
+    for i in range(len(params)):
+        zipped.append({**params[i], **states[i]})
     return zipped
 
 
@@ -104,3 +106,4 @@ class ContinuousNet(nn.Module):
             r = lambda t, x: self.R.apply(params_of_t(t), x)
             y = OdeIntegrateFast(r, x, scheme=self.scheme, n_step=self.n_step)
         return y
+

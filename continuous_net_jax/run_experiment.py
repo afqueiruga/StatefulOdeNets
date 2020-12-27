@@ -31,14 +31,16 @@ def run_an_experiment(train_data,
                       n_step: int = 3,
                       n_basis: int = 3,
                       scheme: str = 'Euler',
+                      norm: str = 'None',
                       optimizer: str = 'SGD',
                       learning_rate: float = 0.001,
                       n_epoch: int = 15):
-    model = ContinuousImageClassifer(alpha=alpha,
-                                     hidden=hidden,
-                                     n_step=n_step,
-                                     n_basis=n_basis,
-                                     scheme=scheme)
+    model = ContinuousImageClassifier(alpha=alpha,
+                                      hidden=hidden,
+                                      n_step=n_step,
+                                      n_basis=n_basis,
+                                      norm=norm,
+                                      scheme=scheme)
 
     exp = Experiment(model, path=save_dir)
     optimizer_def = optim.Adam(learning_rate=learning_rate)
@@ -49,19 +51,22 @@ def run_an_experiment(train_data,
 
     prng_key = jax.random.PRNGKey(seed)
     x, _ = next(iter(train_data))
-    ode_params = exp.model.init(prng_key, x)['params']
-    optimizer = optimizer_def.create(ode_params)
+    init_vars = exp.model.init(prng_key, x)
+    init_state, init_params = init_vars.pop('params')
+    optimizer = optimizer_def.create(init_params)
+    current_state = init_state
     trainer = Trainer(exp.model, train_data, test_data)
 
-    test_accs = [trainer.metrics_over_test_set(optimizer.target)]
+    test_accs = [trainer.metrics_over_test_set(optimizer.target, current_state)]
     accuracy_writer(test_accs[-1])
     for epoch in range(1, 1 + n_epoch):
         print("Working on epoch ", epoch)
-        optimizer = trainer.train_epoch(optimizer, loss_saver)
-        test_accs.append(trainer.metrics_over_test_set(optimizer.target))
+        optimizer = trainer.train_epoch(optimizer, current_state, loss_saver)
+        test_accs.append(
+            trainer.metrics_over_test_set(optimizer.target, current_state))
         accuracy_writer(test_accs[-1])
         exp.save_checkpoint(optimizer, epoch)
 
     tf_summary.flush()
-    plt.plot([l for l in test_accs], '-o')
-    plt.show()
+    # plt.plot([l for l in test_accs], '-o')
+    # plt.show()
