@@ -50,9 +50,8 @@ class Experiment():
         with open(self._path("optimizer_hyper_params.json"), "w") as f:
             f.write(json.dumps(h_dict, indent=4))
 
-    def save_checkpoint(self, optimizer, step):
-        print(optimizer)
-        checkpoints.save_checkpoint(self.path, optimizer, step=step, keep=3)
+    def save_checkpoint(self, optimizer, state, step):
+        checkpoints.save_checkpoint(self.path, {'optimizer': optimizer, 'state':state}, step=step, keep=3)
 
     def load_checkpoint(self, like=None):
         return checkpoints.restore_checkpoint(self.path, like)

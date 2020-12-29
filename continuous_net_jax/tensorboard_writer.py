@@ -12,7 +12,7 @@ class TensorboardWriter:
         def saver(val):
             nonlocal step_counter
             with self.summary_writer.as_default():
-                tf_summary.scalar('loss', val, step=step_counter)
+                tf_summary.scalar(name, val, step=step_counter)
             step_counter += 1
 
         return saver
