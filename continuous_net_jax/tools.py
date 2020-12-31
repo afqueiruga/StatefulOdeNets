@@ -1,6 +1,7 @@
 import json
 import os
 
+import jax
 from flax.linen import Module
 
 
@@ -67,3 +68,15 @@ def parse_optimizer_def_dict(dict_repr, scope):
 
 def load_optimizer_def_dict_from_json(fname, scope):
     return load_model_dict_from_json(fname, scope)
+
+
+def count_parameters(tree):
+    def size_of(x):
+        try:
+            return x.size
+        except:
+            try:
+                return len(x)
+            except:
+                return 1
+    return jax.tree_util.tree_reduce(lambda x, y : x + size_of(y), tree, initializer=0)
