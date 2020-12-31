@@ -17,3 +17,5 @@ class TensorboardWriter:
 
         return saver
 
+    def flush(self):
+        tf_summary.flush(self.summary_writer)

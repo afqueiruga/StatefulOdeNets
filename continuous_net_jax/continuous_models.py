@@ -1,6 +1,14 @@
 """These are application-complete architectures based on continuousnet."""
 
-from .continuous_net import *
+import flax.linen as nn
+
+from .continuous_types import *
+from .continuous_net import ContinuousNet
+from .residual_modules import NORMS, ResidualUnit, ResidualStitch
+
+from .basis_functions import piecewise_constant
+from .residual_modules import ShallowNet
+
 
 
 class ContinuousClassifier(nn.Module):
@@ -56,6 +64,9 @@ class ContinuousImageClassifier(nn.Module):
         R_ = lambda hidden_ : ResidualUnit(hidden_features=hidden_, norm=self.norm)
         # First filter to make features.
         h = nn.Conv(features=alpha, kernel_size=(3, 3))(x)
+        # TODO batchnorm + relu here
+        h = NORMS[self.norm]()(h)
+        h = nn.relu(h)
         # 3 stages of continuous segments:
         h = ContinuousNet(R=R_(hidden),
                           scheme=self.scheme,
@@ -78,6 +89,7 @@ class ContinuousImageClassifier(nn.Module):
                           n_step=self.n_step,
                           n_basis=self.n_basis)(h)
         # Pool and linearly classify:
+        h = NORMS[self.norm]()(h)
         h = nn.pooling.avg_pool(h, (h.shape[-3], h.shape[-2]))
         h = h.reshape(h.shape[0], -1)
         h = nn.Dense(features=self.n_classes)(h)
