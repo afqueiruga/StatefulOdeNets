@@ -18,10 +18,11 @@ jax.config.enable_omnistaging()
 
 from continuous_net import datasets
 from continuous_net_jax import *
-from continuous_net_jax.baselines import ResNet
+from .baselines import ResNet
 from .learning_rate_schedule import LearningRateSchedule
-from .tensorboard_writer import TensorboardWriter
 from .optimizer_factory import make_optimizer
+from .tensorboard_writer import TensorboardWriter
+from .tools import count_parameters
 
 
 def run_an_experiment(train_data,
@@ -35,28 +36,34 @@ def run_an_experiment(train_data,
                       scheme: str = 'Euler',
                       norm: str = 'None',
                       which_optimizer: str = 'Momentum',
-                      learning_rate: float = 0.001,
-                      learning_rate_decay: float = 0.8,
+                      learning_rate: float = 0.1,
+                      learning_rate_decay: float = 0.1,
                       learning_rate_decay_epochs: Optional[List[int]] = None,
                       weight_decay: float = 5.0e-4,
                       n_epoch: int = 15):
     lr_schedule = LearningRateSchedule(learning_rate, learning_rate_decay,
                                        learning_rate_decay_epochs)
-    optimizer_def = make_optimizer(which_optimizer, learning_rate=learning_rate,
-                                       weight_decay=weight_decay)
+    optimizer_def = make_optimizer(which_optimizer,
+                                   learning_rate=learning_rate,
+                                   weight_decay=weight_decay)
 
-    model = ContinuousImageClassifier(alpha=alpha,
-                                      hidden=hidden,
-                                      n_step=n_step,
-                                      scheme=scheme,
-                                      n_basis=n_basis,
-                                      norm=norm)
+    # model = ContinuousImageClassifier(alpha=alpha,
+    #                                   hidden=hidden,
+    #                                   n_step=n_step,
+    #                                   scheme=scheme,
+    #                                   n_basis=n_basis,
+    #                                   norm=norm)
+    model = ResNet(alpha=alpha,
+                   hidden=hidden,
+                   n_step=n_step,
+                   norm=norm)
 
     exp = Experiment(model, path=save_dir)
     exp.save_optimizer_hyper_params(optimizer_def, seed)
     tb_writer = TensorboardWriter(exp.path)
     loss_writer = tb_writer.Writer('loss')
-    accuracy_writer = tb_writer.Writer('accuracy')
+    test_acc_writer = tb_writer.Writer('test_accuracy')
+    train_acc_writer = tb_writer.Writer('train_accuracy')
 
     prng_key = jax.random.PRNGKey(seed)
     x, _ = next(iter(train_data))
@@ -64,17 +71,27 @@ def run_an_experiment(train_data,
     init_state, init_params = init_vars.pop('params')
     optimizer = optimizer_def.create(init_params)
     current_state = init_state
+    print("Model has ", count_parameters(init_params), " params + ",
+          count_parameters(init_state), " state params (",
+          count_parameters(init_vars), " total).")
     trainer = Trainer(exp.model, train_data, test_data)
 
     test_acc = trainer.metrics_over_test_set(optimizer.target, current_state)
-    accuracy_writer(float(test_acc))
+    test_acc_writer(float(test_acc))
     print("Initial acc ", test_acc)
     for epoch in range(1, 1 + n_epoch):
         optimizer, current_state = trainer.train_epoch(optimizer, current_state,
                                                        lr_schedule(epoch),
-                                                       loss_writer)
-        test_acc = trainer.metrics_over_test_set(optimizer.target, current_state)
-        accuracy_writer(float(test_acc))
-        exp.save_checkpoint(optimizer, current_state, epoch)
+                                                       loss_writer,
+                                                       train_acc_writer)
+        test_acc = trainer.metrics_over_test_set(optimizer.target,
+                                                 current_state)
+        test_acc_writer(float(test_acc))
         print("After epoch ", epoch, " acc: ", test_acc)
+        if epoch % 20 == 0:
+            exp.save_checkpoint(optimizer, current_state, epoch)
         tb_writer.flush()
+    try:
+        exp.save_checkpoint(optimizer, current_state, epoch)
+    except:
+        pass

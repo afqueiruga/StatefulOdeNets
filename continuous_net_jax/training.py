@@ -35,39 +35,53 @@ class Trainer():
             print('Tracing train_step.')
 
             def loss_fn(params):
-                logp_y_pred, new_state = self.model.apply(
-                    pack_params(params, state), X, mutable=state.keys())
+                logp_y_pred, new_state = self.model.apply(pack_params(
+                    params, state),
+                                                          X,
+                                                          mutable=state.keys())
                 loss = cross_entropy_loss(Y, logp_y_pred)
-                return loss, new_state
+                acc = jnp.mean(jnp.argmax(logp_y_pred, -1) == Y)
+                return loss, (acc, new_state)
 
             grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
-            (loss, new_state), grad = grad_fn(optimizer.target)
+            (loss, (acc, new_state)), grad = grad_fn(optimizer.target)
             optimizer = optimizer.apply_gradient(grad, learning_rate=lr)
-            return optimizer, new_state, loss
+            return optimizer, new_state, loss, acc
 
         self.train_step = train_step
 
         @jax.jit
         def test_metrics(params, state, X, Y):
             print('Tracing test_metrics.')
-            logp_y_pred, new_state = self.model.apply(
-                pack_params(params, state), X, mutable=state.keys())
+            logp_y_pred, _ = self.model.apply(pack_params(
+                params, state),
+                                                      X,
+                                                      mutable=state.keys())
             # loss = cross_entropy_loss(Y, logp_y_pred)
             return jnp.mean(jnp.argmax(logp_y_pred, -1) == Y)
 
         self.test_metrics = test_metrics
 
-    def train_epoch(self, optimizer: Any, state: Any,
-                     learning_rate: float,
-                     loss_saver: Callable[[int, Any], None]):
+    def train_epoch(self, optimizer: Any, state: Any, learning_rate: float,
+                    loss_saver: Callable[[Any], None],
+                    train_acc_saver: Callable[[Any], None]):
         """Loop over train_data once, applying the optimizer."""
+        acc_avg_numerator = 0
+        acc_avg_denominator = 0
         for i, (X, Y) in tqdm.tqdm(enumerate(self.train_data), desc="Epoch"):
-            optimizer, state, loss = self.train_step(optimizer, state, X, Y, learning_rate)
+            optimizer, state, loss, acc = self.train_step(
+                optimizer, state, X, Y, learning_rate)
             loss_saver(float(loss))
+            train_acc_saver(float(acc))
+            acc_avg_numerator += float(acc) * len(Y)
+            acc_avg_denominator += len(Y)
+        print("Average trian acc ", acc_avg_numerator / acc_avg_denominator)
         return optimizer, state
 
     def metrics_over_test_set(self, params, state):
         accuracies = []
+        denominator = 0
         for X, Y in self.test_data:
-            accuracies.append(self.test_metrics(params, state, X, Y))
-        return jnp.mean(jnp.array(accuracies))
+            accuracies.append(len(Y) * self.test_metrics(params, state, X, Y))
+            denominator += len(Y)
+        return jnp.sum(jnp.array(accuracies)) / denominator
