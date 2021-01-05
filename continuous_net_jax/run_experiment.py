@@ -22,12 +22,14 @@ from .baselines import ResNet
 from .learning_rate_schedule import LearningRateSchedule
 from .optimizer_factory import make_optimizer
 from .tensorboard_writer import TensorboardWriter
+from .training import Trainer, Tester
 from .tools import count_parameters
 
 
 def run_an_experiment(train_data,
                       test_data,
                       save_dir: str = './runs',
+                      which_model: str = 'Continuous',
                       seed: int = 0,
                       alpha: int = 8,
                       hidden: int = 8,
@@ -35,6 +37,7 @@ def run_an_experiment(train_data,
                       n_basis: int = 3,
                       scheme: str = 'Euler',
                       norm: str = 'None',
+                      kernel_init: str = 'kaiming_out',
                       which_optimizer: str = 'Momentum',
                       learning_rate: float = 0.1,
                       learning_rate_decay: float = 0.1,
@@ -47,16 +50,22 @@ def run_an_experiment(train_data,
                                    learning_rate=learning_rate,
                                    weight_decay=weight_decay)
 
-    # model = ContinuousImageClassifier(alpha=alpha,
-    #                                   hidden=hidden,
-    #                                   n_step=n_step,
-    #                                   scheme=scheme,
-    #                                   n_basis=n_basis,
-    #                                   norm=norm)
-    model = ResNet(alpha=alpha,
-                   hidden=hidden,
-                   n_step=n_step,
-                   norm=norm)
+    if which_model == 'Continuous':
+        model = ContinuousImageClassifier(alpha=alpha,
+                                              hidden=hidden,
+                                              n_step=n_step,
+                                              scheme=scheme,
+                                              n_basis=n_basis,
+                                              norm=norm)
+    elif which_model == 'ResNet':
+        model = ResNet(alpha=alpha,
+                           hidden=hidden,
+                           n_step=n_step,
+                           norm=norm,
+                           kernel_init=kernel_init)
+    else:
+        raise ArgumentError("Unknown model class.")
+    eval_model = model.clone(training=False)
 
     exp = Experiment(model, path=save_dir)
     exp.save_optimizer_hyper_params(optimizer_def, seed)
@@ -74,9 +83,11 @@ def run_an_experiment(train_data,
     print("Model has ", count_parameters(init_params), " params + ",
           count_parameters(init_state), " state params (",
           count_parameters(init_vars), " total).")
-    trainer = Trainer(exp.model, train_data, test_data)
+    trainer = Trainer(exp.model, train_data)
+    tester = Tester(eval_model, test_data)
 
-    test_acc = trainer.metrics_over_test_set(optimizer.target, current_state)
+    # print("current_state: ", current_state)
+    test_acc = tester.metrics_over_test_set(optimizer.target, current_state)
     test_acc_writer(float(test_acc))
     print("Initial acc ", test_acc)
     for epoch in range(1, 1 + n_epoch):
@@ -84,7 +95,7 @@ def run_an_experiment(train_data,
                                                        lr_schedule(epoch),
                                                        loss_writer,
                                                        train_acc_writer)
-        test_acc = trainer.metrics_over_test_set(optimizer.target,
+        test_acc = tester.metrics_over_test_set(optimizer.target,
                                                  current_state)
         test_acc_writer(float(test_acc))
         print("After epoch ", epoch, " acc: ", test_acc)

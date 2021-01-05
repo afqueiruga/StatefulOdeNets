@@ -21,13 +21,11 @@ def cross_entropy_loss(y_label, logp_y_pred):
 class Trainer():
     """This class is basically just a container of closures to jit."""
     train_data: Iterable[Tuple[ArrayType, ArrayType]]
-    test_data: Iterable[Tuple[ArrayType, ArrayType]]
     model: Any
 
-    def __init__(self, model, train_data, test_data):
+    def __init__(self, model, train_data):
         self.model = model
         self.train_data = train_data
-        self.test_data = test_data
 
         @jax.jit
         def train_step(optimizer, state, X, Y, lr):
@@ -50,18 +48,6 @@ class Trainer():
 
         self.train_step = train_step
 
-        @jax.jit
-        def test_metrics(params, state, X, Y):
-            print('Tracing test_metrics.')
-            logp_y_pred, _ = self.model.apply(pack_params(
-                params, state),
-                                                      X,
-                                                      mutable=state.keys())
-            # loss = cross_entropy_loss(Y, logp_y_pred)
-            return jnp.mean(jnp.argmax(logp_y_pred, -1) == Y)
-
-        self.test_metrics = test_metrics
-
     def train_epoch(self, optimizer: Any, state: Any, learning_rate: float,
                     loss_saver: Callable[[Any], None],
                     train_acc_saver: Callable[[Any], None]):
@@ -77,6 +63,28 @@ class Trainer():
             acc_avg_denominator += len(Y)
         print("Average trian acc ", acc_avg_numerator / acc_avg_denominator)
         return optimizer, state
+
+
+class Tester():
+    """This class is basically just a container of closures to jit."""
+    test_data: Iterable[Tuple[ArrayType, ArrayType]]
+    model: Any
+
+    def __init__(self, model, test_data):
+        self.model = model
+        self.test_data = test_data
+
+        @jax.jit
+        def test_metrics(params, state, X, Y):
+            print('Tracing test_metrics.')
+            logp_y_pred, _ = self.model.apply(pack_params(
+                params, state),
+                                                      X,
+                                                      mutable=state.keys())
+            # loss = cross_entropy_loss(Y, logp_y_pred)
+            return jnp.mean(jnp.argmax(logp_y_pred, -1) == Y)
+
+        self.test_metrics = test_metrics
 
     def metrics_over_test_set(self, params, state):
         accuracies = []
