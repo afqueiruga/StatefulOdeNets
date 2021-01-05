@@ -34,9 +34,19 @@ def point_project(ys, ts, n_basis, basis):
     return d_params
 
 
+def point_project_array(ys, ts, n_basis, basis):
+    point_project_mapped = lambda ys_ : point_project(ys_, ts, n_basis, basis)
+    ys_stack = jnp.array(ys)
+    ys_flat = ys_stack.reshape(ys_stack.shape[0], -1)
+    # print(ys_flat.shape)
+    nodes = jax.vmap(point_project_mapped, in_axes=-1, out_axes=-1)(ys_flat)
+    # print(nodes.shape)
+    return list(nodes.reshape( (n_basis,) + ys_stack.shape[1:]))
+
+
 def point_project_tree(tree_point_cloud, ts, n_basis, basis):
     def point_project_list(*args):
-        return list(point_project(args, ts, n_basis, basis))
+        return list(point_project_array(args, ts, n_basis, basis))
     out = jax.tree_multimap(point_project_list, *tree_point_cloud)
     original_struct = jax.tree_structure(tree_point_cloud[0])
     mapped_struct = jax.tree_structure(list(range(n_basis)))

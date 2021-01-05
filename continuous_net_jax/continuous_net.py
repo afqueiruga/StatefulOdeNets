@@ -76,6 +76,7 @@ class ContinuousNet(nn.Module):
     scheme: str = 'Euler'
     n_basis: int = 1
     basis: BasisFunction = piecewise_constant
+    training: bool = True
 
     def make_param_nodes(self, key, x):
         return initialize_multiple_times_split_state(key, self.R, x,
@@ -100,7 +101,8 @@ class ContinuousNet(nn.Module):
                 r, x, scheme=self.scheme, n_step=self.n_step)
             new_state = point_project_tree(state_points, t_points, self.n_basis,
                                            self.basis)
-            ode_states.value = new_state
+            if self.training:
+                ode_states.value = new_state
         else:
             params_of_t = piecewise_constant(ode_params)
             r = lambda t, x: self.R.apply(params_of_t(t), x)

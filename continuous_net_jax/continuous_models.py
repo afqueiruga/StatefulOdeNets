@@ -1,14 +1,14 @@
 """These are application-complete architectures based on continuousnet."""
 
 import flax.linen as nn
+import jax.numpy as jnp
 
 from .continuous_types import *
 from .continuous_net import ContinuousNet
-from .residual_modules import NORMS, ResidualUnit, ResidualStitch
+from .residual_modules import NORMS, ResidualUnit, ResidualStitch, INITS
 
 from .basis_functions import piecewise_constant
 from .residual_modules import ShallowNet
-
 
 
 class ContinuousClassifier(nn.Module):
@@ -55,42 +55,51 @@ class ContinuousImageClassifier(nn.Module):
     scheme: str = "Euler"
     n_basis: int = 2
     norm: str = "BatchNorm"
+    kernel_init: str = 'kaiming_out'
+    training: bool = True
 
     @nn.compact
     def __call__(self, x):
         alpha = self.alpha
         hidden = self.hidden
         # Helper macro.
-        R_ = lambda hidden_ : ResidualUnit(hidden_features=hidden_, norm=self.norm)
+        R_ = lambda hidden_: ResidualUnit(
+            hidden_features=hidden_, norm=self.norm, training=self.training)
         # First filter to make features.
-        h = nn.Conv(features=alpha, kernel_size=(3, 3))(x)
+        h = nn.Conv(features=alpha,
+                    kernel_size=(3, 3),
+                    kernel_init=INITS[self.kernel_init])(x)
         # TODO batchnorm + relu here
-        h = NORMS[self.norm]()(h)
+        h = NORMS[self.norm](use_running_average=not self.training)(h)
         h = nn.relu(h)
         # 3 stages of continuous segments:
         h = ContinuousNet(R=R_(hidden),
                           scheme=self.scheme,
                           n_step=self.n_step,
-                          n_basis=self.n_basis)(h)
+                          n_basis=self.n_basis,
+                           training=self.training)(h)
         h = ResidualStitch(hidden_features=hidden,
                            output_features=2 * alpha,
                            strides=(2, 2),
-                           norm=self.norm)(h)
+                           norm=self.norm,
+                           training=self.training)(h)
         h = ContinuousNet(R=R_(2 * hidden),
                           scheme=self.scheme,
                           n_step=self.n_step,
-                          n_basis=self.n_basis)(h)
+                          n_basis=self.n_basis,
+                           training=self.training)(h)
         h = ResidualStitch(hidden_features=2 * hidden,
                            output_features=4 * alpha,
                            strides=(2, 2),
-                           norm=self.norm)(h)
+                           norm=self.norm,
+                           training=self.training)(h)
         h = ContinuousNet(R=R_(4 * hidden),
                           scheme=self.scheme,
                           n_step=self.n_step,
-                          n_basis=self.n_basis)(h)
+                          n_basis=self.n_basis,
+                          training=self.training)(h)
         # Pool and linearly classify:
-        h = NORMS[self.norm]()(h)
-        h = nn.pooling.avg_pool(h, (h.shape[-3], h.shape[-2]))
-        h = h.reshape(h.shape[0], -1)
+        h = NORMS[self.norm](use_running_average=not self.training)(h)
+        h = jnp.mean(h, axis=(1, 2))
         h = nn.Dense(features=self.n_classes)(h)
         return nn.log_softmax(h)  # no softmax

@@ -1,5 +1,7 @@
 import unittest
 
+import jax.numpy as jnp
+
 from .basis_functions import *
 
 
@@ -43,6 +45,15 @@ class BasisFunctionsTests(unittest.TestCase):
         self.assertEqual(len(nodes), n)
         for val in nodes:
             self.assertEqual(jax.tree_structure(val), jax.tree_structure(points[0]))
+
+    def test_point_project_floats(self):
+        ts = list(jnp.linspace(0, 1, 11))
+        points = [ jnp.array([1.0, 2.0, jnp.sin(3 * t)]) for t in ts]
+        n = 13
+        nodes = point_project_tree(points, ts, n, piecewise_constant)
+        self.assertEqual(len(nodes), n)
+        for node in nodes:
+            self.assertEqual(node.shape, (3,))
 
 
 if __name__ == "__main__":
