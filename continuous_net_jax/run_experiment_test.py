@@ -49,15 +49,45 @@ class RunExperimentTests(unittest.TestCase):
                               n_epoch=1,
                               norm='BatchNorm')
 
-    # def testResNetStateful(self):
-    #     with tempfile.TemporaryDirectory() as tmp:
-    #         run_an_experiment(self.train_data,
-    #                           self.test_data,
-    #                           tmp,
-    #                           which_model='ResNet',
-    #                           alpha=1,
-    #                           hidden=1,
-    #                           n_step=1,
-    #                           n_basis=1,
-    #                           n_epoch=1,
-    #                           norm='BatchNorm')
+    def testContinuousStatefulFemLinear(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_an_experiment(self.train_data,
+                              self.test_data,
+                              tmp,
+                              which_model='Continuous',
+                              alpha=1,
+                              hidden=1,
+                              n_step=1,
+                              scheme='Midpoint',
+                              n_basis=2,
+                              basis='fem_linear',
+                              n_epoch=1,
+                              norm='BatchNorm')
+
+    def testContinuousStatefulPolyLinear(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_an_experiment(self.train_data,
+                              self.test_data,
+                              tmp,
+                              which_model='Continuous',
+                              alpha=1,
+                              hidden=1,
+                              n_step=1,
+                              scheme='Midpoint',
+                              n_basis=2,
+                              basis='poly_linear',
+                              n_epoch=1,
+                              norm='BatchNorm')
+
+    def testResNetStateful(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_an_experiment(self.train_data,
+                              self.test_data,
+                              tmp,
+                              which_model='ResNet',
+                              alpha=1,
+                              hidden=1,
+                              n_step=1,
+                              n_basis=1,
+                              n_epoch=1,
+                              norm='BatchNorm')

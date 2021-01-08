@@ -5,12 +5,12 @@ import jax.numpy as jnp
 import flax
 import flax.linen as nn
 
+from .basis_functions import BASIS, point_project_tree
+from .continuous_types import *
 from . import nonauto_ode_solvers, stateful_ode_solvers
 from .nonauto_ode_solvers import OdeIntegrateFast
-from .stateful_ode_solvers import StateOdeIntegrateFast
-
-from .basis_functions import *
 from .residual_modules import ShallowNet, ResidualUnit, ResidualStitch
+from .stateful_ode_solvers import StateOdeIntegrateFast
 
 
 # Initialize tools
@@ -65,17 +65,16 @@ class ContinuousNet(nn.Module):
 
     Attributes:
       R: the module to use as the rate equation.
-      #ode_dim: how many dimensions is the hidden continua.
-      #hidden_dim: how many dimensions inside of R_module.
-      n_step: how many time steps.
+      n_step: how many time steps?
+      scheme: which scheme to use to integrate?
+      n_basis: how many basis function nodes are initialized?      
       basis: what basis function is theta?
-      n_basis: how many basis function nodes are initialized?
     """
     R: nn.Module
     n_step: int = 1
     scheme: str = 'Euler'
     n_basis: int = 1
-    basis: BasisFunction = piecewise_constant
+    basis: str = 'piecewise_constant'
     training: bool = True
 
     def make_param_nodes(self, key, x):
@@ -92,20 +91,20 @@ class ContinuousNet(nn.Module):
         ode_params = self.param('ode_params', self.make_param_nodes, x)
         ode_states = self.variable('ode_state', 'state', self.make_state_nodes,
                                    x)
+        basis = BASIS[self.basis]
         if ode_states.value[0].keys():
             full_params = zip_time_dicts(ode_params, ode_states.value)
-            params_of_t = piecewise_constant(full_params)
+            params_of_t = basis(full_params)
             r = lambda t, x: self.R.apply(
                 params_of_t(t), x, mutable=ode_states.value[0].keys())
             y, t_points, state_points = StateOdeIntegrateFast(
                 r, x, scheme=self.scheme, n_step=self.n_step)
-            new_state = point_project_tree(state_points, t_points, self.n_basis,
-                                           self.basis)
             if self.training:
+                new_state = point_project_tree(state_points, t_points,
+                                               self.n_basis, basis)
                 ode_states.value = new_state
         else:
-            params_of_t = piecewise_constant(ode_params)
+            params_of_t = basis(ode_params)
             r = lambda t, x: self.R.apply(params_of_t(t), x)
             y = OdeIntegrateFast(r, x, scheme=self.scheme, n_step=self.n_step)
         return y
-

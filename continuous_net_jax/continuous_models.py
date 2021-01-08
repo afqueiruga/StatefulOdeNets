@@ -54,6 +54,7 @@ class ContinuousImageClassifier(nn.Module):
     n_step: int = 2
     scheme: str = "Euler"
     n_basis: int = 2
+    basis: str = 'piecewise_constant'
     norm: str = "BatchNorm"
     kernel_init: str = 'kaiming_out'
     training: bool = True
@@ -77,7 +78,8 @@ class ContinuousImageClassifier(nn.Module):
                           scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis,
-                           training=self.training)(h)
+                          basis=self.basis,
+                          training=self.training)(h)
         h = ResidualStitch(hidden_features=hidden,
                            output_features=2 * alpha,
                            strides=(2, 2),
@@ -87,7 +89,8 @@ class ContinuousImageClassifier(nn.Module):
                           scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis,
-                           training=self.training)(h)
+                          basis=self.basis,
+                          training=self.training)(h)
         h = ResidualStitch(hidden_features=2 * hidden,
                            output_features=4 * alpha,
                            strides=(2, 2),
@@ -97,6 +100,7 @@ class ContinuousImageClassifier(nn.Module):
                           scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis,
+                          basis=self.basis,
                           training=self.training)(h)
         # Pool and linearly classify:
         h = NORMS[self.norm](use_running_average=not self.training)(h)

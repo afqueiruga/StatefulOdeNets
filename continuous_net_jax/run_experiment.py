@@ -34,8 +34,9 @@ def run_an_experiment(train_data,
                       alpha: int = 8,
                       hidden: int = 8,
                       n_step: int = 3,
-                      n_basis: int = 3,
                       scheme: str = 'Euler',
+                      n_basis: int = 3,
+                      basis: str = 'piecewise_constant',
                       norm: str = 'None',
                       kernel_init: str = 'kaiming_out',
                       which_optimizer: str = 'Momentum',
@@ -52,17 +53,18 @@ def run_an_experiment(train_data,
 
     if which_model == 'Continuous':
         model = ContinuousImageClassifier(alpha=alpha,
-                                              hidden=hidden,
-                                              n_step=n_step,
-                                              scheme=scheme,
-                                              n_basis=n_basis,
-                                              norm=norm)
+                                          hidden=hidden,
+                                          n_step=n_step,
+                                          scheme=scheme,
+                                          n_basis=n_basis,
+                                          basis=basis,
+                                          norm=norm)
     elif which_model == 'ResNet':
         model = ResNet(alpha=alpha,
-                           hidden=hidden,
-                           n_step=n_step,
-                           norm=norm,
-                           kernel_init=kernel_init)
+                       hidden=hidden,
+                       n_step=n_step,
+                       norm=norm,
+                       kernel_init=kernel_init)
     else:
         raise ArgumentError("Unknown model class.")
     eval_model = model.clone(training=False)
@@ -95,8 +97,7 @@ def run_an_experiment(train_data,
                                                        lr_schedule(epoch),
                                                        loss_writer,
                                                        train_acc_writer)
-        test_acc = tester.metrics_over_test_set(optimizer.target,
-                                                 current_state)
+        test_acc = tester.metrics_over_test_set(optimizer.target, current_state)
         test_acc_writer(float(test_acc))
         print("After epoch ", epoch, " acc: ", test_acc)
         if epoch % 20 == 0:
