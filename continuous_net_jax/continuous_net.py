@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import flax
 import flax.linen as nn
 
-from .basis_functions import BASIS, point_project_tree
+from .basis_functions import BASIS, REFINE, point_project_tree
 from .continuous_types import *
 from . import nonauto_ode_solvers, stateful_ode_solvers
 from .nonauto_ode_solvers import OdeIntegrateFast
@@ -91,7 +91,12 @@ class ContinuousNet(nn.Module):
         ode_params = self.param('ode_params', self.make_param_nodes, x)
         ode_states = self.variable('ode_state', 'state', self.make_state_nodes,
                                    x)
+
+        # The model instance's n_basis only dictates initialization.
+        n_basis = len(ode_params)
         basis = BASIS[self.basis]
+
+        # Two versions for whether or not R has a state.
         if ode_states.value[0].keys():
             full_params = zip_time_dicts(ode_params, ode_states.value)
             params_of_t = basis(full_params)
@@ -101,10 +106,17 @@ class ContinuousNet(nn.Module):
                 r, x, scheme=self.scheme, n_step=self.n_step)
             if self.training:
                 new_state = point_project_tree(state_points, t_points,
-                                               self.n_basis, basis)
+                                               n_basis, basis)
                 ode_states.value = new_state
         else:
             params_of_t = basis(ode_params)
             r = lambda t, x: self.R.apply(params_of_t(t), x)
             y = OdeIntegrateFast(r, x, scheme=self.scheme, n_step=self.n_step)
         return y
+
+    def refine(self, params: Iterable[JaxTreeType], state: Iterable[JaxTreeType]=None) -> Tuple[Iterable[JaxTreeType],Iterable[JaxTreeType]]:
+        """Perform doubling refinement for these bases."""
+        if state:
+            return REFINE[self.basis](params), REFINE[self.basis](state)
+        else:
+            return REFINE[self.basis](params)

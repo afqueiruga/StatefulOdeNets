@@ -23,71 +23,93 @@ class RunExperimentTests(unittest.TestCase):
             [onp.ones((5, 14, 14, 3)), onp.ones(5,)],
         ]
 
-    # def testContinuousNoState(self):
-    #     with tempfile.TemporaryDirectory() as tmp:
-    #         run_an_experiment(self.train_data,
-    #                           self.test_data,
-    #                           tmp,
-    #                           alpha=1,
-    #                           hidden=1,
-    #                           n_step=1,
-    #                           n_basis=1,
-    #                           n_epoch=1,
-    #                           norm='None',
-    #                           learning_rate=0.1)
+    def testContinuousNoState(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            acc = run_an_experiment(self.train_data,
+                                    self.test_data,
+                                    tmp,
+                                    alpha=1,
+                                    hidden=1,
+                                    n_step=1,
+                                    n_basis=1,
+                                    n_epoch=1,
+                                    norm='None',
+                                    learning_rate=0.1)
+            self.assertEqual(acc, 1.0)
 
     def testContinuousStateful(self):
+        print("Test testContinuousStateful")
         with tempfile.TemporaryDirectory() as tmp:
-            run_an_experiment(self.train_data,
-                              self.test_data,
-                              tmp,
-                              which_model='Continuous',
-                              alpha=1,
-                              hidden=1,
-                              n_step=1,
-                              n_basis=1,
-                              n_epoch=1,
-                              norm='BatchNorm')
+            acc = run_an_experiment(self.train_data,
+                                    self.test_data,
+                                    tmp,
+                                    which_model='Continuous',
+                                    alpha=1,
+                                    hidden=1,
+                                    n_step=1,
+                                    n_basis=1,
+                                    n_epoch=2,
+                                    norm='BatchNorm')
+            self.assertEqual(acc, 1.0)
+
+    def testRefineContinuousStateful(self):
+        print("Test testRefineContinuousStateful")
+        with tempfile.TemporaryDirectory() as tmp:
+            acc = run_an_experiment(self.train_data,
+                                    self.test_data,
+                                    tmp,
+                                    which_model='Continuous',
+                                    alpha=1,
+                                    hidden=1,
+                                    n_step=1,
+                                    n_basis=1,
+                                    n_epoch=3,
+                                    norm='BatchNorm',
+                                    refine_epochs=[2, 3])
+            self.assertEqual(acc, 1.0)
 
     def testContinuousStatefulFemLinear(self):
         with tempfile.TemporaryDirectory() as tmp:
-            run_an_experiment(self.train_data,
-                              self.test_data,
-                              tmp,
-                              which_model='Continuous',
-                              alpha=1,
-                              hidden=1,
-                              n_step=1,
-                              scheme='Midpoint',
-                              n_basis=2,
-                              basis='fem_linear',
-                              n_epoch=1,
-                              norm='BatchNorm')
+            acc = run_an_experiment(self.train_data,
+                                    self.test_data,
+                                    tmp,
+                                    which_model='Continuous',
+                                    alpha=1,
+                                    hidden=1,
+                                    n_step=1,
+                                    scheme='Midpoint',
+                                    n_basis=2,
+                                    basis='fem_linear',
+                                    n_epoch=1,
+                                    norm='BatchNorm')
+            self.assertEqual(acc, 1.0)
 
     def testContinuousStatefulPolyLinear(self):
         with tempfile.TemporaryDirectory() as tmp:
-            run_an_experiment(self.train_data,
-                              self.test_data,
-                              tmp,
-                              which_model='Continuous',
-                              alpha=1,
-                              hidden=1,
-                              n_step=1,
-                              scheme='Midpoint',
-                              n_basis=2,
-                              basis='poly_linear',
-                              n_epoch=1,
-                              norm='BatchNorm')
+            acc = run_an_experiment(self.train_data,
+                                    self.test_data,
+                                    tmp,
+                                    which_model='Continuous',
+                                    alpha=1,
+                                    hidden=1,
+                                    n_step=1,
+                                    scheme='Midpoint',
+                                    n_basis=2,
+                                    basis='poly_linear',
+                                    n_epoch=1,
+                                    norm='BatchNorm')
+            self.assertEqual(acc, 1.0)
 
     def testResNetStateful(self):
         with tempfile.TemporaryDirectory() as tmp:
-            run_an_experiment(self.train_data,
-                              self.test_data,
-                              tmp,
-                              which_model='ResNet',
-                              alpha=1,
-                              hidden=1,
-                              n_step=1,
-                              n_basis=1,
-                              n_epoch=1,
-                              norm='BatchNorm')
+            acc = run_an_experiment(self.train_data,
+                                    self.test_data,
+                                    tmp,
+                                    which_model='ResNet',
+                                    alpha=1,
+                                    hidden=1,
+                                    n_step=1,
+                                    n_basis=1,
+                                    n_epoch=1,
+                                    norm='BatchNorm')
+            self.assertEqual(acc, 1.0)

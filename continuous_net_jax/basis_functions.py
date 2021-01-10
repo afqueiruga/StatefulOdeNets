@@ -21,7 +21,7 @@ def piecewise_constant(
     return theta
 
 
-def fem_linear(param_nodes: Iterable[JaxTreeType]):
+def fem_linear(param_nodes: Iterable[JaxTreeType]) -> ContinuousParameters:
     """Finite Element Method style linear basis functions.
     
     Requires n_basis > 2."""
@@ -39,7 +39,7 @@ def fem_linear(param_nodes: Iterable[JaxTreeType]):
     return theta
 
 
-def poly_linear(param_nodes: Iterable[JaxTreeType]):
+def poly_linear(param_nodes: Iterable[JaxTreeType]) -> ContinuousParameters:
     """Linear polynomial basis functions.
     
     Rolled out, a time dependent layer of this form is:
@@ -62,6 +62,29 @@ BASIS = {
     'piecewise_constant': piecewise_constant,
     'fem_linear': fem_linear,
     'poly_linear': poly_linear,
+}
+
+
+def split_refine_piecewise(nodes: Iterable[JaxTreeType]):
+    new_nodes = []
+    for node in nodes:
+        new_nodes.append(node)
+        new_nodes.append(node)
+    return new_nodes
+
+
+def split_refine_fem(nodes: Iterable[JaxTreeType]):
+    # 
+    new_nodes = [nodes[0]]
+    for i in range(len(nodes)-1):
+        new_nodes.append(0.5*nodes[i]+0.5*nodes[i+1])
+        new_nodes.append(nodes[i+1])
+    return new_nodes
+
+
+REFINE = {
+    'piecewise_constant': split_refine_piecewise,
+    'fem_linear': split_refine_fem,
 }
 
 
@@ -100,3 +123,5 @@ def point_project_tree(tree_point_cloud, ts, n_basis, basis):
     original_struct = jax.tree_structure(tree_point_cloud[0])
     mapped_struct = jax.tree_structure(list(range(n_basis)))
     return jax.tree_transpose(original_struct, mapped_struct, out)
+
+

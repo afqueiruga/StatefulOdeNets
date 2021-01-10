@@ -1,5 +1,6 @@
 """These are application-complete architectures based on continuousnet."""
 
+import flax
 import flax.linen as nn
 import jax.numpy as jnp
 
@@ -7,7 +8,7 @@ from .continuous_types import *
 from .continuous_net import ContinuousNet
 from .residual_modules import NORMS, ResidualUnit, ResidualStitch, INITS
 
-from .basis_functions import piecewise_constant
+from .basis_functions import piecewise_constant, REFINE
 from .residual_modules import ShallowNet
 
 
@@ -107,3 +108,24 @@ class ContinuousImageClassifier(nn.Module):
         h = jnp.mean(h, axis=(1, 2))
         h = nn.Dense(features=self.n_classes)(h)
         return nn.log_softmax(h)  # no softmax
+
+    def refine(self, params: JaxTreeType, state: JaxTreeType=None
+                   ) -> Tuple[JaxTreeType, JaxTreeType]:
+        new_model = self.clone(n_step=2*self.n_step, n_basis=2*self.n_basis)
+        new_params = {}
+        for k, v in params.items():
+            if 'Continuous' in k:
+                new_params[k] = {'ode_params': REFINE[self.basis](v['ode_params'])}
+            else:
+                new_params[k] = v
+        new_params = flax.core.frozen_dict.FrozenDict(new_params)
+
+        if not state:
+            return new_model, new_params
+        else:
+            keep_state, ode_state = state.pop('ode_state')
+            new_ode_state = {}
+            for k, v in ode_state.items():
+                new_ode_state[k] = {'state': REFINE[self.basis](v['state'])}
+            new_state = flax.core.frozen_dict.FrozenDict({**keep_state, 'ode_state': new_ode_state})
+            return new_model, new_params, new_state

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Iterable, List, Optional
 
 from datetime import datetime
 
@@ -25,6 +25,15 @@ from .tensorboard_writer import TensorboardWriter
 from .training import Trainer, Tester
 from .tools import count_parameters
 
+_CHECKPOINT_FREQ = 20
+
+
+def report_count(params, state):
+    n_params = count_parameters(params)
+    n_state = count_parameters(state)
+    print("Model has ", n_params, " params + ", n_state, " state params (",
+          n_params + n_state, " total).")
+
 
 def run_an_experiment(train_data,
                       test_data,
@@ -44,12 +53,16 @@ def run_an_experiment(train_data,
                       learning_rate_decay: float = 0.1,
                       learning_rate_decay_epochs: Optional[List[int]] = None,
                       weight_decay: float = 5.0e-4,
-                      n_epoch: int = 15):
+                      n_epoch: int = 15,
+                      refine_epochs: Optional[Iterable] = None):
     lr_schedule = LearningRateSchedule(learning_rate, learning_rate_decay,
                                        learning_rate_decay_epochs)
     optimizer_def = make_optimizer(which_optimizer,
                                    learning_rate=learning_rate,
                                    weight_decay=weight_decay)
+
+    if refine_epochs == None:
+        refine_epochs = set()
 
     if which_model == 'Continuous':
         model = ContinuousImageClassifier(alpha=alpha,
@@ -82,17 +95,24 @@ def run_an_experiment(train_data,
     init_state, init_params = init_vars.pop('params')
     optimizer = optimizer_def.create(init_params)
     current_state = init_state
-    print("Model has ", count_parameters(init_params), " params + ",
-          count_parameters(init_state), " state params (",
-          count_parameters(init_vars), " total).")
+    report_count(init_params, init_state)
     trainer = Trainer(exp.model, train_data)
     tester = Tester(eval_model, test_data)
 
-    # print("current_state: ", current_state)
     test_acc = tester.metrics_over_test_set(optimizer.target, current_state)
     test_acc_writer(float(test_acc))
     print("Initial acc ", test_acc)
     for epoch in range(1, 1 + n_epoch):
+        if epoch in refine_epochs:
+            new_model, new_params, current_state = exp.model.refine(
+                optimizer.target, current_state)
+            exp.model = new_model
+            eval_model = exp.model.clone(training=False)
+            # We just reset the momenta.
+            optimizer = optimizer_def.create(new_params)
+            trainer = Trainer(exp.model, train_data)
+            tester = Tester(eval_model, test_data)
+            report_count(new_params, current_state)
         optimizer, current_state = trainer.train_epoch(optimizer, current_state,
                                                        lr_schedule(epoch),
                                                        loss_writer,
@@ -100,10 +120,12 @@ def run_an_experiment(train_data,
         test_acc = tester.metrics_over_test_set(optimizer.target, current_state)
         test_acc_writer(float(test_acc))
         print("After epoch ", epoch, " acc: ", test_acc)
-        if epoch % 20 == 0:
+        if epoch % _CHECKPOINT_FREQ == 0:
             exp.save_checkpoint(optimizer, current_state, epoch)
         tb_writer.flush()
-    try:
+
+    try:  # Save the last checkpoint if the last loop didn't.
         exp.save_checkpoint(optimizer, current_state, epoch)
     except:
         pass
+    return test_acc  # Return the final test set accuracy for testing.

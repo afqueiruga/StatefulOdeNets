@@ -72,6 +72,20 @@ class BasisFunctionsTests(unittest.TestCase):
         self.assertEqual(theta_t(0.5), 2.5)
         self.assertEqual(theta_t(1.0), 4.0)
 
+    def test_refine_piecewise(self):
+        nodes = [2.0]
+        rnodes = split_refine_piecewise(nodes)
+        self.assertEqual(len(rnodes), 2)
+        self.assertEqual(rnodes[0], 2.0)
+        self.assertEqual(rnodes[1], 2.0)
+
+        nodes = [2.0, 3.0]
+        rnodes = split_refine_piecewise(nodes)
+        self.assertEqual(len(rnodes), 4)
+        self.assertEqual(rnodes[0], 2.0)
+        self.assertEqual(rnodes[1], 2.0)
+        self.assertEqual(rnodes[2], 3.0)
+        self.assertEqual(rnodes[3], 3.0)
 
 if __name__ == "__main__":
     unittest.main()
