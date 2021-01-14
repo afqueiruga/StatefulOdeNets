@@ -1,7 +1,10 @@
 import unittest
 
+import flax.linen as nn
 import jax
 import jax.numpy as onp
+from jax.config import config
+config.enable_omnistaging()
 
 from .tools import *
 
@@ -29,3 +32,7 @@ class ToolsTest(unittest.TestCase):
                 },
                 'c': onp.zeros((7, 11)),
             }))
+
+    def test_module_to_dict(self):
+        F = nn.Dense(10)
+        module_to_dict(F)

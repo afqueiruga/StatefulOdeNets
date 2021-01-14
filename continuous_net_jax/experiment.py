@@ -42,11 +42,15 @@ class Experiment():
         with open(self._path("model.json"), "w") as f:
             f.write(json.dumps(module_to_dict(self.model), indent=4))
 
-    def save_optimizer_hyper_params(self, optimizer_def, seed):
+    def save_optimizer_hyper_params(self, optimizer_def, seed, extra=None):
         h_dict = optimizer_def_to_dict(optimizer_def)
         h_dict["seed"] = seed
+        if extra:
+            h_dict["extra"] = extra
         with open(self._path("optimizer_hyper_params.txt"), "w") as f:
             f.write(f"{repr(optimizer_def.hyper_params)}\nseed = {seed}")
+            if extra:
+                f.write(f"\nextra = {seed}")
         with open(self._path("optimizer_hyper_params.json"), "w") as f:
             f.write(json.dumps(h_dict, indent=4))
 

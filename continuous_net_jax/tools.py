@@ -21,7 +21,7 @@ def module_to_dict(module: Module):
     }
     child_modules = {
         k: v
-        for k, v in module.children.items()  # pytype: disable=attribute-error
+        for k, v in module._state.children.items()  # pytype: disable=attribute-error
         if isinstance(v, Module)
     }
     if attributes:
