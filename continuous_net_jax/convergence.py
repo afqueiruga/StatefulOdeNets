@@ -35,8 +35,8 @@ def perform_convergence_test(exp, params, train_data, test_data):
     @SimDataDB2(os.path.join(exp.path, "convergence.sqlite"))
     def infer_test_error(scheme: str, n_step: int) -> Tuple[float]:
         model = exp.model.clone(n_step=n_step)
-        trainer = Trainer(model, train_data, test_data)
-        err = trainer.metrics_over_test_set(params)
+        tester = Tester(model, test_data)
+        err = tester.metrics_over_test_set(params)
         return float(err),
     errs = []
     for n_step in range(1,10):

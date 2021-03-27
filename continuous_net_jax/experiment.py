@@ -37,6 +37,7 @@ class Experiment():
             os.makedirs(self.path)
         except FileExistsError:
             print(f"In danger of overwriting {self.path}/")
+        print("Saving a model to ", self.path)
         with open(self._path("model_repr.txt"), "w") as f:
             f.write(repr(self.model))
         with open(self._path("model.json"), "w") as f:

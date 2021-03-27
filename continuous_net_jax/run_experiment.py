@@ -62,7 +62,7 @@ def run_an_experiment(train_data,
                                    weight_decay=weight_decay)
 
     if refine_epochs == None:
-        refine_epochs = set()
+        refine_epochs = []
 
     if which_model == 'Continuous':
         model = ContinuousImageClassifier(alpha=alpha,
@@ -82,13 +82,17 @@ def run_an_experiment(train_data,
         raise ArgumentError("Unknown model class.")
     eval_model = model.clone(training=False)
 
+    # Create savers management.
     exp = Experiment(model, path=save_dir)
-    exp.save_optimizer_hyper_params(optimizer_def, seed)
+    exp.save_optimizer_hyper_params(optimizer_def, seed,
+                                    extra={'learning_rate_decay_epochs': learning_rate_decay_epochs,
+                                           'refine_epochs': refine_epochs})
     tb_writer = TensorboardWriter(exp.path)
     loss_writer = tb_writer.Writer('loss')
     test_acc_writer = tb_writer.Writer('test_accuracy')
     train_acc_writer = tb_writer.Writer('train_accuracy')
 
+    # Initialize the model and make training modules.
     prng_key = jax.random.PRNGKey(seed)
     x, _ = next(iter(train_data))
     init_vars = exp.model.init(prng_key, x)
