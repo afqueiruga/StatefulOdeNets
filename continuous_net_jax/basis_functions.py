@@ -26,8 +26,9 @@ def fem_linear(param_nodes: Iterable[JaxTreeType]) -> ContinuousParameters:
     
     Requires n_basis > 2."""
     n_basis = len(param_nodes)
+    if n_basis == 1:
+        return piecewise_constant(param_nodes)
     n_elem = n_basis - 1
-
     def theta(t: float) -> JaxTreeType:
         elem_idx = min(int(n_elem * t), n_elem - 1)
         phi_1 = (t - elem_idx / n_elem) / (1.0 / n_elem)
@@ -74,10 +75,18 @@ def split_refine_piecewise(nodes: Iterable[JaxTreeType]):
 
 
 def split_refine_fem(nodes: Iterable[JaxTreeType]):
-    # 
+    # Fringe case is constant, which turns into one element.
+    if len(nodes) == 1:
+        return [nodes[0], nodes[0]]
+
+
     new_nodes = [nodes[0]]
+    
     for i in range(len(nodes)-1):
-        new_nodes.append(0.5*nodes[i]+0.5*nodes[i+1])
+        midpoint = jax.tree_multimap(lambda a1, a2: a1 * 0.5 + a2 * 0.5,
+                                     nodes[i + 1],
+                                     nodes[i])
+        new_nodes.append(midpoint)
         new_nodes.append(nodes[i+1])
     return new_nodes
 
