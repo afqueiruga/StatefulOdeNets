@@ -47,7 +47,7 @@ def module_to_single_line(module: Module):
 
 def parse_model_dict(dict_repr, scope):
     """Turn a dict into an instantiated model."""
-    assert len(dict_repr) == 1
+    # assert len(dict_repr) == 1
     for k, v in dict_repr.items():
         return eval(k, scope)(**v)  # TODO security
 

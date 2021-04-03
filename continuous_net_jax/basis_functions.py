@@ -29,6 +29,7 @@ def fem_linear(param_nodes: Iterable[JaxTreeType]) -> ContinuousParameters:
     if n_basis == 1:
         return piecewise_constant(param_nodes)
     n_elem = n_basis - 1
+
     def theta(t: float) -> JaxTreeType:
         elem_idx = min(int(n_elem * t), n_elem - 1)
         phi_1 = (t - elem_idx / n_elem) / (1.0 / n_elem)
@@ -75,19 +76,18 @@ def split_refine_piecewise(nodes: Iterable[JaxTreeType]):
 
 
 def split_refine_fem(nodes: Iterable[JaxTreeType]):
+    """Traditional finite element hat functions."""
     # Fringe case is constant, which turns into one element.
     if len(nodes) == 1:
         return [nodes[0], nodes[0]]
 
-
+    # Use the midpoints to subdivide elements.
     new_nodes = [nodes[0]]
-    
-    for i in range(len(nodes)-1):
+    for i in range(len(nodes) - 1):
         midpoint = jax.tree_multimap(lambda a1, a2: a1 * 0.5 + a2 * 0.5,
-                                     nodes[i + 1],
-                                     nodes[i])
+                                     nodes[i + 1], nodes[i])
         new_nodes.append(midpoint)
-        new_nodes.append(nodes[i+1])
+        new_nodes.append(nodes[i + 1])
     return new_nodes
 
 
@@ -132,5 +132,3 @@ def point_project_tree(tree_point_cloud, ts, n_basis, basis):
     original_struct = jax.tree_structure(tree_point_cloud[0])
     mapped_struct = jax.tree_structure(list(range(n_basis)))
     return jax.tree_transpose(original_struct, mapped_struct, out)
-
-

@@ -20,7 +20,8 @@ class Experiment():
                 os.path.join(self.path, 'model.json'), scope)
             with open(self._path('optimizer_hyper_params.json'), "r") as f:
                 h_dict = json.loads(f.read())
-            h_dict.pop('seed')
+            self.seed = h_dict.pop('seed')
+            self.extra = h_dict.pop('extra')
             self.optimizer_def = parse_optimizer_def_dict(h_dict, scope)
         else:
             timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")

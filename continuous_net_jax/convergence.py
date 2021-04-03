@@ -19,7 +19,7 @@ def load_for_test(path):
 
     # For now, we to make a skeleton optimizer to interperet the checkpoint.
     prng_key = jax.random.PRNGKey(0)
-    x = jnp.ones((1, 28, 28, 1), jnp.float32)
+    x = jnp.ones((1, 32, 32, 1), jnp.float32)
     ode_params = exp.model.init(prng_key, x)['params']
     optimizer = exp.optimizer_def.create(ode_params)
     # Load the final checkpoint, using the dict structure.
