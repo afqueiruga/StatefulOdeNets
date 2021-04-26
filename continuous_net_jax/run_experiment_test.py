@@ -5,8 +5,6 @@ import flax.linen as nn
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from jax.config import config
-config.enable_omnistaging()
 
 from continuous_net_jax.run_experiment import *
 
@@ -25,9 +23,10 @@ class RunExperimentTests(unittest.TestCase):
 
     def testContinuousNoState(self):
         with tempfile.TemporaryDirectory() as tmp:
-            acc = run_an_experiment(self.train_data,
-                                    self.test_data,
-                                    tmp,
+            acc = run_an_experiment(train_data=self.train_data,
+                                    validation_data=self.test_data,
+                                    test_data = self.test_data,
+                                    save_dir=tmp,
                                     alpha=1,
                                     hidden=1,
                                     n_step=1,
@@ -40,9 +39,10 @@ class RunExperimentTests(unittest.TestCase):
     def testContinuousStateful(self):
         print("Test testContinuousStateful")
         with tempfile.TemporaryDirectory() as tmp:
-            acc = run_an_experiment(self.train_data,
-                                    self.test_data,
-                                    tmp,
+            acc = run_an_experiment(train_data=self.train_data,
+                                    validation_data=self.test_data,
+                                    test_data = self.test_data,
+                                    save_dir=tmp,
                                     which_model='Continuous',
                                     alpha=1,
                                     hidden=1,
@@ -55,9 +55,10 @@ class RunExperimentTests(unittest.TestCase):
     def testRefineContinuousStateful(self):
         print("Test testRefineContinuousStateful")
         with tempfile.TemporaryDirectory() as tmp:
-            acc = run_an_experiment(self.train_data,
-                                    self.test_data,
-                                    tmp,
+            acc = run_an_experiment(train_data=self.train_data,
+                                    validation_data=self.test_data,
+                                    test_data = self.test_data,
+                                    save_dir=tmp,
                                     which_model='Continuous',
                                     alpha=1,
                                     hidden=1,
@@ -70,9 +71,10 @@ class RunExperimentTests(unittest.TestCase):
 
     def testContinuousStatefulFemLinear(self):
         with tempfile.TemporaryDirectory() as tmp:
-            acc = run_an_experiment(self.train_data,
-                                    self.test_data,
-                                    tmp,
+            acc = run_an_experiment(train_data=self.train_data,
+                                    validation_data=self.test_data,
+                                    test_data = self.test_data,
+                                    save_dir=tmp,
                                     which_model='Continuous',
                                     alpha=1,
                                     hidden=1,
@@ -86,9 +88,10 @@ class RunExperimentTests(unittest.TestCase):
 
     def testContinuousStatefulPolyLinear(self):
         with tempfile.TemporaryDirectory() as tmp:
-            acc = run_an_experiment(self.train_data,
-                                    self.test_data,
-                                    tmp,
+            acc = run_an_experiment(train_data=self.train_data,
+                                    validation_data=self.test_data,
+                                    test_data = self.test_data,
+                                    save_dir=tmp,
                                     which_model='Continuous',
                                     alpha=1,
                                     hidden=1,
@@ -102,9 +105,10 @@ class RunExperimentTests(unittest.TestCase):
 
     def testResNetStateful(self):
         with tempfile.TemporaryDirectory() as tmp:
-            acc = run_an_experiment(self.train_data,
-                                    self.test_data,
-                                    tmp,
+            acc = run_an_experiment(train_data=self.train_data,
+                                    validation_data=self.test_data,
+                                    test_data = self.test_data,
+                                    save_dir=tmp,
                                     which_model='ResNet',
                                     alpha=1,
                                     hidden=1,
