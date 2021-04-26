@@ -5,8 +5,7 @@ import glob
 import os
 
 import flax
-import flax.linen as nn
-from flax import optim
+from flax.training import checkpoints
 import jax
 import jax.numpy as jnp
 
@@ -14,37 +13,53 @@ from continuous_net_jax import *
 from continuous_net import datasets
 
 
-def load_for_test(path):
-    exp = Experiment(path=path, scope=globals())
+class ConvergenceTester:
 
-    # For now, we to make a skeleton optimizer to interperet the checkpoint.
-    prng_key = jax.random.PRNGKey(0)
-    x = jnp.ones((1, 32, 32, 1), jnp.float32)
-    ode_params = exp.model.init(prng_key, x)['params']
-    optimizer = exp.optimizer_def.create(ode_params)
-    # Load the final checkpoint, using the dict structure.
-    optimizer = exp.load_checkpoint(optimizer)
-    params = optimizer.target
+    def __init__(self, path: str):
+        self.path = path
 
-    # TODO Get this to work:
-    # dd = exp.load_checkpoint()
-    # params = flax.core.FrozenDict(dd['target'])
-    return exp, params
+        exp = Experiment(path=path, scope=globals())
+        # The model was saved at the begining, got longer after refinement.
+        final_n_step = exp.model.n_step * 2**len(exp.extra['refine_epochs'])
+        final_model = exp.model.clone(n_step=final_n_step)
+        # Load the parameters
+        chp = checkpoints.restore_checkpoint(path, None)
+        params = chp['optimizer']['target']
+        state = chp['state']
+        # Initialize a skeleton with the right shape.
+        prng_key = jax.random.PRNGKey(0)
+        x = jnp.ones((1, 32, 32, 3), jnp.float32)
+        p = final_model.init(prng_key, x)
+        i_state, i_params = p.pop('params')
+        # Reshape the values that were loaded. This is needed because
+        # ContinuousNet uses lists in the parameter trees, but the
+        # checkpoint always loads dictionaries. I.e., we turn
+        # {'ContinuousNet0':{'0':W0, '1':W1}} into
+        # {'ContinuousNet0':[W0, W1]}
+        loaded_params = jax.tree_util.tree_unflatten(
+            jax.tree_util.tree_structure(i_params),
+            jax.tree_util.tree_leaves(chp['optimizer']['target']))
+        loaded_state = jax.tree_util.tree_unflatten(
+            jax.tree_util.tree_structure(i_state),
+            jax.tree_util.tree_leaves(chp['state']))
+        eval_model = final_model.clone(training=False)
 
-def perform_convergence_test(exp, params, train_data, test_data):
-    @SimDataDB2(os.path.join(exp.path, "convergence.sqlite"))
-    def infer_test_error(scheme: str, n_step: int) -> Tuple[float]:
-        model = exp.model.clone(n_step=n_step)
-        tester = Tester(model, test_data)
-        err = tester.metrics_over_test_set(params)
-        return float(err),
-    errs = []
-    for n_step in range(1,10):
-        err = infer_test_error("Euler", n_step)
-        errs.append((n_step, err))
-    return errs
+        self.exp = exp
+        self.params = loaded_params
+        self.state = loaded_state
+        self.eval_model = eval_model
 
-def perfom_tests_for_path(path: str, train_data, test_data):
-    exp, params = load_for_test(path)
-    errors = perform_convergence_test(exp, params, train_data, test_data)
-    return exp, errors
+    def perform_convergence_test(self, test_data):
+
+        @SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
+        def infer_test_error(scheme: str, n_step: int) -> Tuple[float]:
+            model = self.eval_model.clone(n_step=n_step)
+            tester = Tester(model, test_data)
+            err = tester.metrics_over_test_set(self.params, self.state)
+            return float(err),
+
+        errors = []
+        for n_step in range(1, 10):
+            error = infer_test_error("Euler", n_step)
+            errors.append((n_step, error))
+        return errors
