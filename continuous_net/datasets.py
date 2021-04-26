@@ -8,7 +8,8 @@ def get_dataset(name='FMNIST',
                 batch_size=128,
                 test_batch_size=256,
                 root='.',
-                device=None):
+                device=None,
+                seed=0):
 
     if name == 'CIFAR10':
         transform_train = transforms.Compose([
@@ -37,7 +38,7 @@ def get_dataset(name='FMNIST',
                           train=False,
                           download=True,
                           transform=transform_test)
-
+        
     elif name == 'FMNIST':
         transform = torchvision.transforms.Compose([
             torchvision.transforms.ToTensor(),
@@ -74,7 +75,6 @@ def get_dataset(name='FMNIST',
                             train=True,
                             download=True,
                             transform=transform_train)
-
         testset = CIFAR100(root=root + '/CIFAR100/',
                            train=False,
                            download=False,
@@ -108,18 +108,34 @@ def get_dataset(name='FMNIST',
     else:
         raise RuntimeError('Unknown dataset')
 
+    n_dataset = len(trainset)
+    n_train = int(0.8 * n_dataset)
+    n_val = n_dataset - n_train
+    # trainset2, validationset = torch.utils.data.random_split(
+    #         trainset,
+    #         [n_train, n_val],
+    #         generator=torch.Generator().manual_seed(seed))
+    
     if device is not None:
         trainset = trainset.to(device)
+        validationset = validationset.to(device)
         testnset = testset.to(device)
-    trainloader = torch.utils.data.DataLoader(trainset,
+
+    train_loader = torch.utils.data.DataLoader(trainset,
                                               batch_size=batch_size,
                                               shuffle=True,
-                                              num_workers=2,
+                                              num_workers=1,
                                               pin_memory=True)
-    testloader = torch.utils.data.DataLoader(testset,
+    # validation_loader = torch.utils.data.DataLoader(validationset,
+    #                                           batch_size=test_batch_size,
+    #                                           shuffle=True,
+    #                                           num_workers=2,
+    #                                           pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(testset,
                                              batch_size=test_batch_size,
                                              shuffle=True,
-                                             num_workers=2,
+                                             num_workers=1,
                                              pin_memory=True)
 
-    return refset, trainset, trainloader, testset, testloader
+    return train_loader, test_loader, test_loader
+    
