@@ -49,7 +49,10 @@ class ConvergenceTester:
         self.state = loaded_state
         self.eval_model = eval_model
 
-    def perform_convergence_test(self, test_data):
+    def perform_convergence_test(self,
+                                 test_data: Any,
+                                 n_steps: Iterable[int],
+                                 schemes: Iterable[str]):
 
         @SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
         def infer_test_error(scheme: str, n_step: int) -> Tuple[float]:
@@ -59,7 +62,8 @@ class ConvergenceTester:
             return float(err),
 
         errors = []
-        for n_step in range(1, 10):
-            error = infer_test_error("Euler", n_step)
-            errors.append((n_step, error))
+        for n_step in n_steps:
+            for scheme in schemes:
+                error = infer_test_error(scheme, n_step)
+                errors.append((n_step, error))
         return errors

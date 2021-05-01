@@ -67,6 +67,9 @@ BASIS = {
 }
 
 
+#
+# Fast split refinement.
+#
 def split_refine_piecewise(nodes: Iterable[JaxTreeType]):
     new_nodes = []
     for node in nodes:
@@ -74,7 +77,7 @@ def split_refine_piecewise(nodes: Iterable[JaxTreeType]):
         new_nodes.append(node)
     return new_nodes
 
-
+a
 def split_refine_fem(nodes: Iterable[JaxTreeType]):
     """Traditional finite element hat functions."""
     # Fringe case is constant, which turns into one element.
@@ -97,6 +100,9 @@ REFINE = {
 }
 
 
+#
+# Point cloud projections.
+#
 def point_loss(params, basis, ts, ys):
     losses = []
     for t_i, y_i in zip(ts, ys):
@@ -130,5 +136,67 @@ def point_project_tree(tree_point_cloud, ts, n_basis, basis):
 
     out = jax.tree_multimap(point_project_list, *tree_point_cloud)
     original_struct = jax.tree_structure(tree_point_cloud[0])
+    mapped_struct = jax.tree_structure(list(range(n_basis)))
+    return jax.tree_transpose(original_struct, mapped_struct, out)
+
+
+#
+# Function projections
+#
+def projection_loss(params_A, params_B, basis_A, basis_B, degree=3, n_cell=10):
+    """Loss function that integrates over the depth of the network."""
+    Gauss_Z, Gauss_W = onp.polynomial.legendre.leggauss(degree)
+    phi_A = basis_A(params_A)
+    phi_B = basis_B(params_B)
+    cell_xs = onp.linspace(0, 1, n_cell)
+    integration_cells = [(cell_xs[i], cell_xs[i + 1]) for i in range(n_cell - 1)
+                        ]
+    losses = []
+    for x_1, x_2 in integration_cells:
+        for z, w in zip(Gauss_Z, Gauss_W):
+            x_z = x_1 + (x_2 - x_1) * (z + 1.0) / 2.0
+            integral = 0.5 * (x_2 - x_1) * w * (phi_A(x_z) - phi_B(x_z))**2
+            losses.append(integral)
+    return jnp.sum(jnp.array(losses))
+
+
+def _function_project(source_params, source_basis, target_basis, n_basis):
+    """Linear function projection is one step of Newton's method."""
+    print('tracing')
+    target_params = jnp.zeros(n_basis)
+    vG = jax.grad(projection_loss)(target_params,
+                                   source_params,
+                                   target_basis,
+                                   source_basis,
+                                   n_cell=n_basis)
+    mH = jax.hessian(projection_loss)(target_params,
+                                      source_params,
+                                      target_basis,
+                                      source_basis,
+                                      n_cell=n_basis)
+    d_params = -jnp.linalg.solve(mH, vG)
+    return d_params
+
+
+function_project = jax.jit(_function_project, static_argnums=[1, 2, 3])
+
+
+def function_project_array(source_params, source_basis, target_basis, n_basis):
+    ys_stack = jnp.array(source_params)
+    ys_flat = ys_stack.reshape(ys_stack.shape[0], -1)
+    f_ = lambda x_: function_project(x_, source_basis, target_basis, n_basis)
+    f_map = jax.vmap(f_, in_axes=-1, out_axes=-1)
+    nodes = f_map(ys_flat)
+    return list(nodes.reshape((n_basis,) + ys_stack.shape[1:]))
+
+
+def function_project_tree(source_params, source_basis, target_basis, n_basis):
+
+    def function_project_list(*args):
+        return list(
+            function_project_array(args, source_basis, target_basis, n_basis))
+
+    out = jax.tree_multimap(function_project_list, *source_params)
+    original_struct = jax.tree_structure(source_params[0])
     mapped_struct = jax.tree_structure(list(range(n_basis)))
     return jax.tree_transpose(original_struct, mapped_struct, out)
