@@ -37,7 +37,7 @@ def run_an_experiment(dataset_name: Optional[str] = None,
                       validation_data: Optional[Any] = None,
                       test_data: Optional[Any] = None,
                       save_dir: str = '../runs/',
-                      dataset_dir: str = '../'
+                      dataset_dir: str = '../',
                       which_model: str = 'Continuous',
                       seed: int = 0,
                       alpha: int = 8,
@@ -57,7 +57,7 @@ def run_an_experiment(dataset_name: Optional[str] = None,
                       refine_epochs: Optional[Iterable] = None):
     if dataset_name:
         torch_train_data, torch_validation_data, torch_test_data = (
-            datasets.get_dataset(dataset_name), root=dataset_dir)
+            datasets.get_dataset(dataset_name, root=dataset_dir))
         train_data = DataTransform(torch_train_data)
         validation_data = DataTransform(torch_validation_data)
         test_data = DataTransform(torch_test_data)
@@ -116,7 +116,7 @@ def run_an_experiment(dataset_name: Optional[str] = None,
     test_acc = tester.metrics_over_test_set(optimizer.target, current_state)
     validation_acc_writer(float(validation_acc))
     print("Initial acc ", test_acc)
-    jax.profiler.save_device_memory_profile(f"{exp.path}/memory_init.prof")
+    # jax.profiler.save_device_memory_profile(f"{exp.path}/memory_init.prof")
     for epoch in range(1, 1 + n_epoch):
         if epoch in refine_epochs:
             new_model, new_params, current_state = exp.model.refine(
@@ -128,15 +128,16 @@ def run_an_experiment(dataset_name: Optional[str] = None,
             trainer = Trainer(exp.model, train_data)
             validator = Tester(eval_model, validation_data)
             tester = Tester(eval_model, test_data)
+            print("Refining model to: ", end='')
             report_count(new_params, current_state)
         optimizer, current_state = trainer.train_epoch(optimizer, current_state,
                                                        lr_schedule(epoch),
                                                        loss_writer,
                                                        train_acc_writer)
-        jax.profiler.save_device_memory_profile(f"{exp.path}/memory_train_{epoch}.prof")
+        # jax.profiler.save_device_memory_profile(f"{exp.path}/memory_train_{epoch}.prof")
         validation_acc = validator.metrics_over_test_set(optimizer.target, current_state)
 
-        jax.profiler.save_device_memory_profile(f"{exp.path}/memory_test_{epoch}.prof")
+        # jax.profiler.save_device_memory_profile(f"{exp.path}/memory_test_{epoch}.prof")
         validation_acc_writer(float(validation_acc))
         print("After epoch ", epoch, " acc: ", validation_acc)
         if epoch % _CHECKPOINT_FREQ == 0:
@@ -148,5 +149,5 @@ def run_an_experiment(dataset_name: Optional[str] = None,
     except:
         pass
     test_acc = tester.metrics_over_test_set(optimizer.target, current_state)
-
+    print("Final test set accuracy: ", test_acc)
     return test_acc  # Return the final test set accuracy for testing.
