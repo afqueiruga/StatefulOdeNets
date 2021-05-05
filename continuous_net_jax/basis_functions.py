@@ -1,8 +1,9 @@
 import jax
 import jax.numpy as jnp
+import numpy as onp
 
 from .continuous_types import *
-
+from .tools import *
 
 # Basis functions
 def piecewise_constant(
@@ -77,7 +78,7 @@ def split_refine_piecewise(nodes: Iterable[JaxTreeType]):
         new_nodes.append(node)
     return new_nodes
 
-a
+
 def split_refine_fem(nodes: Iterable[JaxTreeType]):
     """Traditional finite element hat functions."""
     # Fringe case is constant, which turns into one element.
@@ -162,7 +163,7 @@ def projection_loss(params_A, params_B, basis_A, basis_B, degree=3, n_cell=10):
 
 def _function_project(source_params, source_basis, target_basis, n_basis):
     """Linear function projection is one step of Newton's method."""
-    print('tracing')
+    print('tracing', source_params.shape)
     target_params = jnp.zeros(n_basis)
     vG = jax.grad(projection_loss)(target_params,
                                    source_params,
@@ -180,13 +181,15 @@ def _function_project(source_params, source_basis, target_basis, n_basis):
 
 function_project = jax.jit(_function_project, static_argnums=[1, 2, 3])
 
+# f_ = lambda x_: function_project(x_, source_basis, target_basis, n_basis)
+_function_project_mapped = jax.vmap(function_project, in_axes=(-1, None, None, None), out_axes=-1)
+function_project_mapped = jax.jit(_function_project_mapped, static_argnums=[1, 2, 3])
+
 
 def function_project_array(source_params, source_basis, target_basis, n_basis):
     ys_stack = jnp.array(source_params)
     ys_flat = ys_stack.reshape(ys_stack.shape[0], -1)
-    f_ = lambda x_: function_project(x_, source_basis, target_basis, n_basis)
-    f_map = jax.vmap(f_, in_axes=-1, out_axes=-1)
-    nodes = f_map(ys_flat)
+    nodes = function_project_mapped(ys_flat, source_basis, target_basis, n_basis)
     return list(nodes.reshape((n_basis,) + ys_stack.shape[1:]))
 
 
