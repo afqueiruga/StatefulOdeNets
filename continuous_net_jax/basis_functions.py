@@ -102,6 +102,35 @@ REFINE = {
 
 
 #
+# Interpolation
+#
+def piecewise_node_locations(n_basis: int):
+    dx = 1.0/n_basis
+    return onp.linspace(0, 1-dx, n_basis) + dx*0.5
+
+
+def interpolate_piecewise_constant(f: ContinuousParameters, n_basis: int) -> Iterable[JaxTreeType]:
+    return [f(t) for t in piecewise_node_locations(n_basis)]
+
+
+def fem_node_locations(n_basis: int):
+    if n_basis == 1:
+        return onp.array([0.5])
+    else:
+        return onp.linspace(0, 1, n_basis)
+
+
+def interpolate_fem_linear(f: ContinuousParameters, n_basis: int) -> Iterable[JaxTreeType]:
+    return [f(t) for t in fem_node_locations(n_basis)]
+
+
+INTERPOLATE = {
+    'piecewise_constant': interpolate_piecewise_constant,
+    'fem_linear': interpolate_fem_linear,
+}
+
+
+#
 # Point cloud projections.
 #
 def point_loss(params, basis, ts, ys):
@@ -144,7 +173,7 @@ def point_project_tree(tree_point_cloud, ts, n_basis, basis):
 #
 # Function projections
 #
-def projection_loss(params_A, params_B, basis_A, basis_B, degree=3, n_cell=10):
+def projection_loss(params_A, params_B, basis_A, basis_B, degree=7, n_cell=10):
     """Loss function that integrates over the depth of the network."""
     Gauss_Z, Gauss_W = onp.polynomial.legendre.leggauss(degree)
     phi_A = basis_A(params_A)
@@ -165,16 +194,17 @@ def _function_project(source_params, source_basis, target_basis, n_basis):
     """Linear function projection is one step of Newton's method."""
     print('tracing', source_params.shape)
     target_params = jnp.zeros(n_basis)
+    n_cell = max(len(source_params), n_basis)
     vG = jax.grad(projection_loss)(target_params,
                                    source_params,
                                    target_basis,
                                    source_basis,
-                                   n_cell=n_basis)
+                                   n_cell=n_cell)
     mH = jax.hessian(projection_loss)(target_params,
                                       source_params,
                                       target_basis,
                                       source_basis,
-                                      n_cell=n_basis)
+                                      n_cell=n_cell)
     d_params = -jnp.linalg.solve(mH, vG)
     return d_params
 

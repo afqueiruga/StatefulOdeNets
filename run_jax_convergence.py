@@ -18,10 +18,16 @@ test_data = DataTransform(torch_test_data)
 for path in paths:
     ct = ConvergenceTester(path)
     print(ct.eval_model)
-    ct.perform_project_and_infer(test_data,
+    ct.perform_interpolate_and_infer(
+        test_data,
                              ('piecewise_constant', 'fem_linear'),
                             range(1, ct.eval_model.n_step+1), 
                             ['Euler', 'RK4'],
                             (ct.eval_model.n_step,))
+#     ct.perform_project_and_infer(test_data,
+#                              ('piecewise_constant', 'fem_linear'),
+#                             range(1, ct.eval_model.n_step+1), 
+#                             ['Euler', 'RK4'],
+#                             (ct.eval_model.n_step,))
     #ct.perform_convergence_test(test_data, range(1,16),
     #                            ['Euler','Midpoint','RK4','RK4_38'])
