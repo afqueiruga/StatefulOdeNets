@@ -1,6 +1,7 @@
 from typing import Any, Iterable, Tuple
 
 from SimDataDB import SimDataDB2
+import functools
 import glob
 import os
 
@@ -91,6 +92,7 @@ class ConvergenceTester:
                 errors.append((n_step, error))
         return errors
 
+    @functools.lru_cache()
     def project(self, target_basis, n_basis):
         W2, S2 = project_continuous_net(self.params, self.state,
                                         BASIS[self.eval_model.basis],
@@ -98,32 +100,30 @@ class ConvergenceTester:
         new_model = self.eval_model.clone(basis=target_basis, n_basis=n_basis)
         return new_model, W2, S2
 
-    def project_and_infer(self, test_data: Any, basis: str, n_basis: int,
-                          schemes: Iterable[str], n_steps: Iterable[int]):
-        p_model, p_params, p_state = self.project(basis, n_basis)
-
-        @SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
-        def infer_projected_test_error(scheme: str, n_step: int, basis: str,
-                                       n_basis: int) -> Tuple[float]:
-            s_p_model = p_model.clone(n_step=n_step, scheme=scheme)
-            tester = Tester(s_p_model, test_data)
-            err = tester.metrics_over_test_set(p_params,  p_state)
-            return float(err),
-
-        errors = []
-        for n_step in n_steps:
-            for scheme in schemes:
-                errors.append(
-                    infer_projected_test_error(scheme, n_step, basis, n_basis))
-        return errors
-
     def perform_project_and_infer(self, test_data: Any,
                                   bases: Iterable[str],
                                   n_bases: Iterable[int],
                                   schemes: Iterable[str],
                                   n_steps: Iterable[int]):
+        
+        @SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
+        def infer_projected_test_error3(scheme: str, n_step: int, basis: str,
+                                       n_basis: int) -> Tuple[float, int]:
+            # Rely on the LRU cache to avoid the second call, and sqlite 
+            # cache to avoid the first call.
+            p_model, p_params, p_state = self.project(basis, n_basis)
+            s_p_model = p_model.clone(n_step=n_step, scheme=scheme)
+            tester = Tester(s_p_model, test_data)
+            err = tester.metrics_over_test_set(p_params,  p_state)
+            return float(err), count_parameters(p_params)
+
+        print("| Basis | n_basis | Scheme | n_step | error | n_params |")
+        print("|-------|----------------------------------------------|")
         errors = {}
-        for n_basis in n_bases:
-            for basis in bases:
-                self.project_and_infer(test_data, basis, n_basis, schemes,
-                                       n_steps)
+        for basis in bases:
+            for n_basis in n_bases:
+                for n_step in n_steps:
+                    for scheme in schemes:
+                        e, num_params = infer_projected_test_error3(scheme, n_step, basis, n_basis)
+                        print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} |")
+
