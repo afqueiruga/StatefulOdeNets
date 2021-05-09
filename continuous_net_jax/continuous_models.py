@@ -234,30 +234,30 @@ class ContinuousImageClassifierSmall(nn.Module):
         R_ = lambda hidden_: ResidualUnitv2(
             hidden_features=hidden_, norm=self.norm, training=self.training)
         # First filter to make features.
-        h = nn.Conv(features=18, use_bias=False,
+        h = nn.Conv(features=16, use_bias=False,
                     kernel_size=(3, 3),
                     kernel_init=INITS[self.kernel_init])(x)
         # TODO batchnorm + relu here
         h = NORMS[self.norm](use_running_average=not self.training)(h)
         h = nn.relu(h)
         # 3 stages of continuous segments:
-        h = ResidualStitchv2(hidden_features=18,
-                           output_features= 18,
+        h = ResidualStitchv2(hidden_features=16,
+                           output_features= 16,
                            strides=(1, 1),
                            norm=self.norm,
                            training=self.training)(h)        
-        h = ContinuousNet(R=R_(18),
+        h = ContinuousNet(R=R_(16),
                           scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis,
                           basis=self.basis,
                           training=self.training)(h)
-        h = ResidualStitchv2(hidden_features=18,
-                           output_features= 34,
+        h = ResidualStitchv2(hidden_features=16,
+                           output_features= 32,
                            strides=(2, 2),
                            norm=self.norm,
                            training=self.training)(h)
-        h = ContinuousNet(R=R_(34),
+        h = ContinuousNet(R=R_(32),
                           scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis,
@@ -266,7 +266,10 @@ class ContinuousImageClassifierSmall(nn.Module):
 
         # Pool and linearly classify:
         #h = NORMS[self.norm](use_running_average=not self.training)(h)
-        h = jnp.mean(h, axis=(1, 2))
+        #h = jnp.mean(h, axis=(1, 2))
+        h = nn.avg_pool(h, window_shape=(16, 16), strides=(8, 8))
+        h = h.reshape((h.shape[0], -1))
+        print('hidden size: ', h.size)
         h = nn.Dense(features=self.n_classes)(h)
         return nn.log_softmax(h)  # no softmax
 
