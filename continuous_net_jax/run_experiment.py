@@ -159,7 +159,7 @@ def run_an_experiment(dataset_name: Optional[str] = None,
 
         # jax.profiler.save_device_memory_profile(f"{exp.path}/memory_test_{epoch}.prof")
         validation_acc_writer(float(validation_acc))
-        print("After epoch ", epoch, " acc: ", validation_acc)
+        print("After epoch ", epoch, "test acc: ", validation_acc)
         if epoch % _CHECKPOINT_FREQ == 0:
             exp.save_checkpoint(optimizer, current_state, epoch)
         tb_writer.flush()
