@@ -22,6 +22,8 @@ from .optimizer_factory import make_optimizer
 from .tensorboard_writer import TensorboardWriter
 from .tools import count_parameters
 
+from .continuous_models import *
+
 _CHECKPOINT_FREQ = 20
 
 
@@ -79,6 +81,15 @@ def run_an_experiment(dataset_name: Optional[str] = None,
                                           n_basis=n_basis,
                                           basis=basis,
                                           norm=norm)
+    elif which_model == 'Continuous2':   
+        model = ContinuousImageClassifierSmall(alpha=alpha,
+                                          hidden=hidden,
+                                          n_step=n_step,
+                                          scheme=scheme,
+                                          n_basis=n_basis,
+                                          basis=basis,
+                                          norm=norm)        
+        
     elif which_model == 'ResNet':
         model = ResNet(alpha=alpha,
                        hidden=hidden,
@@ -111,6 +122,15 @@ def run_an_experiment(dataset_name: Optional[str] = None,
     trainer = Trainer(exp.model, train_data)
     validator = Tester(eval_model, validation_data)
     tester = Tester(eval_model, test_data)
+    
+    
+    print('**** Setup ****')
+    n_params = jax.tree_util.tree_reduce(lambda x, y : x + y.flatten().size, init_params, initializer=0)
+    print(n_params)
+    print('Total params: %.2fk ; %.2fM' % (n_params * 10**-3, n_params * 10**-6))
+    print('************')    
+    
+    
 
     validation_acc = validator.metrics_over_test_set(optimizer.target, current_state)
     test_acc = tester.metrics_over_test_set(optimizer.target, current_state)

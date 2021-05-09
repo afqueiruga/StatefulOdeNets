@@ -55,14 +55,37 @@ class ResidualUnit(nn.Module):
     def __call__(self, x):
         h = NORMS[self.norm](use_running_average=not self.training)(x)
         h = self.activation(h)
-        h = nn.Conv(self.hidden_features, (3, 3),
+        h = nn.Conv(self.hidden_features, (3, 3), use_bias=False,
                     kernel_init=INITS[self.kernel_init])(h)
 
         h = NORMS[self.norm](use_running_average=not self.training)(h)
         h = self.activation(h)
-        h = nn.Conv(x.shape[-1], (3, 3), kernel_init=INITS[self.kernel_init])(h)
-
+        h = nn.Conv(x.shape[-1], (3, 3), use_bias=False,
+                    kernel_init=INITS[self.kernel_init])(h)
         return h
+
+
+class ResidualUnitv2(nn.Module):
+    hidden_features: int
+    norm: str = 'BatchNorm'
+    activation: Callable = nn.relu
+    kernel_init: str = 'kaiming_out'
+    training: bool = True
+    # epsilon: float = 1.0
+
+    @nn.compact
+    def __call__(self, x):
+        h = nn.Conv(self.hidden_features, (3, 3), use_bias=False,
+                    kernel_init=INITS[self.kernel_init])(x)
+        h = NORMS[self.norm](use_running_average=not self.training)(h)
+        h = self.activation(h)
+        h = nn.Conv(x.shape[-1], (3, 3), use_bias=False,
+                    kernel_init=INITS[self.kernel_init])(h)
+        h = NORMS[self.norm](use_running_average=not self.training)(h)
+        h = self.activation(h)
+        return h
+
+
 
 
 class ResidualStitch(nn.Module):
@@ -78,17 +101,50 @@ class ResidualStitch(nn.Module):
     def __call__(self, x):
         h = NORMS[self.norm](use_running_average=not self.training)(x)
         h = self.activation(h)
-        h = nn.Conv(self.hidden_features, (3, 3),
+        h = nn.Conv(self.hidden_features, (3, 3), use_bias=False,
                     kernel_init=INITS[self.kernel_init])(h)
 
         h = NORMS[self.norm](use_running_average=not self.training)(h)
         h = self.activation(h)
-        h = nn.Conv(self.output_features, (3, 3),
+        h = nn.Conv(self.output_features, (3, 3), use_bias=False,
                     strides=self.strides,
                     kernel_init=INITS[self.kernel_init])(h)
 
-        x_down = nn.Conv(self.output_features, (1, 1),
+        x_down = nn.Conv(self.output_features, (1, 1), use_bias=False,
                          strides=self.strides,
                          use_bias=False,
                          kernel_init=INITS[self.kernel_init])(x)
         return x_down + h
+
+
+
+class ResidualStitchv2(nn.Module):
+    hidden_features: int
+    output_features: int
+    norm: str = 'BatchNorm'
+    activation: Callable = nn.relu
+    kernel_init: str = 'kaiming_out'
+    training: bool = True
+    strides: Tuple[int] = (2, 2)
+
+    @nn.compact
+    def __call__(self, x):
+        h = nn.Conv(self.hidden_features, (3, 3), use_bias=False,
+                    kernel_init=INITS[self.kernel_init])(x)
+        h = NORMS[self.norm](use_running_average=not self.training)(h)
+        h = self.activation(h)
+        h = nn.Conv(self.output_features, (3, 3), use_bias=False,
+                    strides=self.strides,
+                    kernel_init=INITS[self.kernel_init])(h)
+
+        h = NORMS[self.norm](use_running_average=not self.training)(h)
+
+
+        x_down = nn.Conv(self.output_features, (1, 1), use_bias=False,
+                         strides=self.strides,
+                         use_bias=False,
+                         kernel_init=INITS[self.kernel_init])(x)
+        
+        x_down = NORMS[self.norm](use_running_average=not self.training)(x_down)
+        
+        return self.activation(x_down + h)

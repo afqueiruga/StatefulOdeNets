@@ -3,34 +3,37 @@ import sys
 
 from continuous_net_jax.run_experiment import *
 
+import argparse
+
+
 # import jax.profiler
 
+# export CUDA_VISIBLE_DEVICES=0; python run_cifar10_jax_version.py --seed 0
+
+
+parser = argparse.ArgumentParser(description='training parameters')
+
+parser.add_argument('--wd', type=float, default=5e-4, help='weight decay parameter')
+parser.add_argument('--seed', type=int, default=1, help='seed')
+
+args = parser.parse_args()
+print(args)
 
 root = './'
 DIR = "../runs_cifar10_b/"
 
-# Baseline ResNet
-# run_an_experiment(
-#     train_data, test_data, DIR,
-#     which_model="ResNet",
-#     alpha=16, hidden=16, n_step=16, norm="BatchNorm",
-#     kernel_init='kaiming_out',
-#     n_epoch=3,
-#     learning_rate=0.01, learning_rate_decay=0.1,
-#     learning_rate_decay_epochs=[90, 110,],
-#     refine_epochs=[])
-
-# Grow to 1 to 16
-for SCHEME in ['Euler', 'RK4']:
+# Experiment 1 1-1-1 ResNet-12
+for SCHEME in ['Euler']:
     run_an_experiment(
           dataset_name='CIFAR10',
           save_dir=DIR,
-          which_model="Continuous",
-          alpha=16, hidden=16, n_step=1, n_basis=1, norm="BatchNorm",
+          which_model="Continuous2",
+          alpha=16, hidden=16, n_step=2, n_basis=2, norm="BatchNorm",
           basis='piecewise_constant',
           scheme=SCHEME,
           kernel_init='kaiming_out',
           n_epoch=120,
-          learning_rate=0.1, learning_rate_decay=0.1,
-          learning_rate_decay_epochs=[90, 110,],
-          refine_epochs=[20,40,60,80,])
+          learning_rate=0.1, learning_rate_decay=0.1, weight_decay=args.wd,
+          learning_rate_decay_epochs=[30, 60, 90],
+          refine_epochs=[],
+          seed=args.seed)

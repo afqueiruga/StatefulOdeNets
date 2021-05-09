@@ -5,7 +5,7 @@ from torchvision.datasets import CIFAR10, CIFAR100, FashionMNIST, ImageFolder
 
 
 def get_dataset(name='FMNIST',
-                batch_size=128,
+                batch_size=64,
                 test_batch_size=256,
                 root='.',
                 device=None,
