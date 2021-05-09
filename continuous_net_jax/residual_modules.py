@@ -14,6 +14,7 @@ INITS = {
     'kaiming': jax.nn.initializers.kaiming_normal(),
     'kaiming_out': kaiming_out(),
     'lecun': jax.nn.initializers.lecun_normal(),
+    'glorot': jax.nn.initializers.glorot_uniform(),
 }
 
 NORMS = {
@@ -104,19 +105,26 @@ class ResidualStitch(nn.Module):
     def __call__(self, x):
         h = NORMS[self.norm](use_running_average=not self.training)(x)
         h = self.activation(h)
-        h = nn.Conv(self.hidden_features, (3, 3), use_bias=self.use_bias,
-                    kernel_init=INITS[self.kernel_init])(h)
+        
+        h = nn.Conv(self.output_features, (3, 3), use_bias=self.use_bias,
+                    strides=self.strides,
+                    kernel_init=INITS[self.kernel_init])(h)        
+        
+
 
         h = NORMS[self.norm](use_running_average=not self.training)(h)
         h = self.activation(h)
-        h = nn.Conv(self.output_features, (3, 3), use_bias=self.use_bias,
-                    strides=self.strides,
-                    kernel_init=INITS[self.kernel_init])(h)
 
-        x_down = nn.Conv(self.output_features, (1, 1), use_bias=self.use_bias,
-                         strides=self.strides,
-                         kernel_init=INITS[self.kernel_init])(x)
-        return x_down + h
+        h = nn.Conv(self.output_features, (3, 3), use_bias=self.use_bias,
+                    kernel_init=INITS[self.kernel_init])(h)
+        
+        if self.strides[0] != 1:
+            x_down = nn.Conv(self.output_features, (1, 1), use_bias=self.use_bias,
+                             strides=self.strides,
+                             kernel_init=INITS[self.kernel_init])(x)
+            return x_down + h
+        else:
+            return x + h
 
 
 
@@ -132,21 +140,26 @@ class ResidualStitchv2(nn.Module):
 
     @nn.compact
     def __call__(self, x):
-        h = nn.Conv(self.hidden_features, (3, 3), use_bias=self.use_bias,
-                    kernel_init=INITS[self.kernel_init])(x)
-        h = NORMS[self.norm](use_running_average=not self.training)(h)
-        h = self.activation(h)
+        
         h = nn.Conv(self.output_features, (3, 3), use_bias=self.use_bias,
                     strides=self.strides,
+                    kernel_init=INITS[self.kernel_init])(x)
+        
+        h = NORMS[self.norm](use_running_average=not self.training)(h)
+        h = self.activation(h)
+
+        h = nn.Conv(self.output_features, (3, 3), use_bias=self.use_bias,
                     kernel_init=INITS[self.kernel_init])(h)
 
         h = NORMS[self.norm](use_running_average=not self.training)(h)
 
-
-        x_down = nn.Conv(self.output_features, (1, 1), use_bias=self.use_bias,
-                         strides=self.strides,
-                         kernel_init=INITS[self.kernel_init])(x)
-        
-        x_down = NORMS[self.norm](use_running_average=not self.training)(x_down)
-        
-        return self.activation(x_down + h)
+        if self.strides[0] != 1:
+            x_down = nn.Conv(self.output_features, (1, 1), use_bias=self.use_bias,
+                             strides=self.strides,
+                             kernel_init=INITS[self.kernel_init])(x)
+            
+            x_down = NORMS[self.norm](use_running_average=not self.training)(x_down)
+            
+            return self.activation(x_down + h)
+        else:
+            return self.activation(x + h)
