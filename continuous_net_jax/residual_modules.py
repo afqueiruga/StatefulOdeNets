@@ -49,18 +49,19 @@ class ResidualUnit(nn.Module):
     activation: Callable = nn.relu
     kernel_init: str = 'kaiming_out'
     training: bool = True
+    use_bias: bool = False
     # epsilon: float = 1.0
 
     @nn.compact
     def __call__(self, x):
         h = NORMS[self.norm](use_running_average=not self.training)(x)
         h = self.activation(h)
-        h = nn.Conv(self.hidden_features, (3, 3), use_bias=False,
+        h = nn.Conv(self.hidden_features, (3, 3), use_bias=self.use_bias,
                     kernel_init=INITS[self.kernel_init])(h)
 
         h = NORMS[self.norm](use_running_average=not self.training)(h)
         h = self.activation(h)
-        h = nn.Conv(x.shape[-1], (3, 3), use_bias=False,
+        h = nn.Conv(x.shape[-1], (3, 3), use_bias=self.use_bias,
                     kernel_init=INITS[self.kernel_init])(h)
         return h
 
@@ -71,15 +72,16 @@ class ResidualUnitv2(nn.Module):
     activation: Callable = nn.relu
     kernel_init: str = 'kaiming_out'
     training: bool = True
+    use_bias: bool = False
     # epsilon: float = 1.0
 
     @nn.compact
     def __call__(self, x):
-        h = nn.Conv(self.hidden_features, (3, 3), use_bias=False,
+        h = nn.Conv(self.hidden_features, (3, 3), use_bias=self.use_bias,
                     kernel_init=INITS[self.kernel_init])(x)
         h = NORMS[self.norm](use_running_average=not self.training)(h)
         h = self.activation(h)
-        h = nn.Conv(x.shape[-1], (3, 3), use_bias=False,
+        h = nn.Conv(x.shape[-1], (3, 3), use_bias=self.use_bias,
                     kernel_init=INITS[self.kernel_init])(h)
         h = NORMS[self.norm](use_running_average=not self.training)(h)
         h = self.activation(h)
@@ -96,23 +98,23 @@ class ResidualStitch(nn.Module):
     kernel_init: str = 'kaiming_out'
     training: bool = True
     strides: Tuple[int] = (2, 2)
+    use_bias: bool = False
 
     @nn.compact
     def __call__(self, x):
         h = NORMS[self.norm](use_running_average=not self.training)(x)
         h = self.activation(h)
-        h = nn.Conv(self.hidden_features, (3, 3), use_bias=False,
+        h = nn.Conv(self.hidden_features, (3, 3), use_bias=self.use_bias,
                     kernel_init=INITS[self.kernel_init])(h)
 
         h = NORMS[self.norm](use_running_average=not self.training)(h)
         h = self.activation(h)
-        h = nn.Conv(self.output_features, (3, 3), use_bias=False,
+        h = nn.Conv(self.output_features, (3, 3), use_bias=self.use_bias,
                     strides=self.strides,
                     kernel_init=INITS[self.kernel_init])(h)
 
-        x_down = nn.Conv(self.output_features, (1, 1), use_bias=False,
+        x_down = nn.Conv(self.output_features, (1, 1), use_bias=self.use_bias,
                          strides=self.strides,
-                         use_bias=False,
                          kernel_init=INITS[self.kernel_init])(x)
         return x_down + h
 
@@ -126,23 +128,23 @@ class ResidualStitchv2(nn.Module):
     kernel_init: str = 'kaiming_out'
     training: bool = True
     strides: Tuple[int] = (2, 2)
+    use_bias: bool = False
 
     @nn.compact
     def __call__(self, x):
-        h = nn.Conv(self.hidden_features, (3, 3), use_bias=False,
+        h = nn.Conv(self.hidden_features, (3, 3), use_bias=self.use_bias,
                     kernel_init=INITS[self.kernel_init])(x)
         h = NORMS[self.norm](use_running_average=not self.training)(h)
         h = self.activation(h)
-        h = nn.Conv(self.output_features, (3, 3), use_bias=False,
+        h = nn.Conv(self.output_features, (3, 3), use_bias=self.use_bias,
                     strides=self.strides,
                     kernel_init=INITS[self.kernel_init])(h)
 
         h = NORMS[self.norm](use_running_average=not self.training)(h)
 
 
-        x_down = nn.Conv(self.output_features, (1, 1), use_bias=False,
+        x_down = nn.Conv(self.output_features, (1, 1), use_bias=self.use_bias,
                          strides=self.strides,
-                         use_bias=False,
                          kernel_init=INITS[self.kernel_init])(x)
         
         x_down = NORMS[self.norm](use_running_average=not self.training)(x_down)
