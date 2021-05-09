@@ -4,8 +4,8 @@ from torchvision import datasets, transforms
 from torchvision.datasets import CIFAR10, CIFAR100, FashionMNIST, ImageFolder
 
 
-def get_dataset(name='FMNIST',
-                batch_size=64,
+def get_dataset(name='CIFAR10',
+                batch_size=128,
                 test_batch_size=256,
                 root='.',
                 device=None,
@@ -29,7 +29,7 @@ def get_dataset(name='FMNIST',
         refset = CIFAR10(root=root + '/CIFAR10_data',
                          train=True,
                          download=True,
-                         transform=None)
+                         transform=transform_test)
         trainset = CIFAR10(root=root + '/CIFAR10_data',
                            train=True,
                            download=True,
@@ -47,7 +47,7 @@ def get_dataset(name='FMNIST',
         refset = FashionMNIST(root + '/F_MNIST_data/',
                               download=True,
                               train=True,
-                              transform=None)
+                              transform=transform)
         trainset = FashionMNIST(root + '/F_MNIST_data/',
                                 download=True,
                                 train=True,
@@ -118,7 +118,7 @@ def get_dataset(name='FMNIST',
     
     if device is not None:
         trainset = trainset.to(device)
-        validationset = validationset.to(device)
+        validationset = refset.to(device)
         testnset = testset.to(device)
 
     train_loader = torch.utils.data.DataLoader(trainset,
@@ -133,7 +133,7 @@ def get_dataset(name='FMNIST',
     #                                           pin_memory=True)
     test_loader = torch.utils.data.DataLoader(testset,
                                              batch_size=test_batch_size,
-                                             shuffle=True,
+                                             shuffle=False,
                                              num_workers=1,
                                              pin_memory=True)
 
