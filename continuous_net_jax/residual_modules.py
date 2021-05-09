@@ -15,6 +15,7 @@ INITS = {
     'kaiming_out': kaiming_out(),
     'lecun': jax.nn.initializers.lecun_normal(),
     'glorot': jax.nn.initializers.glorot_uniform(),
+    'he': jax.nn.initializers.he_uniform(),
 }
 
 NORMS = {
@@ -25,7 +26,7 @@ NORMS = {
     'BatchNorm-opt-flax':
         partial(nn.BatchNorm,
                 use_running_average=True,
-                momentum=0.9,
+                momentum=0.1,
                 epsilon=1e-5),
     'BatchNorm-freeze':
         partial(nn.BatchNorm, use_running_average=True)
