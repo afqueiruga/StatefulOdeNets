@@ -131,9 +131,10 @@ def run_an_experiment(dataset_name: Optional[str] = None,
     print('************')    
     
     
-
+    
     validation_acc = validator.metrics_over_test_set(optimizer.target, current_state)
     test_acc = tester.metrics_over_test_set(optimizer.target, current_state)
+    best_test_acc = 0.0
     validation_acc_writer(float(validation_acc))
     print("Initial acc ", test_acc)
     # jax.profiler.save_device_memory_profile(f"{exp.path}/memory_init.prof")
@@ -160,6 +161,9 @@ def run_an_experiment(dataset_name: Optional[str] = None,
         # jax.profiler.save_device_memory_profile(f"{exp.path}/memory_test_{epoch}.prof")
         validation_acc_writer(float(validation_acc))
         print("After epoch ", epoch, "test acc: ", validation_acc)
+        if best_test_acc < validation_acc:
+            best_test_acc = validation_acc
+        
         if epoch % _CHECKPOINT_FREQ == 0:
             exp.save_checkpoint(optimizer, current_state, epoch)
         tb_writer.flush()
@@ -170,4 +174,6 @@ def run_an_experiment(dataset_name: Optional[str] = None,
         pass
     test_acc = tester.metrics_over_test_set(optimizer.target, current_state)
     print("Final test set accuracy: ", test_acc)
+    print("Final best test set accuracy: ", best_test_acc)
+    
     return test_acc  # Return the final test set accuracy for testing.
