@@ -5,7 +5,7 @@ import flax.linen as nn
 import jax.numpy as jnp
 
 from .continuous_types import *
-from .continuous_net import ContinuousNet, ContinuousNet2
+from .continuous_net import ContinuousNet
 from .residual_modules import NORMS, ResidualUnit, ResidualStitch, INITS, ResidualUnitv2, ResidualStitchv2
 
 from .basis_functions import piecewise_constant, REFINE
@@ -131,7 +131,7 @@ class ContinuousImageClassifier(nn.Module):
 
 
 
-class ContinuousImageClassifierSmallv2(nn.Module):
+class ContinuousImageClassifierSmall(nn.Module):
     """Analogue of the 3-block resnet architecture."""
     alpha: int = 1
     hidden: int = 16
@@ -208,7 +208,7 @@ class ContinuousImageClassifierSmallv2(nn.Module):
         
         
         
-class ContinuousImageClassifierSmall(nn.Module):
+class ContinuousImageClassifierSmall2(nn.Module):
     """Analogue of the 3-block resnet architecture."""
     alpha: int = 1
     hidden: int = 16
@@ -238,24 +238,25 @@ class ContinuousImageClassifierSmall(nn.Module):
                            strides=(1, 1),
                            norm=self.norm,
                            training=self.training)(h)  
-        h = ContinuousNet2(R=R_(self.hidden * self.alpha),
+        h = ContinuousNet(R=R_(self.hidden * self.alpha),
                           scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis,
                           basis=self.basis,
                           training=self.training)(h)
+        h = nn.relu(h)
         h = ResidualStitchv2(hidden_features=self.hidden * self.alpha,
                            output_features= self.hidden * self.alpha * 2,
                            strides=(2, 2),
                            norm=self.norm,
                            training=self.training)(h)
-        h = ContinuousNet2(R=R_(self.hidden * self.alpha * 2),
+        h = ContinuousNet(R=R_(self.hidden * self.alpha * 2),
                           scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis,
                           basis=self.basis,
                           training=self.training)(h)
-
+        h = nn.relu(h)
 
         # Pool and linearly classify:
         h = NORMS[self.norm](use_running_average=not self.training)(h)
