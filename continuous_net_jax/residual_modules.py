@@ -126,9 +126,10 @@ class ResidualStitch(nn.Module):
                     kernel_init=INITS[self.kernel_init])(h)
         
         if self.strides[0] != 1:
+            x = NORMS[self.norm](use_running_average=not self.training)(x)
+            x = self.activation(x)
             x_down = nn.Conv(self.output_features, (1, 1), use_bias=self.use_bias,
                              strides=self.strides, kernel_init=INITS[self.kernel_init])(x)
-            #x_down = NORMS[self.norm](use_running_average=not self.training)(x_down)
 
             return x_down + self.epsilon * h
         else:

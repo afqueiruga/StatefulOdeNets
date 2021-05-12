@@ -8,13 +8,15 @@ import argparse
 
 # import jax.profiler
 
-# export CUDA_VISIBLE_DEVICES=0; python run_cifar10_jax_version.py --seed 0
+# export CUDA_VISIBLE_DEVICES=0; python run_cifar10_jax_version.py --seed 0 --basis fem_linear
 
 
 parser = argparse.ArgumentParser(description='training parameters')
 
 parser.add_argument('--wd', type=float, default=5e-4, help='weight decay parameter')
 parser.add_argument('--seed', type=int, default=1, help='seed')
+parser.add_argument('--basis', type=str, default="piecewise_constant", help='basis function')
+
 
 args = parser.parse_args()
 print(args)
@@ -30,7 +32,7 @@ for SCHEME in ['Euler']:
           which_model="Continuous2",
           alpha=1, hidden=16, n_step=2, n_basis=2, 
           norm="BatchNorm-opt-flax",
-          basis='piecewise_constant',
+          basis=args.basis,
           scheme=SCHEME,
           kernel_init='kaiming_out',
           n_epoch=160,

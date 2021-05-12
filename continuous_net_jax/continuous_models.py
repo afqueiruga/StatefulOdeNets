@@ -131,7 +131,7 @@ class ContinuousImageClassifier(nn.Module):
 
 
 
-class ContinuousImageClassifierSmall(nn.Module):
+class ContinuousImageClassifierSmall2(nn.Module):
     """Analogue of the 3-block resnet architecture."""
     alpha: int = 1
     hidden: int = 16
@@ -208,7 +208,7 @@ class ContinuousImageClassifierSmall(nn.Module):
         
         
         
-class ContinuousImageClassifierSmall2(nn.Module):
+class ContinuousImageClassifierSmall(nn.Module):
     """Analogue of the 3-block resnet architecture."""
     alpha: int = 1
     hidden: int = 16
