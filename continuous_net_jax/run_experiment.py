@@ -24,6 +24,9 @@ from .tools import count_parameters
 
 from .continuous_models import *
 
+from .convergence import project_continuous_net
+from .basis_functions import *
+
 _CHECKPOINT_FREQ = 20
 
 
@@ -56,7 +59,10 @@ def run_an_experiment(dataset_name: Optional[str] = None,
                       learning_rate_decay_epochs: Optional[List[int]] = None,
                       weight_decay: float = 5.0e-4,
                       n_epoch: int = 15,
-                      refine_epochs: Optional[Iterable] = None):
+                      refine_epochs: Optional[Iterable] = None,
+                      project_epochs: Optional[Iterable] = None,
+                      ):
+    
     if dataset_name:
         torch_train_data, torch_validation_data, torch_test_data = (
             datasets.get_dataset(dataset_name, root=dataset_dir))
@@ -104,7 +110,9 @@ def run_an_experiment(dataset_name: Optional[str] = None,
     exp = Experiment(model, path=save_dir)
     exp.save_optimizer_hyper_params(optimizer_def, seed,
                                     extra={'learning_rate_decay_epochs': learning_rate_decay_epochs,
-                                           'refine_epochs': refine_epochs})
+                              
+                                
+                                'refine_epochs': refine_epochs})
     tb_writer = TensorboardWriter(exp.path)
     loss_writer = tb_writer.Writer('loss')
     test_acc_writer = tb_writer.Writer('test_accuracy')
@@ -151,6 +159,43 @@ def run_an_experiment(dataset_name: Optional[str] = None,
             tester = Tester(eval_model, test_data)
             print("Refining model to: ", end='')
             report_count(new_params, current_state)
+            print('N basis function: ', exp.model.n_basis)
+            print('N Steps: ', exp.model.n_step)    
+            
+        if epoch in project_epochs:
+            
+            print('Before N basis function: ', exp.model.n_basis)
+            print('Before N Steps: ', exp.model.n_step) 
+            
+            print("all good")
+
+            new_params, current_state = project_continuous_net(optimizer.target, current_state,
+                                            BASIS[exp.model.basis],
+                                            BASIS[exp.model.basis], int(exp.model.n_basis/2))
+            
+            print('Before N basis function: ', exp.model.n_basis)
+            print('Before N Steps: ', exp.model.n_step)               
+            
+            new_model = exp.model.clone(basis=exp.model.basis, n_basis=int(exp.model.n_basis/2))
+            new_model = new_model.clone(n_step=int(exp.model.n_step/2), scheme=exp.model.scheme)
+        
+    
+            exp.model = new_model
+
+            print('After N basis function: ', exp.model.n_basis)
+            print('After N Steps: ', exp.model.n_step)               
+            
+            eval_model = exp.model.clone(training=False)
+            # We just reset the momenta.
+            optimizer = optimizer_def.create(new_params)
+            trainer = Trainer(exp.model, train_data)
+            validator = Tester(eval_model, validation_data)
+            tester = Tester(eval_model, test_data)
+            print("Project model to: ", end='')
+            report_count(new_params, current_state)
+                        
+            
+            
         optimizer, current_state = trainer.train_epoch(optimizer, current_state,
                                                        lr_schedule(epoch),
                                                        loss_writer,
@@ -163,15 +208,16 @@ def run_an_experiment(dataset_name: Optional[str] = None,
         print("After epoch ", epoch, "test acc: ", validation_acc)
         if best_test_acc < validation_acc:
             best_test_acc = validation_acc
-        
-        if epoch % _CHECKPOINT_FREQ == 0:
             exp.save_checkpoint(optimizer, current_state, epoch)
+        
+        #if epoch % _CHECKPOINT_FREQ == 0:
+        #    exp.save_checkpoint(optimizer, current_state, epoch)
         tb_writer.flush()
 
-    try:  # Save the last checkpoint if the last loop didn't.
-        exp.save_checkpoint(optimizer, current_state, epoch)
-    except:
-        pass
+    #try:  # Save the last checkpoint if the last loop didn't.
+    #    exp.save_checkpoint(optimizer, current_state, epoch)
+    #except:
+    #    pass
     test_acc = tester.metrics_over_test_set(optimizer.target, current_state)
     print("Final test set accuracy: ", test_acc)
     print("Final best test set accuracy: ", best_test_acc)
