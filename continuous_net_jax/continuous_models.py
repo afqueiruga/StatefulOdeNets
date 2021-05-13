@@ -70,6 +70,8 @@ class ContinuousImageClassifier(nn.Module):
         h = nn.Conv(features=self.hidden * self.alpha, use_bias=False,
                     kernel_size=(3, 3),
                     kernel_init=INITS[self.kernel_init])(x)
+        h = NORMS[self.norm](use_running_average=not self.training)(h)        
+        h = nn.relu(h)        
         # 3 stages of continuous segments:
         h = ContinuousNet(R=R_(self.hidden * self.alpha),
                           scheme=self.scheme,
@@ -100,7 +102,7 @@ class ContinuousImageClassifier(nn.Module):
                           basis=self.basis,
                           training=self.training)(h)
         # Pool and linearly classify:
-        h = NORMS[self.norm](use_running_average=not self.training)(h)
+        h = NORMS[self.norm](use_running_average=not self.training)(h)        
         h = nn.relu(h)
         h = nn.avg_pool(h, window_shape=(8, 8), strides=(8, 8))
         h = h.reshape((h.shape[0], -1))
@@ -131,7 +133,7 @@ class ContinuousImageClassifier(nn.Module):
 
 
 
-class ContinuousImageClassifierSmall2(nn.Module):
+class ContinuousImageClassifierSmall(nn.Module):
     """Analogue of the 3-block resnet architecture."""
     alpha: int = 1
     hidden: int = 16
@@ -153,6 +155,8 @@ class ContinuousImageClassifierSmall2(nn.Module):
         h = nn.Conv(features=self.hidden * self.alpha, use_bias=False,
                     kernel_size=(3, 3),
                     kernel_init=INITS[self.kernel_init])(x)
+        h = NORMS[self.norm](use_running_average=not self.training)(h)        
+        #h = nn.relu(h)
         # 2 stages of continuous segments:
         h = ResidualStitch(hidden_features=self.hidden * self.alpha,
                            output_features= self.hidden * self.alpha,
@@ -178,8 +182,8 @@ class ContinuousImageClassifierSmall2(nn.Module):
                           training=self.training)(h)
 
         # Pool and linearly classify:
-        h = NORMS[self.norm](use_running_average=not self.training)(h)
-        h = nn.relu(h)
+        #h = NORMS[self.norm](use_running_average=not self.training)(h)        
+        #h = nn.relu(h)
         h = nn.avg_pool(h, window_shape=(8, 8), strides=(8, 8))
         h = h.reshape((h.shape[0], -1))
         h = nn.Dense(features=self.n_classes)(h)
@@ -208,7 +212,7 @@ class ContinuousImageClassifierSmall2(nn.Module):
         
         
         
-class ContinuousImageClassifierSmall(nn.Module):
+class ContinuousImageClassifierSmall2(nn.Module):
     """Analogue of the 3-block resnet architecture."""
     alpha: int = 1
     hidden: int = 16

@@ -117,6 +117,11 @@ class ResidualStitch(nn.Module):
     def __call__(self, x):
         h = NORMS[self.norm](use_running_average=not self.training)(x)
         h = self.activation(h)
+        
+        if self.strides[0] != 1:
+            x_down = nn.Conv(self.output_features, (1, 1), use_bias=self.use_bias,
+                             strides=self.strides, kernel_init=INITS[self.kernel_init])(h)        
+        
         h = nn.Conv(self.output_features, (3, 3), use_bias=self.use_bias,
                     strides=self.strides, kernel_init=INITS[self.kernel_init])(h)  
         
@@ -125,12 +130,8 @@ class ResidualStitch(nn.Module):
         h = nn.Conv(self.output_features, (3, 3), use_bias=self.use_bias,
                     kernel_init=INITS[self.kernel_init])(h)
         
-        if self.strides[0] != 1:
-            x = NORMS[self.norm](use_running_average=not self.training)(x)
-            x = self.activation(x)
-            x_down = nn.Conv(self.output_features, (1, 1), use_bias=self.use_bias,
-                             strides=self.strides, kernel_init=INITS[self.kernel_init])(x)
 
+        if self.strides[0] != 1:
             return x_down + self.epsilon * h
         else:
             return x + self.epsilon * h
