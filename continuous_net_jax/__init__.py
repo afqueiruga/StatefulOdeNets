@@ -1,5 +1,5 @@
 from .continuous_net import ContinuousNet
-from .continuous_models import ContinuousClassifier, ContinuousImageClassifier
+from .continuous_models import *
 from .data_transform import DataTransform
 from .experiment import Experiment
 from .nonauto_ode_solvers import Euler, Midpoint, RK4, SCHEME_TABLE
