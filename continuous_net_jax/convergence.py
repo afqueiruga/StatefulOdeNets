@@ -14,6 +14,8 @@ from continuous_net_jax import *
 from continuous_net import datasets
 from continuous_net_jax.basis_functions import *
 
+from .continuous_models import *
+
 
 def project_continuous_net(params: Iterable[JaxTreeType],
                                state: Iterable[JaxTreeType], 
@@ -56,15 +58,15 @@ def interpolate_continuous_net(params: Iterable[JaxTreeType],
         params['ContinuousNet_0']['ode_params'])
     p2['ContinuousNet_1']['ode_params'] = INTERP(
         params['ContinuousNet_1']['ode_params'])
-    p2['ContinuousNet_2']['ode_params'] = INTERP(
-        params['ContinuousNet_2']['ode_params'])
+#    p2['ContinuousNet_2']['ode_params'] = INTERP(
+#        params['ContinuousNet_2']['ode_params'])
 
     s2['ode_state']['ContinuousNet_0']['state'] = INTERP(
         state['ode_state']['ContinuousNet_0']['state'])
     s2['ode_state']['ContinuousNet_1']['state'] = INTERP(
         state['ode_state']['ContinuousNet_1']['state'])
-    s2['ode_state']['ContinuousNet_2']['state'] = INTERP(
-        state['ode_state']['ContinuousNet_2']['state'])
+#    s2['ode_state']['ContinuousNet_2']['state'] = INTERP(
+#        state['ode_state']['ContinuousNet_2']['state'])
 
     print('Originally: ', count_parameters(params))
     print('Interpolate: ', count_parameters(p2))
@@ -79,7 +81,10 @@ class ConvergenceTester:
         exp = Experiment(path=path, scope=globals())
         # The model was saved at the begining, got longer after refinement.
         final_n_step = exp.model.n_step * 2**len(exp.extra['refine_epochs'])
-        final_model = exp.model.clone(n_step=final_n_step, n_basis=final_n_step)
+        final_n_basis = exp.model.n_basis * 2**len(exp.extra['refine_epochs'])
+        final_model = exp.model.clone(n_step=final_n_step, n_basis=final_n_basis)        
+
+        
         # Load the parameters
         chp = checkpoints.restore_checkpoint(path, None)
         params = chp['optimizer']['target']
@@ -194,4 +199,3 @@ class ConvergenceTester:
                     for scheme in schemes:
                         e, num_params = infer_interpolated_test_error2(scheme, n_step, basis, n_basis)
                         print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} |")
-
