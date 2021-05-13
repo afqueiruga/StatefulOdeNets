@@ -55,6 +55,7 @@ def zip_time_dicts(params, states):
     return zipped
 
 
+
 class ContinuousNet(nn.Module):
     """A continuously deep network block, aka "OdeBlock".
 
@@ -122,3 +123,18 @@ class ContinuousNet(nn.Module):
             return REFINE[self.basis](params), REFINE[self.basis](state)
         else:
             return REFINE[self.basis](params)
+
+
+class ContinuousNetNoState(ContinuousNet):
+    @nn.compact
+    def __call__(self, x):
+        ode_params = self.param('ode_params', self.make_param_nodes, x)
+        # The model instance's n_basis only dictates initialization.
+        n_basis = len(ode_params)
+        basis = BASIS[self.basis]
+
+
+        params_of_t = basis(ode_params)
+        r = lambda t, x: self.R.apply(params_of_t(t), x)
+        y = OdeIntegrateFast(r, x, scheme=self.scheme, n_step=self.n_step)
+        return y

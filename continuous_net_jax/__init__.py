@@ -1,4 +1,4 @@
-from .continuous_net import ContinuousNet
+from .continuous_net import ContinuousNet, ContinuousNetNoState
 from .continuous_models import ContinuousClassifier, ContinuousImageClassifier
 from .data_transform import DataTransform
 from .experiment import Experiment
