@@ -18,7 +18,8 @@ parser.add_argument('--basis', type=str, default="piecewise_constant", help='bas
 parser.add_argument('--alpha', type=int, default=1, help='seed')
 parser.add_argument('--n_steps', type=int, default=1, help='number of steps')
 parser.add_argument('--n_basis', type=int, default=1, help='number of basis functions')
-parser.add_argument('--lr_decay_epoch', type=int, nargs='+', default=[80, 120, 150], help='Decrease learning rate at these epochs.')
+parser.add_argument('--epochs', type=int, default=200, help='number of epochs')
+parser.add_argument('--lr_decay_epoch', type=int, nargs='+', default=[80, 150, 180], help='Decrease learning rate at these epochs.')
 parser.add_argument('--refine_epochs', type=int, nargs='+', default=[], help='Refinement epochs.')
 parser.add_argument('--project_epochs', type=int, nargs='+', default=[], help='Project epochs.')
 parser.add_argument('--seed', type=int, default=1, help='seed')
@@ -26,6 +27,7 @@ parser.add_argument('--seed', type=int, default=1, help='seed')
 
 args = parser.parse_args()
 print(args)
+
 root = './'
 DIR = "../runs_cifar10_b/"
 
@@ -41,7 +43,7 @@ run_an_experiment(
           basis=args.basis,
           scheme=args.scheme,
           kernel_init='kaiming_out',
-          n_epoch=160,
+          n_epoch=args.epochs,
           learning_rate=0.1, learning_rate_decay=0.1, weight_decay=args.wd,
           learning_rate_decay_epochs=args.lr_decay_epoch,
           refine_epochs=args.refine_epochs,
