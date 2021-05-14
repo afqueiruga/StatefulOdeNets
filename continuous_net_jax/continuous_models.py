@@ -6,7 +6,7 @@ import jax.numpy as jnp
 
 from .continuous_types import *
 from .continuous_net import ContinuousNet
-from .residual_modules import NORMS, ResidualUnit, ResidualStitch, INITS, ResidualUnitv2, ResidualStitchv2
+from .residual_modules import NORMS, ResidualUnit, ResidualStitch, INITS
 
 from .basis_functions import piecewise_constant, REFINE
 from .residual_modules import ShallowNet

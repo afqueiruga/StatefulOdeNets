@@ -34,7 +34,7 @@ DIR = "../runs_cifar10_b/"
 run_an_experiment(
           dataset_name='CIFAR10',
           save_dir=DIR,
-          which_model="Continuous2",
+          which_model="Continuous",
           alpha=args.alpha, 
           hidden=16, 
           n_step=args.n_steps, 
