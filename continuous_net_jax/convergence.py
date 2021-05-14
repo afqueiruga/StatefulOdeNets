@@ -30,15 +30,15 @@ def project_continuous_net(params: Iterable[JaxTreeType],
         params['ContinuousNet_0']['ode_params'])
     p2['ContinuousNet_1']['ode_params'] = PROJ(
         params['ContinuousNet_1']['ode_params'])
-    p2['ContinuousNet_2']['ode_params'] = PROJ(
-        params['ContinuousNet_2']['ode_params'])
+    #p2['ContinuousNet_2']['ode_params'] = PROJ(
+    #    params['ContinuousNet_2']['ode_params'])
 
     s2['ode_state']['ContinuousNet_0']['state'] = PROJ(
         state['ode_state']['ContinuousNet_0']['state'])
     s2['ode_state']['ContinuousNet_1']['state'] = PROJ(
         state['ode_state']['ContinuousNet_1']['state'])
-    s2['ode_state']['ContinuousNet_2']['state'] = PROJ(
-        state['ode_state']['ContinuousNet_2']['state'])
+    #s2['ode_state']['ContinuousNet_2']['state'] = PROJ(
+    #    state['ode_state']['ContinuousNet_2']['state'])
 
     print('Originally: ', count_parameters(params))
     print('Projected: ', count_parameters(p2))
