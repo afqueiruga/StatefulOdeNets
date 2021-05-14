@@ -17,10 +17,24 @@ def plot_piecewise_nodes(nodes: Iterable[float]):
     ts = onp.linspace(0.5*dt, 1.0-0.5*dt, n)
     plt.plot(ts, nodes, 'o')
 
-    
+
 def plot_piecewise_fun(nodes: Iterable[float]):
     plot_fun(piecewise_constant(nodes))
     plot_piecewise_nodes(nodes)
+
+
+def plot_piecewise_linear_nodes(nodes: Iterable[float]):
+    n_cell = len(nodes) // 2
+    dt = 1 / n_cell
+    ts = []
+    for i in range(n_cell):
+        ts += [dt*i, dt*(i+1)]
+    plt.plot(ts, nodes, 'o')
+
+
+def plot_piecewise_linear_fun(nodes: Iterable[float]):
+    plot_fun(piecewise_linear(nodes))
+    plot_piecewise_linear_nodes(nodes)
 
 
 def plot_fem_nodes(nodes: Iterable[float]):
@@ -30,3 +44,10 @@ def plot_fem_nodes(nodes: Iterable[float]):
 def plot_fem_fun(nodes: Iterable[float]):
     plot_fun(fem_linear(nodes))
     plot_fem_nodes(nodes)
+
+
+PLOT = {
+    'piecewise_constant': plot_piecewise_fun,
+    'fem_linear': plot_fem_fun,
+    'piecewise_linear': plot_piecewise_linear_fun,
+}

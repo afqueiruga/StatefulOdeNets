@@ -42,6 +42,23 @@ def fem_linear(param_nodes: Iterable[JaxTreeType]) -> ContinuousParameters:
     return theta
 
 
+def piecewise_linear(param_nodes: Iterable[JaxTreeType]) -> ContinuousParameters:
+    """Piecewise linear i.e. Discontinuous Galerkin (DG) linear.
+    
+    Requiries n_basis % 2 == 0
+    """
+    assert len(param_nodes) % 2 == 0
+    n_elem = len(param_nodes) // 2
+    def theta(t: float) -> JaxTreeType:
+        elem_idx = min(int(n_elem * t), n_elem - 1)
+        phi_1 = (t - elem_idx / n_elem) / (1.0 / n_elem)
+        phi_2 = 1.0 - phi_1
+        return jax.tree_multimap(lambda a1, a2: a1 * phi_1 + a2 * phi_2,
+                                 param_nodes[2*elem_idx + 1],
+                                 param_nodes[2*elem_idx])
+    return theta
+
+
 def poly_linear(param_nodes: Iterable[JaxTreeType]) -> ContinuousParameters:
     """Linear polynomial basis functions.
     
@@ -60,10 +77,11 @@ def poly_linear(param_nodes: Iterable[JaxTreeType]) -> ContinuousParameters:
 
     return theta
 
-
+    
 BASIS = {
     'piecewise_constant': piecewise_constant,
     'fem_linear': fem_linear,
+    'piecewise_linear': piecewise_linear,
     'poly_linear': poly_linear,
 }
 
@@ -102,7 +120,7 @@ REFINE = {
 
 
 #
-# Interpolation
+# General Interpolation
 #
 def piecewise_node_locations(n_basis: int):
     dx = 1.0/n_basis
