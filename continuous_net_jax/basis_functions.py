@@ -115,6 +115,8 @@ def split_refine_fem(nodes: Iterable[JaxTreeType]):
 
 REFINE = {
     'piecewise_constant': split_refine_piecewise,
+    'piecewise_linear': piecewise_linear,
+    'poly_linear': poly_linear,    
     'fem_linear': split_refine_fem,
 }
 
@@ -145,6 +147,8 @@ def interpolate_fem_linear(f: ContinuousParameters, n_basis: int) -> Iterable[Ja
 INTERPOLATE = {
     'piecewise_constant': interpolate_piecewise_constant,
     'fem_linear': interpolate_fem_linear,
+    'piecewise_linear': piecewise_linear,
+    'poly_linear': poly_linear,    
 }
 
 

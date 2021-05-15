@@ -16,6 +16,9 @@ from continuous_net_jax.basis_functions import *
 
 from .continuous_models import *
 
+import timeit
+
+
 
 def project_continuous_net(params: Iterable[JaxTreeType],
                                state: Iterable[JaxTreeType], 
@@ -30,15 +33,15 @@ def project_continuous_net(params: Iterable[JaxTreeType],
         params['ContinuousNet_0']['ode_params'])
     p2['ContinuousNet_1']['ode_params'] = PROJ(
         params['ContinuousNet_1']['ode_params'])
-    #p2['ContinuousNet_2']['ode_params'] = PROJ(
-    #    params['ContinuousNet_2']['ode_params'])
+    p2['ContinuousNet_2']['ode_params'] = PROJ(
+        params['ContinuousNet_2']['ode_params'])
 
     s2['ode_state']['ContinuousNet_0']['state'] = PROJ(
         state['ode_state']['ContinuousNet_0']['state'])
     s2['ode_state']['ContinuousNet_1']['state'] = PROJ(
         state['ode_state']['ContinuousNet_1']['state'])
-    #s2['ode_state']['ContinuousNet_2']['state'] = PROJ(
-    #    state['ode_state']['ContinuousNet_2']['state'])
+    s2['ode_state']['ContinuousNet_2']['state'] = PROJ(
+        state['ode_state']['ContinuousNet_2']['state'])
 
     print('Originally: ', count_parameters(params))
     print('Projected: ', count_parameters(p2))
@@ -58,15 +61,15 @@ def interpolate_continuous_net(params: Iterable[JaxTreeType],
         params['ContinuousNet_0']['ode_params'])
     p2['ContinuousNet_1']['ode_params'] = INTERP(
         params['ContinuousNet_1']['ode_params'])
-#    p2['ContinuousNet_2']['ode_params'] = INTERP(
-#        params['ContinuousNet_2']['ode_params'])
+    p2['ContinuousNet_2']['ode_params'] = INTERP(
+        params['ContinuousNet_2']['ode_params'])
 
     s2['ode_state']['ContinuousNet_0']['state'] = INTERP(
         state['ode_state']['ContinuousNet_0']['state'])
     s2['ode_state']['ContinuousNet_1']['state'] = INTERP(
         state['ode_state']['ContinuousNet_1']['state'])
-#    s2['ode_state']['ContinuousNet_2']['state'] = INTERP(
-#        state['ode_state']['ContinuousNet_2']['state'])
+    s2['ode_state']['ContinuousNet_2']['state'] = INTERP(
+        state['ode_state']['ContinuousNet_2']['state'])
 
     print('Originally: ', count_parameters(params))
     print('Interpolate: ', count_parameters(p2))
@@ -84,11 +87,15 @@ class ConvergenceTester:
         final_n_basis = exp.model.n_basis * 2**len(exp.extra['refine_epochs'])
         final_model = exp.model.clone(n_step=final_n_step, n_basis=final_n_basis)        
 
+        print('final_n_step', final_n_step)
+        print('final_n_basis', final_n_basis)
+        print('final_model', final_model)
+
         
         # Load the parameters
         chp = checkpoints.restore_checkpoint(path, None)
         params = chp['optimizer']['target']
-        state = chp['state']
+        #state = chp['state']
         # Initialize a skeleton with the right shape.
         prng_key = jax.random.PRNGKey(0)
         x = jnp.ones((1, 32, 32, 3), jnp.float32)
@@ -138,6 +145,20 @@ class ConvergenceTester:
         new_model = self.eval_model.clone(basis=target_basis, n_basis=n_basis)
         return new_model, W2, S2
 
+
+    def infer(self, test_data: Any):
+        #t0 = timeit.default_timer()
+        tester = Tester(self.eval_model, test_data)
+        err = tester.metrics_over_test_set(self.params,  self.state)
+        #inf_time = timeit.default_timer()  - t0
+        
+        print('n_step', self.eval_model.n_step)
+        print('n_basis', self.eval_model.n_basis)
+        print('scheme', self.eval_model.scheme)
+        print('Test error: ', err)   
+        return err
+
+
     def perform_project_and_infer(self, test_data: Any,
                                   bases: Iterable[str],
                                   n_bases: Iterable[int],
@@ -151,9 +172,17 @@ class ConvergenceTester:
             # cache to avoid the first call.
             p_model, p_params, p_state = self.project(basis, n_basis)
             s_p_model = p_model.clone(n_step=n_step, scheme=scheme)
+            
+            #t0 = timeit.default_timer()
             tester = Tester(s_p_model, test_data)
             err = tester.metrics_over_test_set(p_params,  p_state)
+            #inf_time = timeit.default_timer()  - t0
+            
             return float(err), count_parameters(p_params)
+
+
+
+
 
         print("| Basis | n_basis | Scheme | n_step | error | n_params |")
         print("|-------|----------------------------------------------|")
@@ -164,6 +193,7 @@ class ConvergenceTester:
                     for scheme in schemes:
                         e, num_params = infer_projected_test_error3(scheme, n_step, basis, n_basis)
                         print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} |")
+                        #print(inf_time)
 
     @functools.lru_cache()
     def interpolate(self, target_basis, n_basis):

@@ -7,7 +7,7 @@ import argparse
 
 # import jax.profiler
 
-# export CUDA_VISIBLE_DEVICES=2; python run_cifar10_jax_version_2.py --alpha 1 --seed 1 --basis piecewise_constant --refine_epochs 70 --n_basis 1 --n_steps 2
+# export CUDA_VISIBLE_DEVICES=6; python run_cifar10_jax_version_2.py --alpha 1 --seed 1 --refine_epochs 20 30 40 50 60
 
 
 parser = argparse.ArgumentParser(description='training parameters')
