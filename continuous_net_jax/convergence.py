@@ -16,6 +16,9 @@ from continuous_net_jax.basis_functions import *
 
 from .continuous_models import *
 
+import timeit
+
+
 
 def project_continuous_net(params: Iterable[JaxTreeType],
                                state: Iterable[JaxTreeType], 
@@ -30,15 +33,15 @@ def project_continuous_net(params: Iterable[JaxTreeType],
         params['ContinuousNet_0']['ode_params'])
     p2['ContinuousNet_1']['ode_params'] = PROJ(
         params['ContinuousNet_1']['ode_params'])
-    #p2['ContinuousNet_2']['ode_params'] = PROJ(
-    #    params['ContinuousNet_2']['ode_params'])
+    p2['ContinuousNet_2']['ode_params'] = PROJ(
+        params['ContinuousNet_2']['ode_params'])
 
     s2['ode_state']['ContinuousNet_0']['state'] = PROJ(
         state['ode_state']['ContinuousNet_0']['state'])
     s2['ode_state']['ContinuousNet_1']['state'] = PROJ(
         state['ode_state']['ContinuousNet_1']['state'])
-    #s2['ode_state']['ContinuousNet_2']['state'] = PROJ(
-    #    state['ode_state']['ContinuousNet_2']['state'])
+    s2['ode_state']['ContinuousNet_2']['state'] = PROJ(
+        state['ode_state']['ContinuousNet_2']['state'])
 
     print('Originally: ', count_parameters(params))
     print('Projected: ', count_parameters(p2))
@@ -58,15 +61,15 @@ def interpolate_continuous_net(params: Iterable[JaxTreeType],
         params['ContinuousNet_0']['ode_params'])
     p2['ContinuousNet_1']['ode_params'] = INTERP(
         params['ContinuousNet_1']['ode_params'])
-#    p2['ContinuousNet_2']['ode_params'] = INTERP(
-#        params['ContinuousNet_2']['ode_params'])
+    p2['ContinuousNet_2']['ode_params'] = INTERP(
+        params['ContinuousNet_2']['ode_params'])
 
     s2['ode_state']['ContinuousNet_0']['state'] = INTERP(
         state['ode_state']['ContinuousNet_0']['state'])
     s2['ode_state']['ContinuousNet_1']['state'] = INTERP(
         state['ode_state']['ContinuousNet_1']['state'])
-#    s2['ode_state']['ContinuousNet_2']['state'] = INTERP(
-#        state['ode_state']['ContinuousNet_2']['state'])
+    s2['ode_state']['ContinuousNet_2']['state'] = INTERP(
+        state['ode_state']['ContinuousNet_2']['state'])
 
     print('Originally: ', count_parameters(params))
     print('Interpolate: ', count_parameters(p2))
@@ -144,16 +147,24 @@ class ConvergenceTester:
                                   schemes: Iterable[str],
                                   n_steps: Iterable[int]):
         
-        @SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
+        #@SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
         def infer_projected_test_error3(scheme: str, n_step: int, basis: str,
                                        n_basis: int) -> Tuple[float, int]:
             # Rely on the LRU cache to avoid the second call, and sqlite 
             # cache to avoid the first call.
             p_model, p_params, p_state = self.project(basis, n_basis)
             s_p_model = p_model.clone(n_step=n_step, scheme=scheme)
+            
+            t0 = timeit.default_timer()
             tester = Tester(s_p_model, test_data)
             err = tester.metrics_over_test_set(p_params,  p_state)
-            return float(err), count_parameters(p_params)
+            inf_time = timeit.default_timer()  - t0
+            
+            return float(err), count_parameters(p_params), inf_time
+
+
+
+
 
         print("| Basis | n_basis | Scheme | n_step | error | n_params |")
         print("|-------|----------------------------------------------|")
@@ -162,8 +173,10 @@ class ConvergenceTester:
             for n_basis in n_bases:
                 for n_step in n_steps:
                     for scheme in schemes:
-                        e, num_params = infer_projected_test_error3(scheme, n_step, basis, n_basis)
+                        e, num_params, inf_time = infer_projected_test_error3(scheme, n_step, basis, n_basis)
                         print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} |")
+                        print(inf_time)
+                        print(e)
 
     @functools.lru_cache()
     def interpolate(self, target_basis, n_basis):

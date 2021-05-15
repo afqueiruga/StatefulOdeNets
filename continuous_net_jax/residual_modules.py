@@ -80,7 +80,7 @@ class ResidualStitch(nn.Module):
     hidden_features: int
     output_features: int
     norm: str = 'BatchNorm'
-    activation: Callable = nn.gelu
+    activation: Callable = nn.relu
     kernel_init: str = 'kaiming_out'
     training: bool = True
     strides: Tuple[int] = (2, 2)
