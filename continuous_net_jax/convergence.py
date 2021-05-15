@@ -87,11 +87,15 @@ class ConvergenceTester:
         final_n_basis = exp.model.n_basis * 2**len(exp.extra['refine_epochs'])
         final_model = exp.model.clone(n_step=final_n_step, n_basis=final_n_basis)        
 
+        print('final_n_step', final_n_step)
+        print('final_n_basis', final_n_basis)
+        print('final_model', final_model)
+
         
         # Load the parameters
         chp = checkpoints.restore_checkpoint(path, None)
         params = chp['optimizer']['target']
-        state = chp['state']
+        #state = chp['state']
         # Initialize a skeleton with the right shape.
         prng_key = jax.random.PRNGKey(0)
         x = jnp.ones((1, 32, 32, 3), jnp.float32)
@@ -141,13 +145,27 @@ class ConvergenceTester:
         new_model = self.eval_model.clone(basis=target_basis, n_basis=n_basis)
         return new_model, W2, S2
 
+
+    def infer(self, test_data: Any):
+        #t0 = timeit.default_timer()
+        tester = Tester(self.eval_model, test_data)
+        err = tester.metrics_over_test_set(self.params,  self.state)
+        #inf_time = timeit.default_timer()  - t0
+        
+        print('n_step', self.eval_model.n_step)
+        print('n_basis', self.eval_model.n_basis)
+        print('scheme', self.eval_model.scheme)
+        print('Test error: ', err)   
+        return err
+
+
     def perform_project_and_infer(self, test_data: Any,
                                   bases: Iterable[str],
                                   n_bases: Iterable[int],
                                   schemes: Iterable[str],
                                   n_steps: Iterable[int]):
         
-        #@SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
+        @SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
         def infer_projected_test_error3(scheme: str, n_step: int, basis: str,
                                        n_basis: int) -> Tuple[float, int]:
             # Rely on the LRU cache to avoid the second call, and sqlite 
@@ -155,12 +173,12 @@ class ConvergenceTester:
             p_model, p_params, p_state = self.project(basis, n_basis)
             s_p_model = p_model.clone(n_step=n_step, scheme=scheme)
             
-            t0 = timeit.default_timer()
+            #t0 = timeit.default_timer()
             tester = Tester(s_p_model, test_data)
             err = tester.metrics_over_test_set(p_params,  p_state)
-            inf_time = timeit.default_timer()  - t0
+            #inf_time = timeit.default_timer()  - t0
             
-            return float(err), count_parameters(p_params), inf_time
+            return float(err), count_parameters(p_params)
 
 
 
@@ -173,10 +191,9 @@ class ConvergenceTester:
             for n_basis in n_bases:
                 for n_step in n_steps:
                     for scheme in schemes:
-                        e, num_params, inf_time = infer_projected_test_error3(scheme, n_step, basis, n_basis)
+                        e, num_params = infer_projected_test_error3(scheme, n_step, basis, n_basis)
                         print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} |")
-                        print(inf_time)
-                        print(e)
+                        #print(inf_time)
 
     @functools.lru_cache()
     def interpolate(self, target_basis, n_basis):
