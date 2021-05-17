@@ -33,7 +33,7 @@ NORMS = {
         nn.BatchNorm,
     'BatchNorm-opt-flax':
         partial(nn.BatchNorm,
-                use_running_average=True,
+                use_running_average=False,
                 momentum=0.9,
                 epsilon=1e-5),
     'BatchNorm-freeze':
