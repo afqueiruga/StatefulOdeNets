@@ -20,6 +20,33 @@ import timeit
 
 
 
+def dict_to_list(d: JaxTreeType) -> List[JaxTreeType]:
+    as_list = [None]*len(d)
+    for str_idx, v in d.items():
+        as_list[int(str_idx)] = v
+    return as_list
+
+
+def convert_checkpoint(chp) -> Tuple[JaxTreeType, JaxTreeType]:
+    # Reshape the values that were loaded. This is needed because
+    # ContinuousNet uses lists in the parameter trees, but the
+    # checkpoint always loads dictionaries. I.e., we turn
+    # {'ContinuousNet0':{'0':W0, '1':W1}} into
+    # {'ContinuousNet0':[W0, W1]}
+    params = chp['optimizer']['target']
+    state = chp['state']
+    r_p = params.copy()
+    r_s = state.copy()
+    for k in params:
+        if 'ContinuousNet' in k:
+            r_p[k]['ode_params'] = dict_to_list(
+                params[k]['ode_params'])
+    for k in r_s['ode_state']:
+        r_s['ode_state'][k]['state'] = dict_to_list(
+            state['ode_state'][k]['state'])
+    return r_p, r_s
+
+
 def project_continuous_net(params: Iterable[JaxTreeType],
                                state: Iterable[JaxTreeType], 
                                source_basis: ContinuousParameters, 
@@ -91,27 +118,9 @@ class ConvergenceTester:
         print('final_n_basis', final_n_basis)
         print('final_model', final_model)
 
-        
         # Load the parameters
         chp = checkpoints.restore_checkpoint(path, None)
-        params = chp['optimizer']['target']
-        #state = chp['state']
-        # Initialize a skeleton with the right shape.
-        prng_key = jax.random.PRNGKey(0)
-        x = jnp.ones((1, 32, 32, 3), jnp.float32)
-        p = final_model.init(prng_key, x)
-        i_state, i_params = p.pop('params')
-        # Reshape the values that were loaded. This is needed because
-        # ContinuousNet uses lists in the parameter trees, but the
-        # checkpoint always loads dictionaries. I.e., we turn
-        # {'ContinuousNet0':{'0':W0, '1':W1}} into
-        # {'ContinuousNet0':[W0, W1]}
-        loaded_params = jax.tree_util.tree_unflatten(
-            jax.tree_util.tree_structure(i_params),
-            jax.tree_util.tree_leaves(chp['optimizer']['target']))
-        loaded_state = jax.tree_util.tree_unflatten(
-            jax.tree_util.tree_structure(i_state),
-            jax.tree_util.tree_leaves(chp['state']))
+        loaded_params, loaded_state = convert_checkpoint(chp)
         eval_model = final_model.clone(training=False)
 
         self.exp = exp
@@ -130,11 +139,14 @@ class ConvergenceTester:
             err = tester.metrics_over_test_set(self.params, self.state)
             return float(err),
 
+        print("| Scheme | n_step | error | n_ops |")
+        print("|-------|----------------------------|")
         errors = []
         for n_step in n_steps:
             for scheme in schemes:
-                error = infer_test_error(scheme, n_step)
+                error, = infer_test_error(scheme, n_step)
                 errors.append((n_step, error))
+                print(f"|{scheme}|{n_step}|{error}|")
         return errors
 
     @functools.lru_cache()
@@ -155,7 +167,7 @@ class ConvergenceTester:
         print('n_step', self.eval_model.n_step)
         print('n_basis', self.eval_model.n_basis)
         print('scheme', self.eval_model.scheme)
-        print('Test error: ', err)   
+        print('Test error: ', err)
         return err
 
 
