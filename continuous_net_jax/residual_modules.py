@@ -56,7 +56,7 @@ class ShallowNet(nn.Module):
 class ResidualUnit(nn.Module):
     hidden_features: int
     norm: str = 'BatchNorm'
-    activation: Callable = nn.relu
+    activation: Callable = nn.gelu
     kernel_init: str = 'kaiming_out'
     training: bool = True
     use_bias: bool = False
@@ -68,7 +68,6 @@ class ResidualUnit(nn.Module):
         h = self.activation(h)
         h = nn.Conv(self.hidden_features, (3, 3), use_bias=self.use_bias,
                     kernel_init=INITS[self.kernel_init])(h)
-
         h = NORMS[self.norm](use_running_average=not self.training)(h)
         h = self.activation(h)
         h = nn.Conv(x.shape[-1], (3, 3), use_bias=self.use_bias,
@@ -80,7 +79,7 @@ class ResidualStitch(nn.Module):
     hidden_features: int
     output_features: int
     norm: str = 'BatchNorm'
-    activation: Callable = nn.relu
+    activation: Callable = nn.gelu
     kernel_init: str = 'kaiming_out'
     training: bool = True
     strides: Tuple[int] = (2, 2)
@@ -99,7 +98,6 @@ class ResidualStitch(nn.Module):
         
         h = nn.Conv(self.output_features, (3, 3), use_bias=self.use_bias,
                     strides=self.strides, kernel_init=INITS[self.kernel_init])(h)  
-        
         h = NORMS[self.norm](use_running_average=not self.training)(h)
         h = self.activation(h)
         h = nn.Conv(self.output_features, (3, 3), use_bias=self.use_bias,
@@ -110,3 +108,9 @@ class ResidualStitch(nn.Module):
             return x_down + self.epsilon * h
         else:
             return x + self.epsilon * h
+        
+        
+        
+        
+        
+        
