@@ -12,8 +12,8 @@ xavier_uniform_gain = partial(jax.nn.initializers.variance_scaling, 2, "fan_avg"
 
 
 # Kaiming, but scale by output channel count.
-kaiming_out = partial(jax.nn.initializers.variance_scaling, 2.0, "fan_out",
-                      "truncated_normal")
+#kaiming_out = partial(jax.nn.initializers.variance_scaling, 2.0, "fan_out", "truncated_normal")
+kaiming_out = partial(jax.nn.initializers.variance_scaling, 2.0, "fan_out", "normal")
 
 
 # We use string qualifiers instead of function refs.
@@ -94,7 +94,9 @@ class ResidualStitch(nn.Module):
         
         if self.strides[0] != 1:
             x_down = nn.Conv(self.output_features, (1, 1), use_bias=self.use_bias,
-                             strides=self.strides, kernel_init=INITS[self.kernel_init])(h)        
+                             strides=self.strides, kernel_init=INITS[self.kernel_init])(x)
+            x_down = NORMS[self.norm](use_running_average=not self.training)(x_down)
+
         
         h = nn.Conv(self.output_features, (3, 3), use_bias=self.use_bias,
                     strides=self.strides, kernel_init=INITS[self.kernel_init])(h)  

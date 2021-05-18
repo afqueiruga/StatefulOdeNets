@@ -17,7 +17,7 @@ from continuous_net_jax.basis_functions import *
 from .continuous_models import *
 
 import timeit
-
+import numpy as np
 
 
 def dict_to_list(d: JaxTreeType) -> List[JaxTreeType]:
@@ -179,33 +179,45 @@ class ConvergenceTester:
         
         @SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
         def infer_projected_test_error3(scheme: str, n_step: int, basis: str,
-                                       n_basis: int) -> Tuple[float, int]:
+                                       n_basis: int) -> Tuple[float, int, float]:
             # Rely on the LRU cache to avoid the second call, and sqlite 
             # cache to avoid the first call.
             p_model, p_params, p_state = self.project(basis, n_basis)
+            
             s_p_model = p_model.clone(n_step=n_step, scheme=scheme)
-            
-            #t0 = timeit.default_timer()
             tester = Tester(s_p_model, test_data)
-            err = tester.metrics_over_test_set(p_params,  p_state)
-            #inf_time = timeit.default_timer()  - t0
+
+            inf_time = []
+            for _ in range(6):
+                t0 = timeit.default_timer()
+                err = tester.metrics_over_test_set(p_params,  p_state)
+                inf_time.append(timeit.default_timer()  - t0)
             
-            return float(err), count_parameters(p_params)
+            return float(err), count_parameters(p_params), float(np.mean(inf_time))
 
 
 
-
-
-        print("| Basis | n_basis | Scheme | n_step | error | n_params |")
-        print("|-------|----------------------------------------------|")
+        print("| Basis | n_basis | Scheme | n_step | error | n_params | inference time |")
+        print("|-------|---------------------------------------------------------------|")
         errors = {}
+        errs = []
+        times = []
+        nparms = []
+        
         for basis in bases:
             for n_basis in n_bases:
                 for n_step in n_steps:
                     for scheme in schemes:
-                        e, num_params = infer_projected_test_error3(scheme, n_step, basis, n_basis)
-                        print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} |")
-                        #print(inf_time)
+                        e, num_params, inf_time = infer_projected_test_error3(scheme, n_step, basis, n_basis)
+                        errs.append(e)
+                        times.append(inf_time)
+                        nparms.append(num_params)
+                        print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} | {inf_time} |")
+        print(n_bases)
+        print(errs)
+        print(num_params)
+        print(times)
+        
 
     @functools.lru_cache()
     def interpolate(self, target_basis, n_basis):
@@ -221,23 +233,44 @@ class ConvergenceTester:
                                   schemes: Iterable[str],
                                   n_steps: Iterable[int]):
         
-        @SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
+        #@SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
         def infer_interpolated_test_error2(scheme: str, n_step: int, basis: str,
-                                       n_basis: int) -> Tuple[float, int]:
+                                       n_basis: int) -> Tuple[float, int, float]:
             # Rely on the LRU cache to avoid the second call, and sqlite 
             # cache to avoid the first call.
             p_model, p_params, p_state = self.interpolate(basis, n_basis)
             s_p_model = p_model.clone(n_step=n_step, scheme=scheme)
             tester = Tester(s_p_model, test_data)
-            err = tester.metrics_over_test_set(p_params,  p_state)
-            return float(err), count_parameters(p_params)
 
-        print("| Basis | n_basis | Scheme | n_step | error | n_params |")
-        print("|-------|----------------------------------------------|")
+            inf_time = []
+            for _ in range(6):
+                t0 = timeit.default_timer()
+                err = tester.metrics_over_test_set(p_params,  p_state)
+                inf_time.append(timeit.default_timer()  - t0)
+            
+            return float(err), count_parameters(p_params), float(np.mean(inf_time))
+
+        print("| Basis | n_basis | Scheme | n_step | error | n_params | inference time |")
+        print("|-------|---------------------------------------------------------------|")
         errors = {}
+        
+        errs = []
+        times = []
+        nparms = []        
+        
         for basis in bases:
             for n_basis in n_bases:
                 for n_step in n_steps:
                     for scheme in schemes:
-                        e, num_params = infer_interpolated_test_error2(scheme, n_step, basis, n_basis)
-                        print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} |")
+                        e, num_params, inf_time = infer_interpolated_test_error2(scheme, n_step, basis, n_basis)
+                        
+                        errs.append(e)
+                        times.append(inf_time)
+                        nparms.append(num_params)                        
+                        
+                        print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} | {inf_time} |")
+
+        print(n_bases)
+        print(list(np.round(errs,4)))
+        print(nparms)
+        print(list(np.round(times,4)))
