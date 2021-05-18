@@ -9,8 +9,16 @@ def full_typename(obj):
     return f"{type(obj).__module__}.{type(obj).__name__}"
 
 
-def module_to_dict(module: Module):
+def to_dict(obj):
+    try:
+        return {type(obj).__name__:{k:to_dict(v) for k,v in obj.__dict__.items()}}
+    except AttributeError:
+        return obj
+
+
+def module_to_dict(module: Module, short=False):
     """Generate a dict representation of a module's arguments."""
+    nester = (lambda x : x) if short else to_dict
     cls = type(module)
     cls_name = cls.__name__
     description = {}
@@ -24,10 +32,11 @@ def module_to_dict(module: Module):
         for k, v in module._state.children.items()  # pytype: disable=attribute-error
         if isinstance(v, Module)
     }
+
     if attributes:
         for attr in attributes.keys():
             value = getattr(module, attr)
-            description[attr] = value
+            description[attr] = nester(value)
 
     if child_modules:
         for name, child in child_modules.items():
@@ -39,10 +48,10 @@ def module_to_dict(module: Module):
 def module_to_single_line(module: Module):
     """Make a filename-friendly string of a module."""
     # TODO support nested modules
-    dict_repr = module_to_dict(module)
+    dict_repr = module_to_dict(module, short=True)
     name = next(iter(dict_repr.keys()))  # There's only one at the top.
     attrs = ",".join(f"{k}={v}" for k, v in dict_repr[name].items())
-    return f"{name}_{attrs}"
+    return f"{name}_{attrs}"[:500]
 
 
 def parse_model_dict(dict_repr, scope):

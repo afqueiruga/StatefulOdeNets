@@ -28,7 +28,7 @@ class TransformerConfig:
   """Global hyperparameters used to minimize obnoxious kwarg plumbing."""
   vocab_size: int
   output_vocab_size: int
-  dtype: Any = jnp.float32
+  dtype: str = 'float32'
   emb_dim: int = 64  # 512
   num_heads: int = 1
   num_layers: int = 4
@@ -37,9 +37,24 @@ class TransformerConfig:
   max_len: int = 2048
   dropout_rate: float = 0.3
   attention_dropout_rate: float = 0.3
-  kernel_init: Callable = nn.initializers.xavier_uniform()
-  bias_init: Callable = nn.initializers.normal(stddev=1e-6)
-  posemb_init: Optional[Callable] = None
+  kernel_init: str = 'xavier_uniform'
+  bias_init: str = 'normal'
+  posemb_init: str = 'None'
+    
+  def __str__(self):
+    return f"TransformerConfig({self.emb_dim}_{self.num_heads}_{self.num_layers}_{self.qkv_dim}_{self.mlp_dim})"
+
+  def get_kernel_init(self) -> Callable:
+    return nn.initializers.xavier_uniform()
+
+  def get_bias_init(self) -> Callable:
+    return nn.initializers.normal(stddev=1e-6)
+    
+  def get_posemb_init(self) -> Callable:
+    return None
+
+  def get_dtype(self) -> Any:
+    return jnp.float32
 
 
 def sinusoidal_init(max_len=2048):
@@ -96,13 +111,13 @@ class AddPositionEmbs(nn.Module):
                               ' but it is: %d' % inputs.ndim)
     length = inputs.shape[1]
     pos_emb_shape = (1, cfg.max_len, inputs.shape[-1])
-    if cfg.posemb_init is None:
+    if cfg.get_posemb_init() is None:
       # Use a fixed (non-learned) sinusoidal position embedding.
       pos_embedding = sinusoidal_init(max_len=cfg.max_len)(
           None, pos_emb_shape, None)
     else:
       pos_embedding = self.param('pos_embedding',
-                                 cfg.posemb_init,
+                                 cfg.get_posemb_init(),
                                  pos_emb_shape)
     pe = pos_embedding[:, :length, :]
     return inputs + pe
@@ -125,15 +140,15 @@ class MlpBlock(nn.Module):
     actual_out_dim = (inputs.shape[-1] if self.out_dim is None
                       else self.out_dim)
     x = nn.Dense(cfg.mlp_dim,
-                 dtype=cfg.dtype,
-                 kernel_init=cfg.kernel_init,
-                 bias_init=cfg.bias_init)(inputs)
+                 dtype=cfg.get_dtype(),
+                 kernel_init=cfg.get_kernel_init(),
+                 bias_init=cfg.get_bias_init())(inputs)
     x = nn.elu(x)
     x = nn.Dropout(rate=cfg.dropout_rate)(x, deterministic=deterministic)
     output = nn.Dense(actual_out_dim,
-                      dtype=cfg.dtype,
-                      kernel_init=cfg.kernel_init,
-                      bias_init=cfg.bias_init)(x)
+                      dtype=cfg.get_dtype(),
+                      kernel_init=cfg.get_kernel_init(),
+                      bias_init=cfg.get_bias_init())(x)
     output = nn.Dropout(rate=cfg.dropout_rate)(
         output, deterministic=deterministic)
     return output
@@ -162,13 +177,13 @@ class Encoder1DBlock(nn.Module):
 
     # Attention block.
     assert inputs.ndim == 3
-    x = nn.LayerNorm(dtype=cfg.dtype)(inputs)
+    x = nn.LayerNorm(dtype=cfg.get_dtype())(inputs)
     x = nn.SelfAttention(
         num_heads=cfg.num_heads,
-        dtype=cfg.dtype,
+        dtype=cfg.get_dtype(),
         qkv_features=cfg.qkv_dim,
-        kernel_init=cfg.kernel_init,
-        bias_init=cfg.bias_init,
+        kernel_init=cfg.get_kernel_init(),
+        bias_init=cfg.get_bias_init(),
         use_bias=False,
         broadcast_dropout=False,
         dropout_rate=cfg.attention_dropout_rate,
@@ -179,7 +194,7 @@ class Encoder1DBlock(nn.Module):
     x = x + inputs
 
     # MLP block.
-    y = nn.LayerNorm(dtype=cfg.dtype)(x)
+    y = nn.LayerNorm(dtype=cfg.get_dtype())(x)
     y = MlpBlock(config=cfg)(y, deterministic=deterministic)
     return x + y
 
@@ -214,9 +229,9 @@ class Transformer(nn.Module):
     for _ in range(cfg.num_layers):
       x = Encoder1DBlock(cfg)(x, deterministic=not train)
 
-    x = nn.LayerNorm(dtype=cfg.dtype)(x)
+    x = nn.LayerNorm(dtype=cfg.get_dtype())(x)
     logits = nn.Dense(
         cfg.output_vocab_size,
-        kernel_init=cfg.kernel_init,
-        bias_init=cfg.bias_init)(x)
+        kernel_init=cfg.get_kernel_init(),
+        bias_init=cfg.get_bias_init())(x)
     return logits

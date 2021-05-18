@@ -1,23 +1,27 @@
 from absl import app
 from absl import flags
 
-FLAGS = flags.FLAGS
+
+from continuous_net_jax import experiment
 
 from . import input_pipeline
 from . import baseline_models as models
 from . import continuous_transformers
-
 from .train import *
 
-flags.DEFINE_string('model_dir', default='', help=('Directory for model data.'))
 
+Experiment = experiment.Experiment
+FLAGS = flags.FLAGS
+
+
+flags.DEFINE_string('model_dir', default='', help=('Directory for model data.'))
 flags.DEFINE_string('experiment', default='xpos', help=('Experiment name.'))
 flags.DEFINE_integer('batch_size',
                      default=64,
                      help=('Batch size for training.'))
 flags.DEFINE_integer(
     'eval_frequency',
-    default=100,
+    default=500,
     help=('Frequency of eval during training, e.g. every 1000 steps.'))
 flags.DEFINE_integer('num_train_steps',
                      default=75000,
@@ -35,6 +39,10 @@ flags.DEFINE_integer('random_seed',
 flags.DEFINE_string('train', default='', help=('Path to training data.'))
 flags.DEFINE_string('dev', default='', help=('Path to development data.'))
 
+flags.DEFINE_string('scheme', default='Euler', help=('Which integrator scheme to use.'))
+flags.DEFINE_string('basis', default='piecewise_constant', help=('Which basis function to use.'))
+
+flags.DEFINE_list('refine_epochs', default='', help=('Refinement epochs'))
 
 def main(argv):
     if len(argv) > 1:
@@ -48,6 +56,8 @@ def main(argv):
     num_train_steps = FLAGS.num_train_steps
     eval_freq = FLAGS.eval_frequency
     random_seed = FLAGS.random_seed
+    scheme = FLAGS.scheme
+    basis = FLAGS.basis
 
     if not FLAGS.dev:
         raise app.UsageError('Please provide path to dev set.')
@@ -90,8 +100,8 @@ def main(argv):
                                                    repeat=1)
 
     # model = models.Transformer(config)
-    model = continuous_transformers.ContinuousTransformer(config)
-
+    model = continuous_transformers.ContinuousTransformer(config, scheme=scheme, basis=basis)
+    
     rng = random.PRNGKey(random_seed)
     rng, init_rng = random.split(rng)
 
@@ -132,6 +142,13 @@ def main(argv):
 
     p_eval_step = jax.pmap(eval_step, axis_name='batch')
 
+    # Saving helpers
+    exp = Experiment(model, path=FLAGS.model_dir)
+    exp.save_optimizer_hyper_params(optimizer_def, random_seed,
+                                    {'learning_rate_decay_epochs': [],
+                                     'refine_epochs': []})
+    
+    
     # We init the first set of dropout PRNG keys, but update it afterwards inside
     # the main pmap'd training update for performance.
     dropout_rngs = random.split(rng, jax.local_device_count())
@@ -193,7 +210,8 @@ def main(argv):
 
             if best_dev_score < eval_summary['accuracy']:
                 best_dev_score = eval_summary['accuracy']
-                # TODO: save model.
+                exp.save_checkpoint(optimizer, {}, step)
+
             eval_summary['best_dev_score'] = best_dev_score
             logging.info('best development model score %.4f', best_dev_score)
             if jax.host_id() == 0:
