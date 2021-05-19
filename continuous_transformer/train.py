@@ -65,7 +65,7 @@ def create_learning_rate_scheduler(
     step-dependent lr.
   """
   factors = [n.strip() for n in factors.split('*')]
-
+  print('Learning rate schedule: ', factors)
   def step_fn(step):
     """Step to learning rate function."""
     ret = 1.0
@@ -173,7 +173,7 @@ def train_step(optimizer, batch, learning_rate_fn, model, dropout_rng=None):
   lr = learning_rate_fn(step)
   grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
   (_, logits), grad = grad_fn(optimizer.target)
-  grad = jax.lax.pmean(grad, 'batch')
+  # grad = jax.lax.pmean(grad, 'batch')
   new_optimizer = optimizer.apply_gradient(grad, learning_rate=lr)
 
   metrics = compute_metrics(logits, targets, weights)

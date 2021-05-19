@@ -75,7 +75,10 @@ class ContinuousTransformer(nn.Module):
 
     config: TransformerConfig
     scheme: str = "Euler"
+    n_step: int = 1
     basis: str = "piecewise_constant"
+    n_basis: int = 1
+    training: bool = True
         
     def __str__(self):
         return f"ContinuousTransformer({self.basis},{self.scheme},{self.config.num_layers},{self.config.emb_dim},{self.config.num_heads},{self.config.qkv_dim},{self.config.mlp_dim})"
@@ -107,9 +110,9 @@ class ContinuousTransformer(nn.Module):
         dxdt = dxdtEncoder1DBlock(cfg, deterministic=True)
         x = ContinuousNetNoState(dxdt,
                           scheme=self.scheme,
-                          n_step=cfg.num_layers,
+                          n_step=self.n_step,
                           basis=self.basis,
-                          n_basis=cfg.num_layers)(x)
+                          n_basis=self.n_basis)(x)
         #for _ in range(cfg.num_layers):
         #    x = x + dxdtEncoder1DBlock(cfg)(x, deterministic=not train)
 
@@ -119,5 +122,5 @@ class ContinuousTransformer(nn.Module):
                           bias_init=cfg.get_bias_init())(x)
         return logits
 
-    def refine(self):
-        return refine(self)
+    def refine(self, params):
+        return refine(self, params)

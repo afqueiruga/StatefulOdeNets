@@ -349,8 +349,7 @@ class ContinuousImageClassifierMNIST(nn.Module):
 
 
 def refine(model,
-           params: JaxTreeType,
-           state: JaxTreeType = None) -> Tuple[JaxTreeType, JaxTreeType]:
+           params: JaxTreeType, state: JaxTreeType = None) -> Tuple[JaxTreeType, JaxTreeType]:
     new_model = model.clone(n_step=2 * model.n_step, n_basis=2 * model.n_basis)
     new_params = {}
     for k, v in params.items():

@@ -3,12 +3,18 @@ from absl import flags
 
 
 from continuous_net_jax import experiment
+from continuous_net_jax.tools import count_parameters
+
 
 from . import input_pipeline
 from . import baseline_models as models
 from . import continuous_transformers
 from .train import *
 
+from flax import traverse_util
+from flax.core import unfreeze
+import flax
+from flax.training.common_utils import *
 
 Experiment = experiment.Experiment
 FLAGS = flags.FLAGS
@@ -24,7 +30,7 @@ flags.DEFINE_integer(
     default=500,
     help=('Frequency of eval during training, e.g. every 1000 steps.'))
 flags.DEFINE_integer('num_train_steps',
-                     default=75000,
+                     default=50000,
                      help=('Number of train steps.'))
 flags.DEFINE_float('learning_rate', default=0.05, help=('Learning rate.'))
 flags.DEFINE_float('weight_decay',
@@ -41,8 +47,12 @@ flags.DEFINE_string('dev', default='', help=('Path to development data.'))
 
 flags.DEFINE_string('scheme', default='Euler', help=('Which integrator scheme to use.'))
 flags.DEFINE_string('basis', default='piecewise_constant', help=('Which basis function to use.'))
+flags.DEFINE_integer('num_layers',
+                     default=1,
+                     help=('Length of the encoder transformers.'))
 
 flags.DEFINE_list('refine_epochs', default='', help=('Refinement epochs'))
+
 
 def main(argv):
     if len(argv) > 1:
@@ -58,6 +68,7 @@ def main(argv):
     random_seed = FLAGS.random_seed
     scheme = FLAGS.scheme
     basis = FLAGS.basis
+    refine_epochs = [int(i) for i in FLAGS.refine_epochs]
 
     if not FLAGS.dev:
         raise app.UsageError('Please provide path to dev set.')
@@ -68,17 +79,12 @@ def main(argv):
             'Batch size must be divisible by the number of devices')
     device_batch_size = batch_size // jax.device_count()
 
-    if jax.host_id() == 0:
-        train_summary_writer = tensorboard.SummaryWriter(
-            os.path.join(FLAGS.model_dir, FLAGS.experiment + '_train'))
-        eval_summary_writer = tensorboard.SummaryWriter(
-            os.path.join(FLAGS.model_dir, FLAGS.experiment + '_eval'))
-
     # create the training and development dataset
     vocabs = input_pipeline.create_vocabs(FLAGS.train)
     config = models.TransformerConfig(vocab_size=len(vocabs['forms']),
                                       output_vocab_size=len(vocabs['xpos']),
-                                      max_len=FLAGS.max_length)
+                                      max_len=FLAGS.max_length,
+                                      num_layers=FLAGS.num_layers)
     logging.info("%s", config)
     print(config)
     attributes_input = [input_pipeline.CoNLLAttributes.FORM]
@@ -100,7 +106,9 @@ def main(argv):
                                                    repeat=1)
 
     # model = models.Transformer(config)
-    model = continuous_transformers.ContinuousTransformer(config, scheme=scheme, basis=basis)
+    model = continuous_transformers.ContinuousTransformer(
+        config, scheme=scheme, basis=basis,
+        n_step=config.num_layers, n_basis=config.num_layers)
     
     rng = random.PRNGKey(random_seed)
     rng, init_rng = random.split(rng)
@@ -114,56 +122,100 @@ def main(argv):
 
     init_variables = initialize_variables(init_rng)
 
-    print(list(init_variables.keys()))
-    #state = init_variables['ode_state']
-    #print(state)
     optimizer_def = optim.Adam(learning_rate,
                                beta1=0.9,
                                beta2=0.98,
                                eps=1e-9,
                                weight_decay=1e-1)
     optimizer = optimizer_def.create(init_variables['params'])
-    optimizer = jax_utils.replicate(optimizer)
+    # optimizer = jax_utils.replicate(optimizer)
     learning_rate_fn = create_learning_rate_scheduler(
         'constant * linear_warmup * decay_every',
         base_learning_rate=learning_rate,
         decay_factor=0.1)
 
-    p_train_step = jax.pmap(functools.partial(
-        train_step, model=model, learning_rate_fn=learning_rate_fn),
-                            axis_name='batch')
-
+    # p_train_step = jax.pmap(functools.partial(
+    #    train_step, model=model, learning_rate_fn=learning_rate_fn),
+    #                        axis_name='batch')
+    train_step_p = functools.partial(
+        train_step, model=model, learning_rate_fn=learning_rate_fn)
+    train_step_p = jax.jit(train_step_p)
+    @jax.jit
     def eval_step(params, batch):
         """Calculate evaluation metrics on a batch."""
         inputs, targets = batch['inputs'], batch['targets']
         weights = jnp.where(targets > 0, 1.0, 0.0)
         logits = model.apply({'params': params}, inputs=inputs, train=False)
         return compute_metrics(logits, targets, weights)
-
-    p_eval_step = jax.pmap(eval_step, axis_name='batch')
+    # p_eval_step = jax.pmap(eval_step, axis_name='batch')
 
     # Saving helpers
     exp = Experiment(model, path=FLAGS.model_dir)
     exp.save_optimizer_hyper_params(optimizer_def, random_seed,
                                     {'learning_rate_decay_epochs': [],
-                                     'refine_epochs': []})
-    
-    
+                                     'refine_epochs': refine_epochs})
+    if jax.host_id() == 0:
+        train_summary_writer = tensorboard.SummaryWriter(
+            os.path.join(exp.path, FLAGS.experiment + '_train'))
+        eval_summary_writer = tensorboard.SummaryWriter(
+            os.path.join(exp.path, FLAGS.experiment + '_eval'))
+
     # We init the first set of dropout PRNG keys, but update it afterwards inside
     # the main pmap'd training update for performance.
-    dropout_rngs = random.split(rng, jax.local_device_count())
+    
+    # dropout_rngs = random.split(rng, jax.local_device_count())
+    dropout_rngs = rng
     metrics_all = []
     tick = time.time()
     best_dev_score = 0
     for step, batch in zip(range(num_train_steps), train_iter):
-        batch = common_utils.shard(jax.tree_map(lambda x: x._numpy(), batch))  # pylint: disable=protected-access
+        
+        #batch = common_utils.shard(jax.tree_map(lambda x: x._numpy(), batch))  # pylint: disable=protected-access
+        batch = jax.tree_map(lambda x: x._numpy(), batch)
+        # Refine.
+        if step in refine_epochs:
+            print("Refining:")
+            flat_opt_state = {'/'.join(k): v for k, v in traverse_util.flatten_dict(unfreeze(optimizer.target)).items()}
+            print(jax.tree_map(jnp.shape, flat_opt_state))
+            model, params = exp.model.refine(optimizer.target)
+            print(model)
+            #print(params)
+            exp.model = model
+            optimizer = optimizer_def.create(params)
+            #optimizer = jax_utils.replicate(optimizer)
+            flat_opt_state = {'/'.join(k): v for k, v in
+                              traverse_util.flatten_dict(unfreeze(optimizer.target)).items()}
+            print(jax.tree_map(jnp.shape, flat_opt_state))
+            print("Now have ", count_parameters(params))
 
-        optimizer, metrics, dropout_rngs = p_train_step(
+            # Remake the training and eval functions
+#             p_train_step = jax.pmap(functools.partial(
+#                 train_step, model=model, learning_rate_fn=learning_rate_fn),
+#                                     axis_name='batch')
+            train_step_p = functools.partial(
+                train_step, model=model, learning_rate_fn=learning_rate_fn)
+            train_step_p = jax.jit(train_step_p)
+            @jax.jit
+            def eval_step(params, batch):
+                """Calculate evaluation metrics on a batch."""
+                inputs, targets = batch['inputs'], batch['targets']
+                weights = jnp.where(targets > 0, 1.0, 0.0)
+                logits = model.apply({'params': params}, inputs=inputs, train=False)
+                return compute_metrics(logits, targets, weights)
+            # p_eval_step = jax.pmap(eval_step, axis_name='batch')
+
+        # Step.
+        optimizer, metrics, dropout_rngs = train_step_p(
             optimizer, batch, dropout_rng=dropout_rngs)
         metrics_all.append(metrics)
-
+        # print(metrics_all)
+        # Evaluate.
         if (step + 1) % eval_freq == 0:
-            metrics_all = common_utils.get_metrics(metrics_all)
+            print('here')
+
+            metrics_all = jax.device_get(metrics_all)
+            metrics_all = stack_forest(metrics_all)
+            # metrics_all = common_utils.get_metrics(metrics_all)
             lr = metrics_all.pop('learning_rate').mean()
             metrics_sums = jax.tree_map(jnp.sum, metrics_all)
             denominator = metrics_sums.pop('denominator')
@@ -194,11 +246,13 @@ def main(argv):
                     # pad up to batch size
                     eval_batch = jax.tree_map(
                         lambda x: pad_examples(x, batch_size), eval_batch)
-                eval_batch = common_utils.shard(eval_batch)
+                # eval_batch = common_utils.shard(eval_batch)
 
-                metrics = p_eval_step(optimizer.target, eval_batch)
+                metrics = eval_step(optimizer.target, eval_batch)
                 eval_metrics.append(metrics)
-            eval_metrics = common_utils.get_metrics(eval_metrics)
+            # eval_metrics = common_utils.get_metrics(eval_metrics)
+            eval_metrics = jax.device_get(eval_metrics)
+            eval_metrics = stack_forest(eval_metrics)
             eval_metrics_sums = jax.tree_map(jnp.sum, eval_metrics)
             eval_denominator = eval_metrics_sums.pop('denominator')
             eval_summary = jax.tree_map(

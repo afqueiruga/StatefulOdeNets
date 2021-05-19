@@ -29,7 +29,7 @@ class TransformerConfig:
   vocab_size: int
   output_vocab_size: int
   dtype: str = 'float32'
-  emb_dim: int = 64  # 512
+  emb_dim: int = 32  # 512
   num_heads: int = 1
   num_layers: int = 4
   qkv_dim: int = 16  # 512
@@ -42,7 +42,7 @@ class TransformerConfig:
   posemb_init: str = 'None'
     
   def __str__(self):
-    return f"TransformerConfig({self.emb_dim}_{self.num_heads}_{self.num_layers}_{self.qkv_dim}_{self.mlp_dim})"
+    return f"TransformerConfig_{self.emb_dim},{self.num_heads},{self.num_layers},{self.qkv_dim},{self.mlp_dim}_"
 
   def get_kernel_init(self) -> Callable:
     return nn.initializers.xavier_uniform()
