@@ -70,8 +70,8 @@ def project_continuous_net(params: Iterable[JaxTreeType],
     s2['ode_state']['ContinuousNet_2']['state'] = PROJ(
         state['ode_state']['ContinuousNet_2']['state'])
 
-    print('Originally: ', count_parameters(params))
-    print('Projected: ', count_parameters(p2))
+    #print('Originally: ', count_parameters(params))
+    #print('Projected: ', count_parameters(p2))
     return flax.core.freeze(p2), flax.core.freeze(s2)
 
 
@@ -98,8 +98,8 @@ def interpolate_continuous_net(params: Iterable[JaxTreeType],
     s2['ode_state']['ContinuousNet_2']['state'] = INTERP(
         state['ode_state']['ContinuousNet_2']['state'])
 
-    print('Originally: ', count_parameters(params))
-    print('Interpolate: ', count_parameters(p2))
+    #print('Originally: ', count_parameters(params))
+    #print('Interpolate: ', count_parameters(p2))
     return flax.core.freeze(p2), flax.core.freeze(s2)
 
 
@@ -114,9 +114,9 @@ class ConvergenceTester:
         final_n_basis = exp.model.n_basis * 2**len(exp.extra['refine_epochs'])
         final_model = exp.model.clone(n_step=final_n_step, n_basis=final_n_basis)        
 
-        print('final_n_step', final_n_step)
-        print('final_n_basis', final_n_basis)
-        print('final_model', final_model)
+        #print('final_n_step', final_n_step)
+        #print('final_n_basis', final_n_basis)
+        #print('final_model', final_model)
 
         # Load the parameters
         chp = checkpoints.restore_checkpoint(path, None)
@@ -214,9 +214,9 @@ class ConvergenceTester:
                         nparms.append(num_params)
                         print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} | {inf_time} |")
         print(n_bases)
-        print(errs)
-        print(num_params)
-        print(times)
+        print(list(np.round(errs,4)))
+        print(nparms)
+        print(list(np.round(times,4)))
         
 
     @functools.lru_cache()
