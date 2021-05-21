@@ -44,11 +44,13 @@ def run_an_experiment(dataset_name: Optional[str] = None,
                       save_dir: str = '../runs/',
                       dataset_dir: str = '../',
                       which_model: str = 'Continuous',
+                      n_classes: int = 10,
                       seed: int = 0,
                       alpha: int = 8,
                       hidden: int = 8,
                       n_step: int = 3,
                       scheme: str = 'Euler',
+                      epsilon: int = 1.0,
                       n_basis: int = 3,
                       basis: str = 'piecewise_constant',
                       norm: str = 'None',
@@ -84,10 +86,24 @@ def run_an_experiment(dataset_name: Optional[str] = None,
                                           hidden=hidden,
                                           n_step=n_step,
                                           scheme=scheme,
+                                          epsilon=epsilon,
                                           n_basis=n_basis,
                                           basis=basis,
-                                          norm=norm)
-    elif which_model == 'Continuous2':   
+                                          norm=norm,
+                                          n_classes=n_classes)
+        
+    elif which_model == 'ContinuousReLU':   
+        model = ContinuousNetReLU(alpha=alpha,
+                                          hidden=hidden,
+                                          n_step=n_step,
+                                          scheme=scheme,
+                                          epsilon=epsilon,
+                                          n_basis=n_basis,
+                                          basis=basis,
+                                          norm=norm)        
+                
+        
+    elif which_model == 'ContinuousSmall':   
         model = ContinuousImageClassifierSmall(alpha=alpha,
                                           hidden=hidden,
                                           n_step=n_step,

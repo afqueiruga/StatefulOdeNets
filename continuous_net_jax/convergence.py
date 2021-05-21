@@ -193,7 +193,7 @@ class ConvergenceTester:
                 err = tester.metrics_over_test_set(p_params,  p_state)
                 inf_time.append(timeit.default_timer()  - t0)
             
-            return float(err), count_parameters(p_params), float(np.mean(inf_time))
+            return float(err), count_parameters(p_params), float(np.median(inf_time))
 
 
 
@@ -248,7 +248,7 @@ class ConvergenceTester:
                 err = tester.metrics_over_test_set(p_params,  p_state)
                 inf_time.append(timeit.default_timer()  - t0)
             
-            return float(err), count_parameters(p_params), float(np.mean(inf_time))
+            return float(err), count_parameters(p_params), float(np.median(inf_time))
 
         print("| Basis | n_basis | Scheme | n_step | error | n_params | inference time |")
         print("|-------|---------------------------------------------------------------|")

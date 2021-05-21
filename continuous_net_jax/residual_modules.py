@@ -15,7 +15,6 @@ xavier_uniform_gain = partial(jax.nn.initializers.variance_scaling, 2, "fan_avg"
 #kaiming_out = partial(jax.nn.initializers.variance_scaling, 2.0, "fan_out", "truncated_normal")
 kaiming_out = partial(jax.nn.initializers.variance_scaling, 2.0, "fan_out", "normal")
 
-
 # We use string qualifiers instead of function refs.
 INITS = {
     'kaiming': jax.nn.initializers.kaiming_normal(),
@@ -60,7 +59,7 @@ class ResidualUnit(nn.Module):
     kernel_init: str = 'kaiming_out'
     training: bool = True
     use_bias: bool = False
-    epsilon: float = 1.0
+    epsilon: int = 1.0
 
     @nn.compact
     def __call__(self, x):
@@ -84,7 +83,7 @@ class ResidualStitch(nn.Module):
     training: bool = True
     strides: Tuple[int] = (2, 2)
     use_bias: bool = False
-    epsilon: float = 1.0
+    epsilon: int = 1.0
 
 
     @nn.compact
