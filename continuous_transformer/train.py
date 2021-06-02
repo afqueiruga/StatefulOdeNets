@@ -153,7 +153,7 @@ def compute_metrics(logits, labels, weights):
   return metrics
 
 
-def train_step(optimizer, batch, learning_rate_fn, model, dropout_rng=None):
+def train_step(optimizer, batch, step, learning_rate_fn, model, dropout_rng=None):
   """Perform a single training step."""
 
   train_keys = ['inputs', 'targets']
@@ -161,15 +161,16 @@ def train_step(optimizer, batch, learning_rate_fn, model, dropout_rng=None):
 
   weights = jnp.where(targets > 0, 1, 0).astype(jnp.float32)
   dropout_rng, new_dropout_rng = random.split(dropout_rng)
+  odenet_rng, new_dropout_rng = random.split(new_dropout_rng)
   def loss_fn(params):
     """Loss function used for training."""
     logits = model.apply({'params': params}, inputs=inputs, train=True,
+                         rng=odenet_rng,
                          rngs={'dropout': dropout_rng})
     loss, weight_sum = compute_weighted_cross_entropy(logits, targets, weights)
     mean_loss = loss / weight_sum
     return mean_loss, logits
 
-  step = optimizer.state.step
   lr = learning_rate_fn(step)
   grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
   (_, logits), grad = grad_fn(optimizer.target)
