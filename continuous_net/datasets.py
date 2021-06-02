@@ -1,7 +1,7 @@
 import torch
 import torchvision
 from torchvision import datasets, transforms
-from torchvision.datasets import CIFAR10, CIFAR100, FashionMNIST, ImageFolder
+from torchvision.datasets import CIFAR10, CIFAR100, FashionMNIST, MNIST, ImageFolder
 
 
 def get_dataset(name='CIFAR10',
@@ -38,6 +38,22 @@ def get_dataset(name='CIFAR10',
                           train=False,
                           download=True,
                           transform=transform_test)
+        
+    elif name == 'MNIST':
+
+        trainset = MNIST('../data', train=True, download=True,
+                           transform=transforms.Compose([
+                               transforms.ToTensor(),
+                               transforms.Normalize((0.1307,), (0.3081,))
+                           ]))
+    
+        testset = MNIST('../data', train=False, transform=transforms.Compose([
+                               transforms.ToTensor(),
+                               transforms.Normalize((0.1307,), (0.3081,))
+                           ]))
+
+        refset = None
+        
         
     elif name == 'FMNIST':
         transform = torchvision.transforms.Compose([
@@ -120,6 +136,9 @@ def get_dataset(name='CIFAR10',
         trainset = trainset.to(device)
         validationset = refset.to(device)
         testnset = testset.to(device)
+
+
+
 
     train_loader = torch.utils.data.DataLoader(trainset,
                                               batch_size=batch_size,

@@ -177,7 +177,7 @@ class ConvergenceTester:
                                   schemes: Iterable[str],
                                   n_steps: Iterable[int]):
         
-        @SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
+        #@SimDataDB2(os.path.join(self.path, "convergence.sqlite"))
         def infer_projected_test_error3(scheme: str, n_step: int, basis: str,
                                        n_basis: int) -> Tuple[float, int, float]:
             # Rely on the LRU cache to avoid the second call, and sqlite 

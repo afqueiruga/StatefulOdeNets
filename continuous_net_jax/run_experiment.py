@@ -81,16 +81,20 @@ def run_an_experiment(dataset_name: Optional[str] = None,
     if refine_epochs == None:
         refine_epochs = []
 
-    if which_model == 'Continuous':
+    if which_model == 'ContinuousNet':
         model = ContinuousImageClassifier(alpha=alpha,
                                           hidden=hidden,
                                           n_step=n_step,
                                           scheme=scheme,
-                                          epsilon=epsilon,
+                                          #epsilon=epsilon,
+                                          #stitch_epsilon=epsilon / (n_step * 2**len(refine_epochs)),
+                                          epsilon=1,
+                                          stitch_epsilon=1,
                                           n_basis=n_basis,
                                           basis=basis,
                                           norm=norm,
-                                          n_classes=n_classes)
+                                          n_classes=n_classes,
+                                          kernel_init=kernel_init)
         
     elif which_model == 'ContinuousReLU':   
         model = ContinuousNetReLU(alpha=alpha,
@@ -98,9 +102,12 @@ def run_an_experiment(dataset_name: Optional[str] = None,
                                           n_step=n_step,
                                           scheme=scheme,
                                           epsilon=epsilon,
+                                          stitch_epsilon=epsilon / (n_step * 2**len(refine_epochs)),                                          
                                           n_basis=n_basis,
                                           basis=basis,
-                                          norm=norm)        
+                                          norm=norm,
+                                          n_classes=n_classes,
+                                          kernel_init=kernel_init)        
                 
         
     elif which_model == 'ContinuousSmall':   
@@ -110,7 +117,20 @@ def run_an_experiment(dataset_name: Optional[str] = None,
                                           scheme=scheme,
                                           n_basis=n_basis,
                                           basis=basis,
-                                          norm=norm)        
+                                          norm=norm,
+                                          kernel_init=kernel_init)    
+        
+        
+    elif which_model == 'ContinuousMNIST':   
+        model = ContinuousImageClassifierMNIST(alpha=alpha,
+                                          hidden=hidden,
+                                          n_step=n_step,
+                                          scheme=scheme,
+                                          n_basis=n_basis,
+                                          basis=basis,
+                                          norm=norm,
+                                          kernel_init=kernel_init)           
+        
         
     elif which_model == 'ResNet':
         model = ResNet(alpha=alpha,
@@ -222,10 +242,19 @@ def run_an_experiment(dataset_name: Optional[str] = None,
         # jax.profiler.save_device_memory_profile(f"{exp.path}/memory_test_{epoch}.prof")
         validation_acc_writer(float(validation_acc))
         print("After epoch ", epoch, "test acc: ", validation_acc)
-        if best_test_acc < validation_acc:
-            best_test_acc = validation_acc
-            exp.save_checkpoint(optimizer, current_state, epoch)
         
+        if learning_rate_decay_epochs is not None:
+        
+            if best_test_acc < validation_acc and epoch > learning_rate_decay_epochs[-1]:
+                best_test_acc = validation_acc
+                exp.save_checkpoint(optimizer, current_state, epoch)
+                
+        else:
+            if best_test_acc < validation_acc:
+                best_test_acc = validation_acc
+                exp.save_checkpoint(optimizer, current_state, epoch)            
+            
+            
         #if epoch % _CHECKPOINT_FREQ == 0:
         #    exp.save_checkpoint(optimizer, current_state, epoch)
         tb_writer.flush()
