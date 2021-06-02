@@ -5,19 +5,8 @@ from continuous_net_jax.run_experiment import run_an_experiment
 
 import argparse
 
-# import jax.profiler
-
-#export CUDA_VISIBLE_DEVICES=0; python run_cifar10_jax_version.py --alpha 1 --scheme Euler --refine_epochs 20 40 60 80 --seed 3 --save_dir ../euler_cifar10_a/
-
-#export CUDA_VISIBLE_DEVICES=3; python run_cifar10_jax_version.py --alpha 1 --scheme Euler --basis fem_linear --refine_epochs 20 40 60 90 --seed 3 --save_dir ../euler_cifar10_a/
-
-
-#export CUDA_VISIBLE_DEVICES=3; python run_cifar10_jax_version.py --alpha 1  --scheme RK4 --n_steps 16 --n_basis 16 --epsilon 16 --seed 1 --save_dir ../rk4_full_cifar10/ --which_model ContinuousReLU
-
-#export CUDA_VISIBLE_DEVICES=3; python run_cifar10_jax_version.py --alpha 1  --scheme Euler --n_steps 16 --n_basis 16 --epsilon 16 --seed 1 --save_dir ../euler_full_cifar10/
-
-
-#export CUDA_VISIBLE_DEVICES=2; python run_cifar10_jax_version.py --alpha 1  --scheme Euler --n_steps 16 --n_basis 16 --epsilon 16 --seed 1 --save_dir ../euler_full_cifar10/ --which_model ContinuousReLU
+# Example of how to run:
+# export CUDA_VISIBLE_DEVICES=6; python run_cifar10_jax_version.py --alpha 1 --seed 1 --refine_epochs 20 30 40 50 60
 
 
 parser = argparse.ArgumentParser(description='training parameters')
@@ -26,7 +15,7 @@ parser.add_argument('--wd', type=float, default=5e-4, help='weight decay paramet
 parser.add_argument('--scheme', type=str, default="Euler", help='numerical integrator scheme')
 parser.add_argument('--epsilon', type=float, default=1.0, help='epsilon')
 parser.add_argument('--basis', type=str, default="piecewise_constant", help='basis function')
-parser.add_argument('--alpha', type=int, default=1, help='seed')
+parser.add_argument('--alpha', type=int, default=1, help='multiplier on number of channels = 16*alpha')
 parser.add_argument('--n_steps', type=int, default=1, help='number of steps')
 parser.add_argument('--n_basis', type=int, default=1, help='number of basis functions')
 parser.add_argument('--epochs', type=int, default=180, help='number of epochs')
@@ -52,7 +41,7 @@ run_an_experiment(
           hidden=8, 
           n_step=args.n_steps, 
           n_basis=args.n_basis, 
-          norm="BatchNorm-opt-flax",
+          norm="BatchNorm",
           basis=args.basis,
           scheme=args.scheme,
           epsilon=args.epsilon,
