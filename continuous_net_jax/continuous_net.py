@@ -28,19 +28,21 @@ def copy_and_perturb(params, n_basis):
 
 
 # deprecated
-def initialize_multiple_times(prng_key, module, x, n_basis):
+def initialize_multiple_times(prng_key, module, x, n_basis, *args, **kwargs):
     """Initilize module on x multiple times by splitting prng_key."""
     key, *subkeys = jax.random.split(prng_key, 1 + n_basis)
-    return [module.init(k, x) for k in subkeys]
+    return [module.init(k, x, *args, **kwargs) for k in subkeys]
 
 
-def initialize_multiple_times_split_state(prng_key, module, x, n_basis):
+def initialize_multiple_times_split_state(prng_key, module, x, n_basis, *args,
+                                          **kwargs):
     """Initilize module on x multiple times by splitting prng_key."""
     key, *subkeys = jax.random.split(prng_key, 1 + n_basis)
     params = []
     states = []
+    print('init multi split:', kwargs)
     for i, k in enumerate(subkeys):
-        inits = module.init(key, x)
+        inits = module.init(key, x, *args, **kwargs)
         state_i, p = inits.pop('params')
         states.append(state_i)
         param_i = {'params': p}
@@ -53,7 +55,6 @@ def zip_time_dicts(params, states):
     for i in range(len(params)):
         zipped.append({**params[i], **states[i]})
     return zipped
-
 
 
 class ContinuousNet(nn.Module):
@@ -80,14 +81,16 @@ class ContinuousNet(nn.Module):
     basis: str = 'piecewise_constant'
     training: bool = True
 
-    def make_param_nodes(self, key, x):
+    def make_param_nodes(self, key, x, *args, **kwargs):
         return initialize_multiple_times_split_state(key, self.R, x,
-                                                     self.n_basis)[0]
+                                                     self.n_basis, *args,
+                                                     **kwargs)[0]
 
-    def make_state_nodes(self, x):
+    def make_state_nodes(self, x, *args, **kwargs):
         key = jax.random.PRNGKey(0)
         return initialize_multiple_times_split_state(key, self.R, x,
-                                                     self.n_basis)[1]
+                                                     self.n_basis, *args,
+                                                     **kwargs)[1]
 
     @nn.compact
     def __call__(self, x):
@@ -108,8 +111,8 @@ class ContinuousNet(nn.Module):
             y, t_points, state_points = StateOdeIntegrateFast(
                 r, x, scheme=self.scheme, n_step=self.n_step)
             if self.training:
-                new_state = point_project_tree(state_points, t_points,
-                                               n_basis, basis)
+                new_state = point_project_tree(state_points, t_points, n_basis,
+                                               basis)
                 ode_states.value = new_state
         else:
             params_of_t = basis(ode_params)
@@ -117,7 +120,11 @@ class ContinuousNet(nn.Module):
             y = OdeIntegrateFast(r, x, scheme=self.scheme, n_step=self.n_step)
         return y
 
-    def refine(self, params: Iterable[JaxTreeType], state: Iterable[JaxTreeType]=None) -> Tuple[Iterable[JaxTreeType],Iterable[JaxTreeType]]:
+    def refine(
+        self,
+        params: Iterable[JaxTreeType],
+        state: Iterable[JaxTreeType] = None
+    ) -> Tuple[Iterable[JaxTreeType], Iterable[JaxTreeType]]:
         """Perform doubling refinement for these bases."""
         if state:
             return REFINE[self.basis](params), REFINE[self.basis](state)
@@ -126,15 +133,48 @@ class ContinuousNet(nn.Module):
 
 
 class ContinuousNetNoState(ContinuousNet):
+
     @nn.compact
     def __call__(self, x):
         ode_params = self.param('ode_params', self.make_param_nodes, x)
         # The model instance's n_basis only dictates initialization.
         n_basis = len(ode_params)
         basis = BASIS[self.basis]
-
-
         params_of_t = basis(ode_params)
         r = lambda t, x: self.R.apply(params_of_t(t), x)
         y = OdeIntegrateFast(r, x, scheme=self.scheme, n_step=self.n_step)
+        return y
+
+
+class ContinuousNetArgs(ContinuousNet):
+
+    @nn.compact
+    def __call__(self, x, *args, **kwargs):
+        ode_params = self.param('ode_params', self.make_param_nodes, x)
+        # The model instance's n_basis only dictates initialization.
+        n_basis = len(ode_params)
+        basis = BASIS[self.basis]
+        params_of_t = basis(ode_params)
+        r = lambda t, x: self.R.apply(params_of_t(t), x, *args, **kwargs)
+        y = OdeIntegrateFast(r, x, scheme=self.scheme, n_step=self.n_step)
+        return y
+
+
+class ContinuousNetSow(ContinuousNet):
+
+    @nn.compact
+    def __call__(self, x):
+        ode_params = self.param('ode_params', self.make_param_nodes, x)
+        # The model instance's n_basis only dictates initialization.
+        n_basis = len(ode_params)
+        basis = BASIS[self.basis]
+        params_of_t = basis(ode_params)
+        r = lambda t, x: self.R.apply(
+            params_of_t(t), x, mutable='intermediates')
+        y, t_points, sow_points = StateOdeIntegrateFast(r,
+                                                        x,
+                                                        scheme=self.scheme,
+                                                        n_step=self.n_step)
+        self.sow('intermediates', 't_points', t_points)
+        self.sow('intermediates', 'sow_points', sow_points)
         return y

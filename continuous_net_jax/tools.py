@@ -57,8 +57,12 @@ def module_to_single_line(module: Module):
 def parse_model_dict(dict_repr, scope):
     """Turn a dict into an instantiated model."""
     # assert len(dict_repr) == 1
-    for k, v in dict_repr.items():
-        return eval(k, scope)(**v)  # TODO security
+    if type(dict_repr) is not dict:
+        return dict_repr
+    for name, fields in dict_repr.items():
+        fields = {k: parse_model_dict(v, scope) for k, v in fields.items()}
+        model = eval(name, scope)(**fields)  # TODO security
+    return model
 
 
 def load_model_dict_from_json(fname, scope):
