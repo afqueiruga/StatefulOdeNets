@@ -13,12 +13,12 @@ class RunExperimentTests(unittest.TestCase):
 
     def setUp(self):
         self.train_data = [
-            [onp.ones((5, 14, 14, 3)), onp.ones(5,)],
-            [onp.ones((5, 14, 14, 3)), onp.ones(5,)],
+            [onp.ones((5, 32, 32, 3)), onp.ones(5,)],
+            [onp.ones((5, 32, 32, 3)), onp.ones(5,)],
         ]
         self.test_data = [
-            [onp.ones((5, 14, 14, 3)), onp.ones(5,)],
-            [onp.ones((5, 14, 14, 3)), onp.ones(5,)],
+            [onp.ones((5, 32, 32, 3)), onp.ones(5,)],
+            [onp.ones((5, 32, 32, 3)), onp.ones(5,)],
         ]
 
     def testContinuousNoState(self):

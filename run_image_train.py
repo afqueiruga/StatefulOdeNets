@@ -31,8 +31,6 @@ parser.add_argument('--which_model', type=str, default="ContinuousNet", help='wh
 args = parser.parse_args()
 print(args)
 
-root = './'
-
 run_an_experiment(
           dataset_name='CIFAR10',
           save_dir=args.save_dir,

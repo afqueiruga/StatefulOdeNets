@@ -40,7 +40,6 @@ def initialize_multiple_times_split_state(prng_key, module, x, n_basis, *args,
     key, *subkeys = jax.random.split(prng_key, 1 + n_basis)
     params = []
     states = []
-    print('init multi split:', kwargs)
     for i, k in enumerate(subkeys):
         inits = module.init(key, x, *args, **kwargs)
         state_i, p = inits.pop('params')
@@ -57,7 +56,7 @@ def zip_time_dicts(params, states):
     return zipped
 
 
-class ContinuousNet(nn.Module):
+class StatefulContinuousBlock(nn.Module):
     """A continuously deep network block, aka "OdeBlock".
 
     It obeys the equation:
@@ -132,22 +131,23 @@ class ContinuousNet(nn.Module):
             return REFINE[self.basis](params)
 
 
-class ContinuousNetNoState(ContinuousNet):
+class ContinuousBlock(StatefulContinuousBlock):
+    """A continuously deep network block, aka "OdeBlock".
 
-    @nn.compact
-    def __call__(self, x):
-        ode_params = self.param('ode_params', self.make_param_nodes, x)
-        # The model instance's n_basis only dictates initialization.
-        n_basis = len(ode_params)
-        basis = BASIS[self.basis]
-        params_of_t = basis(ode_params)
-        r = lambda t, x: self.R.apply(params_of_t(t), x)
-        y = OdeIntegrateFast(r, x, scheme=self.scheme, n_step=self.n_step)
-        return y
+    It obeys the equation:
+      dh/dt = R(theta(t), h(t))
+    where
+      theta(t) = sum phi^a(t) theta^a for a=(0, n_basis)
+    With scheme=Euler and basis=piecewise_constant, this network degenerates
+    into a residual network.
 
-
-class ContinuousNetArgs(ContinuousNet):
-
+    Attributes:
+      R: the module to use as the rate equation.
+      n_step: how many time steps?
+      scheme: which scheme to use to integrate?
+      n_basis: how many basis function nodes are initialized?      
+      basis: what basis function is theta?
+    """
     @nn.compact
     def __call__(self, x, *args, **kwargs):
         ode_params = self.param('ode_params', self.make_param_nodes, x)
@@ -160,7 +160,7 @@ class ContinuousNetArgs(ContinuousNet):
         return y
 
 
-class ContinuousNetSow(ContinuousNet):
+class ContinuousBlockSow(ContinuousBlock):
 
     @nn.compact
     def __call__(self, x):

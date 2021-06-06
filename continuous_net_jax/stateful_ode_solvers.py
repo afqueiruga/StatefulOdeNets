@@ -6,7 +6,6 @@ F(p, x, mutable=False) = dx/dt
 F(p, x, mutable=True) = p', dx/dt
 
 These schemes are aware of that statefulness:
-
 """
 
 import jax

@@ -15,15 +15,15 @@ import numpy as np
 
 import tqdm
 
-from continuous_net import datasets
-from continuous_net_jax import *
+from . import *
+from . import image_datasets
 from .baselines import ResNet
+from .continuous_models import *
 from .learning_rate_schedule import LearningRateSchedule
 from .optimizer_factory import make_optimizer
 from .tensorboard_writer import TensorboardWriter
 from .tools import count_parameters
 
-from .continuous_models import *
 
 from .convergence import project_continuous_net
 from .basis_functions import *
@@ -68,7 +68,7 @@ def run_an_experiment(dataset_name: Optional[str] = None,
     
     if dataset_name:
         torch_train_data, torch_validation_data, torch_test_data = (
-            datasets.get_dataset(dataset_name, root=dataset_dir))
+            image_datasets.get_dataset(dataset_name, root=dataset_dir))
         train_data = DataTransform(torch_train_data)
         validation_data = DataTransform(torch_validation_data)
         test_data = DataTransform(torch_test_data)
@@ -81,6 +81,8 @@ def run_an_experiment(dataset_name: Optional[str] = None,
 
     if refine_epochs == None:
         refine_epochs = []
+    if project_epochs == None:
+        project_epochs = []
 
     if which_model == 'ContinuousNet':
         model = ContinuousImageClassifier(alpha=alpha,

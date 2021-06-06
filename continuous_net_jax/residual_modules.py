@@ -85,7 +85,6 @@ class ResidualStitch(nn.Module):
     use_bias: bool = False
     epsilon: int = 1.0
 
-
     @nn.compact
     def __call__(self, x):
         h = NORMS[self.norm](use_running_average=not self.training)(x)
@@ -109,9 +108,3 @@ class ResidualStitch(nn.Module):
             return x_down + self.epsilon * h
         else:
             return x + self.epsilon * h
-        
-        
-        
-        
-        
-        

@@ -3,13 +3,11 @@
 
 import unittest
 
-from jax.config import config
-config.enable_omnistaging()
-
 from .convergence import *
 
-def ConvergenceTestTests(unittest.TestCase):
+class ConvergenceTestTests(unittest.TestCase):
 
     def testConvergence(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            pass
+        pass
+        # with tempfile.TemporaryDirectory() as tmp:
+        #     pass

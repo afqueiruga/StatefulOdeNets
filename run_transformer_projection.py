@@ -14,9 +14,11 @@ from continuous_transformer import input_pipeline
 
 # Change DIR to point to the experiment path containing model directories.
 DIR = "/home/user/german_hdt_experiments/"
+DIR = "/home/afq/tree_bank/german_hdt/"
+
 paths = glob.glob(
     DIR + '/ContinuousTransformer_config=TransformerConfig_128,1,1,128,128*')
-
+print(paths)
 # Main text example.
 # tt = TransformerTester(
 #     datadir="../ud-treebanks-v2.8/UD_English-GUM/",

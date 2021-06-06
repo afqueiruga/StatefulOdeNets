@@ -1,4 +1,4 @@
-from .continuous_net import ContinuousNet, ContinuousNetNoState
+from .continuous_block import ContinuousBlock, StatefulContinuousBlock
 from .continuous_models import *
 from .data_transform import DataTransform
 from .experiment import Experiment

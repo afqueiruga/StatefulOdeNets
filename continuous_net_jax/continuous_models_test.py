@@ -3,8 +3,6 @@ import unittest
 import flax.linen as nn
 import jax
 import jax.numpy as jnp
-from jax.config import config
-config.enable_omnistaging()
 
 from .continuous_models import *
 
@@ -13,7 +11,7 @@ class ContinuousImageClassifierTests(unittest.TestCase):
 
     def setUp(self):
         self.prng_key = jax.random.PRNGKey(0)
-        self.x = jnp.ones((1,14,14,1))
+        self.x = jnp.ones((1,32,32,3))
         
     def testInitializeStateful(self):
         model = ContinuousImageClassifier()

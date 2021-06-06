@@ -40,7 +40,7 @@ class dxdtEncoder1DBlock(nn.Module):
         # Attention block.
         assert inputs.ndim == 3
         x = nn.LayerNorm(dtype=cfg.get_dtype())(inputs)
-        SA = SelfAttention(num_heads=cfg.num_heads,
+        SA = nn.SelfAttention(num_heads=cfg.num_heads,
                            dtype=cfg.get_dtype(),
                            qkv_features=cfg.qkv_dim,
                            kernel_init=cfg.get_kernel_init(),
@@ -97,20 +97,19 @@ class ContinuousTransformer(nn.Module):
 
         dxdt = dxdtEncoder1DBlock(cfg, deterministic=True)
         # Plumb in the rng for dropouts.
-        x = ContinuousNetArgs(dxdt,
-                              scheme=self.scheme,
-                              n_step=self.n_step,
-                              basis=self.basis,
-                              n_basis=self.n_basis,
-                              name="ContinuousNetNoState_0")(x, rng=None)
+        x = ContinuousBlock(dxdt,
+                            scheme=self.scheme,
+                            n_step=self.n_step,
+                            basis=self.basis,
+                            n_basis=self.n_basis)(x)
         # Extract the attention matrix as a stateful side-effect to make Fig 1:
-        # x = ContinuousNetSow(
+        # x = ContinuousBlockSow(
         #         dxdt,
         #         scheme=self.scheme,
         #         n_step=self.n_step,
         #         basis=self.basis,
         #         n_basis=self.n_basis,
-        #         name="ContinuousNetNoState_0")(x)
+        #         name="ContinuousBlock_0")(x)
 
         x = nn.LayerNorm(dtype=cfg.dtype)(x)
         logits = nn.Dense(cfg.output_vocab_size,
