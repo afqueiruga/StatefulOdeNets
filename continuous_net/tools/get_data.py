@@ -6,7 +6,7 @@ from torchvision.datasets import CIFAR10, CIFAR100, FashionMNIST, ImageFolder
 
 def get_dataset(name='CIFAR10',
                 batch_size=128,
-                test_batch_size=256,
+                test_batch_size=1024,
                 root='.',
                 device=None,
                 seed=0):
@@ -103,7 +103,7 @@ def get_dataset(name='CIFAR10',
                                               shuffle=True,
                                               num_workers=4,
                                               pin_memory=True)
-    validation_loader = torch.utils.data.DataLoader(trainset,
+    validation_loader = torch.utils.data.DataLoader(testset,
                                               batch_size=test_batch_size,
                                               shuffle=False,
                                               num_workers=4,
