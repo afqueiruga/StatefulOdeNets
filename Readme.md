@@ -8,7 +8,7 @@ Introduction (todo).
 
 Just clone the ContinuousNet repository to your local system and you are ready to go:
 ```
-git clone https://github.com/afqueiruga/StatefulOdeNets
+git clone https://github.com/erichson/StatefulOdeNets
 ```
 
 
@@ -60,7 +60,7 @@ After training the model checkpoint is saved in a folder called results.
 
 | Model           |  Units           | Refined     | Scheme      | #parms  | Test Accuracy | Time |
 | ----------------|:----------------:|:----------: |:----------: |:-------:|:-------------:|:----:|
-
+```
 
 ## Evaluation
 
