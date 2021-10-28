@@ -16,13 +16,13 @@ import numpy as np
 import tqdm
 
 from . import *
-from . import image_datasets
-from .baselines import ResNet
-from .continuous_models import *
-from .learning_rate_schedule import LearningRateSchedule
+from .tools import get_data
+from .models.baselines import ResNet
+from .models.continuous_models import *
+from .tools.learning_rate_schedule import LearningRateSchedule
 from .optimizer_factory import make_optimizer
-from .tensorboard_writer import TensorboardWriter
-from .tools import count_parameters
+from .tools.tensorboard_writer import TensorboardWriter
+from .tools.tools import count_parameters
 
 
 from .convergence import project_continuous_net
@@ -68,7 +68,7 @@ def run_an_experiment(dataset_name: Optional[str] = None,
     
     if dataset_name:
         torch_train_data, torch_validation_data, torch_test_data = (
-            image_datasets.get_dataset(dataset_name, root=dataset_dir))
+            get_data.get_dataset(dataset_name, root=dataset_dir))
         train_data = DataTransform(torch_train_data)
         validation_data = DataTransform(torch_validation_data)
         test_data = DataTransform(torch_test_data)
@@ -89,10 +89,8 @@ def run_an_experiment(dataset_name: Optional[str] = None,
                                           hidden=hidden,
                                           n_step=n_step,
                                           scheme=scheme,
-                                          #epsilon=epsilon,
-                                          #stitch_epsilon=epsilon / (n_step * 2**len(refine_epochs)),
-                                          epsilon=1,
-                                          stitch_epsilon=1,
+                                          epsilon=epsilon,
+                                          stitch_epsilon=epsilon / (n_step * 2**len(refine_epochs)),
                                           n_basis=n_basis,
                                           basis=basis,
                                           norm=norm,
@@ -104,7 +102,7 @@ def run_an_experiment(dataset_name: Optional[str] = None,
                                           n_step=n_step,
                                           scheme=scheme,
                                           epsilon=epsilon,
-                                          stitch_epsilon=epsilon / (n_step * 2**len(refine_epochs)),                                          
+                                          stitch_epsilon=epsilon / (n_step * 2**len(refine_epochs)),            
                                           n_basis=n_basis,
                                           basis=basis,
                                           norm=norm,

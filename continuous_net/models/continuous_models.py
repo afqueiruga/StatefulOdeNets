@@ -5,11 +5,11 @@ import flax.linen as nn
 import jax.numpy as jnp
 from typing import Callable, Tuple
 
-from .basis_functions import piecewise_constant, REFINE
-from .continuous_types import *
-from .continuous_block import ContinuousBlock, StatefulContinuousBlock
-from .residual_modules import NORMS, ResidualUnit, ResidualStitch, INITS
-from .residual_modules import ShallowNet
+from ..basis_functions import piecewise_constant, REFINE
+from ..continuous_types import *
+from ..continuous_block import ContinuousBlock, StatefulContinuousBlock
+from ..residual_modules import NORMS, ResidualUnit, ResidualStitch, INITS
+from ..residual_modules import ShallowNet
 
 
 class ContinuousClassifier(nn.Module):
@@ -72,7 +72,7 @@ class ContinuousImageClassifier(nn.Module):
                     kernel_size=(3, 3),
                     kernel_init=INITS[self.kernel_init])(x)
         h = NORMS[self.norm](use_running_average=not self.training)(h)
-        h = nn.gelu(h)
+        h = nn.relu(h)
         # 3 stages of continuous segments:
         h = ResidualStitch(hidden_features=self.hidden * self.alpha,
                            output_features=self.hidden * self.alpha,
@@ -163,7 +163,7 @@ class ContinuousNetReLU(nn.Module):
                            training=self.training,
                            epsilon=self.stitch_epsilon,
                            activation=nn.relu)(h)
-        h = ContinuousNet(R=R_(self.hidden * self.alpha),
+        h = StatefulContinuousBlock(R=R_(self.hidden * self.alpha),
                           scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis,
@@ -176,7 +176,7 @@ class ContinuousNetReLU(nn.Module):
                            training=self.training,
                            epsilon=self.stitch_epsilon,
                            activation=nn.relu)(h)
-        h = ContinuousNet(R=R_(2 * self.hidden * self.alpha),
+        h = StatefulContinuousBlock(R=R_(2 * self.hidden * self.alpha),
                           scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis,
@@ -189,7 +189,7 @@ class ContinuousNetReLU(nn.Module):
                            training=self.training,
                            epsilon=self.stitch_epsilon,
                            activation=nn.relu)(h)
-        h = ContinuousNet(R=R_(4 * self.hidden * self.alpha),
+        h = StatefulContinuousBlock(R=R_(4 * self.hidden * self.alpha),
                           scheme=self.scheme,
                           n_step=self.n_step,
                           n_basis=self.n_basis,

@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import tqdm
 
 from .continuous_types import *
-from .learning_rate_schedule import LearningRateSchedule
+from .tools.learning_rate_schedule import LearningRateSchedule
 
 
 def pack_params(params, state):

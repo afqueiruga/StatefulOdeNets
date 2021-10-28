@@ -81,35 +81,12 @@ def get_dataset(name='CIFAR10',
                            transform=transform_test)
         refset = None
 
-    elif name == 'tinyimagenet':
-        normalize = transforms.Normalize(
-            mean=[
-                0.44785526394844055, 0.41693055629730225, 0.36942949891090393
-            ],
-            std=[0.2928885519504547, 0.28230994939804077, 0.2889912724494934])
-        trainset = ImageFolder(
-            root + '/tiny-imagenet-200/train',
-            transforms.Compose([
-                transforms.RandomCrop(64, padding=4),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                normalize,
-            ]))
-        # train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=train_bs, shuffle=True, num_workers=4, pin_memory=False)
-        testset = ImageFolder(
-            root + '/tiny-imagenet-200/val',
-            transforms.Compose([
-                transforms.ToTensor(),
-                normalize,
-            ]))
-        # test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=test_bs, shuffle=False)
-        refset = None
 
     else:
         raise RuntimeError('Unknown dataset')
 
     n_dataset = len(trainset)
-    n_train = int(0.8 * n_dataset)
+    n_train = int(1 * n_dataset)
     n_val = n_dataset - n_train
     trainset, validationset = torch.utils.data.random_split(
             trainset,
@@ -124,17 +101,17 @@ def get_dataset(name='CIFAR10',
     train_loader = torch.utils.data.DataLoader(trainset,
                                               batch_size=batch_size,
                                               shuffle=True,
-                                              num_workers=1,
+                                              num_workers=4,
                                               pin_memory=True)
-    validation_loader = torch.utils.data.DataLoader(validationset,
+    validation_loader = torch.utils.data.DataLoader(trainset,
                                               batch_size=test_batch_size,
                                               shuffle=False,
-                                              num_workers=1,
+                                              num_workers=4,
                                               pin_memory=True)
     test_loader = torch.utils.data.DataLoader(testset,
                                              batch_size=test_batch_size,
                                              shuffle=False,
-                                             num_workers=1,
+                                             num_workers=4,
                                              pin_memory=True)
 
     return train_loader, validation_loader, test_loader

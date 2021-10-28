@@ -13,9 +13,9 @@ import numpy as np
 from SimDataDB import SimDataDB2
 
 from .basis_functions import *
-from .continuous_models import *
+from .models.continuous_models import *
 from .continuous_types import *
-from .tools import *
+from .tools.tools import *
 
 
 def dict_to_list(d: JaxTreeType) -> List[JaxTreeType]:

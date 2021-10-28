@@ -5,7 +5,7 @@ import os
 import flax.linen as nn
 from flax.training import checkpoints
 
-from .tools import *
+from .tools.tools import *
 
 
 class Experiment():
