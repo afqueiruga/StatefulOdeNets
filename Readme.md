@@ -56,8 +56,6 @@ After training the model checkpoint is saved in a folder called results.
 (todo)
 
 ```
-
-
 | Model           |  N           | Refined     | Scheme      | #parms  | Test Accuracy |
 | ----------------|:----------------:|:----------: |:----------: |:-------:|:-------------:|
 ContinuousNet     | 16 | - | Euler | 1.63M | 0.9369 
