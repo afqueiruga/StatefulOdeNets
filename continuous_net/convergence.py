@@ -144,7 +144,7 @@ class ConvergenceTester:
             return float(err),
 
         print("| Scheme | n_step | error | n_ops |")
-        print("|-------|----------------------------|")
+        print("|-----------------------------------|")
         errors = []
         for n_step in n_steps:
             for scheme in schemes:
@@ -201,8 +201,8 @@ class ConvergenceTester:
 
 
 
-        print("| Basis | n_basis | Scheme | n_step | error | n_params | inference time |")
-        print("|-------|---------------------------------------------------------------|")
+        print("| Basis | n_basis | Scheme | n_step | error | n_params |")
+        print("|------------------------------------------------------|")
         errors = {}
         errs = []
         times = []
@@ -216,7 +216,7 @@ class ConvergenceTester:
                         errs.append(e)
                         times.append(inf_time)
                         nparms.append(num_params)
-                        print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} | {inf_time} |")
+                        print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} |")
         print(n_bases)
         print(list(np.round(errs,4)))
         print(nparms)
@@ -254,8 +254,8 @@ class ConvergenceTester:
             
             return float(err), count_parameters(p_params), float(np.median(inf_time))
 
-        print("| Basis | n_basis | Scheme | n_step | error | n_params | inference time |")
-        print("|-------|---------------------------------------------------------------|")
+        print("| Basis | n_basis | Scheme | n_step | error | n_params |")
+        print("|------------------------------------------------------|")
         errors = {}
         
         errs = []
@@ -272,7 +272,7 @@ class ConvergenceTester:
                         times.append(inf_time)
                         nparms.append(num_params)                        
                         
-                        print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} | {inf_time} |")
+                        print(f"| {basis:20} | {n_basis} | {scheme:5} | {n_step} | {e:1.3f} | {num_params} |")
 
         print(n_bases)
         print(list(np.round(errs,4)))

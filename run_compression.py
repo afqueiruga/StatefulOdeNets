@@ -29,7 +29,7 @@ for path in paths:
         print(path)
         ct = ConvergenceTester(path)
         print(ct.eval_model)
-        ct.perform_project_and_infer(test_data,  bases=["piecewise_constant"], n_bases=[16, 14, 12, 10, 8, 6, 4], schemes=['Euler'], n_steps=[16])
+        ct.perform_project_and_infer(test_data,  bases=["piecewise_constant"], n_bases=[16, 8], schemes=['Euler'], n_steps=[16,8])
 
 
     except Exception as e:

@@ -36,7 +36,7 @@ The results are summarized in the following table.
 | Model           |  N | K  | Refined     | Scheme      | #parameters  | Test Accuracy |
 | ----------------|:--:|:--:|:----------: |:----------: |:------------:|:-------------:|
 |ContinuousNet (1)   | 16 | 16 | -           | Euler    | 1.63M        | 0.9369       |
-|ContinuousNet (2)   | 16 | 6 | 1->2->4->8->16  | Euler | 1.63M        | 0.931       |
+|ContinuousNet (2)   | 16 | 6 | 1->2->4->8->16  | Euler | 1.63M        | 0.927       |
 
 
 
@@ -46,13 +46,13 @@ The script,
 ```
 python3 run_compression.py
 ```
-is compressing a given model. We present results for the second model that was trained with the refinement training scheme. 
+is compressing a given model, without retraining or revisiting any data. We present results for the second model that was trained with the refinement training scheme. 
 
 
-| Model           |  N | K   Scheme      | #parameters  | Test Accuracy |
-| ----------------|:--:|:--::----------: |:------------:|:-------------:|
-|ContinuousNet (2)| 8 | 16 | Euler       | 0.85M     | 0.927       |
-|ContinuousNet (2)| 8 | 8 | Euler       | 0.85M     | 0.920       |
+| Model           |  N | K  | Scheme      | #parameters  | Test Accuracy |
+| ----------------|:--:|:--:|:----------: |:------------:|:-------------:|
+|Compressed ContinuousNet (2)| 8 | 16 | Euler       | 0.85M     | 0.927       |
+|Compressed ContinuousNet (2)| 8 | 8 | Euler       | 0.85M     | 0.920       |
 
 
 ## License
