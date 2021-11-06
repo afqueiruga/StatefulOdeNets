@@ -59,7 +59,7 @@ After training the model checkpoint is saved in a folder called results.
 | Model           |  N | K  | Refined     | Scheme      | #parameters  | Test Accuracy |
 | ----------------|:--:|:--:|:----------: |:----------: |:------------:|:-------------:|
 |ContinuousNet    | 16 | 16 | -           | Euler       | 1.63M        | 0.9369       |
-
+|ContinuousNet    | 16 | 6 | 1->2->4->8->16  | Euler       | 1.63M     | 0.931       |
 
 ## Evaluation
 
