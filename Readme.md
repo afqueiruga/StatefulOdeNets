@@ -1,6 +1,6 @@
 # Stateful ODE-Nets
 
-Introduction (todo).
+This repository provides research code for [Stateful ODE-Nets](https://arxiv.org/pdf/2106.10820.pdf), presented at NeurIPS (2021). 
 
 
 
@@ -14,66 +14,54 @@ git clone https://github.com/erichson/StatefulOdeNets
 
 ## Training
 
-ContinuousNets can be trained similar to ResNets via a command line interface:
-```
-python3 cli.py [--dataset] [--batch-size] [--test-batch-size] [--epochs] [--lr] [--lr-decay] [--lr-decay-epoch] [--weight-decay] [--batch-norm] [--device] [--seed]
-
-standard arguments:
---dataset                   you can train on CIFAR10, or CIFAR100 (default: CIFAR10)	
---batch-size                training batch size (default: 128)
---test-batch-size           testing batch size (default:256)
---epochs                    total number of training epochs (default: 180)
---lr                        initial learning rate (default: 0.1)
---lr-decay                  learning rate decay ratio (default: 0.1)
---lr-decay-epoch            epoch for the learning rate decaying (default: 80, 120)
---weight-decay              weight decay value (default: 5e-4)
---batch-norm                do we need batch norm in ResNet or not (default: True)
---device                    do we use gpu or not (default: 'gpu')
---seed                      used to reproduce the results (default: 0)
-```
 
 
-
-
-ContinuousNet provides some some extras (todo):
-```
-python3 cli.py [--model] [--scheme] [--n_time_steps_per] [--initial_time_d] [--time_epsilon] [--use_skipinit]
-
-standard arguments:
---model
---scheme
---n_time_steps_per
---initial_time_d
---time_epsilon
---use_skipinit
-```
-
-
-After training the model checkpoint is saved in a folder called results.
 
 ## Examples and Performance on CIFAR-10
 
-(todo)
+ContinuousNets can be trained similar to ResNets via a command line interface. Here are two examples. First, we train an ODE-Net without refinemenet training:
 
+```
+python3 run_cifar10.py --which_model ContinuousNet --scheme Euler --n_steps 16 --n_basis 16 --epsilon 16 
+```
+
+Next, we train an ODE-Net with refinement training:
+
+```
+python3 run_cifar10.py --which_model ContinuousNet --scheme Euler --refine_epochs 20 40 70 90
+```
+
+The results are summarized in the following table.
 
 | Model           |  N | K  | Refined     | Scheme      | #parameters  | Test Accuracy |
 | ----------------|:--:|:--:|:----------: |:----------: |:------------:|:-------------:|
-|ContinuousNet    | 16 | 16 | -           | Euler       | 1.63M        | 0.9369       |
-|ContinuousNet    | 16 | 6 | 1->2->4->8->16  | Euler       | 1.63M     | 0.931       |
+|ContinuousNet (1)   | 16 | 16 | -           | Euler    | 1.63M        | 0.9369       |
+|ContinuousNet (2)   | 16 | 6 | 1->2->4->8->16  | Euler | 1.63M        | 0.931       |
 
-## Evaluation
 
-The training script outputs models to Python pickles. The script,
+
+## Compression
+
+The script,
 ```
-python3 eval_manifestation.py
+python3 run_compression.py
 ```
-performs a "convergence test" for given models by altering their integrator settings to illustrate the manifestation invariance property.
+is compressing a given model. We present results for the second model that was trained with the refinement training scheme. 
+
+
+| Model           |  N | K   Scheme      | #parameters  | Test Accuracy |
+| ----------------|:--:|:--::----------: |:------------:|:-------------:|
+|ContinuousNet (2)| 8 | 16 | Euler       | 0.85M     | 0.927       |
+|ContinuousNet (2)| 8 | 8 | Euler       | 0.85M     | 0.920       |
+
 
 ## License
 
 This implementation is released under the GPL 3, as per LICENSE.
 
-## Additional References
+## References
 
-There is a video recording of an acompanying presentation available at [Queiruga, A. F., "Continuous-in-Depth Neural Networks," 1st Workshop on Scientific-Driven Deep Learning, July 1, 2020.](https://www.youtube.com/watch?v=_aX3T1Smg54)
+* Continuous-in-Depth Neural Networks: [https://arxiv.org/pdf/2008.02389.pdf](https://arxiv.org/pdf/2008.02389.pdf)
+* Stateful ODE-Nets using Basis Function Expansions: [https://arxiv.org/pdf/2106.10820.pdf](https://arxiv.org/pdf/2106.10820.pdf)
+
 

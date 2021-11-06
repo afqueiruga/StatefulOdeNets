@@ -144,7 +144,7 @@ def get_dataset(name='CIFAR10',
     train_loader = torch.utils.data.DataLoader(trainset,
                                               batch_size=batch_size,
                                               shuffle=True,
-                                              num_workers=1,
+                                              num_workers=4,
                                               pin_memory=True)
     # validation_loader = torch.utils.data.DataLoader(validationset,
     #                                           batch_size=test_batch_size,
@@ -154,7 +154,7 @@ def get_dataset(name='CIFAR10',
     test_loader = torch.utils.data.DataLoader(testset,
                                              batch_size=test_batch_size,
                                              shuffle=False,
-                                             num_workers=1,
+                                             num_workers=4,
                                              pin_memory=True)
 
     return train_loader, test_loader, test_loader
