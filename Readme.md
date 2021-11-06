@@ -17,7 +17,7 @@ git clone https://github.com/erichson/StatefulOdeNets
 
 
 
-## Examples and Performance on CIFAR-10
+### Examples and Performance on CIFAR-10
 
 ContinuousNets can be trained similar to ResNets via a command line interface. Here are two examples. First, we train an ODE-Net without refinemenet training:
 
@@ -40,7 +40,7 @@ The results are summarized in the following table.
 
 
 
-## Compression
+### Compression
 
 The script,
 ```
@@ -55,13 +55,13 @@ is compressing a given model, without retraining or revisiting any data. We pres
 |Compressed ContinuousNet (2)| 8 | 8 | Euler       | 0.85M     | 0.920       |
 
 
-## License
 
-This implementation is released under the GPL 3, as per LICENSE.
 
 ## References
 
 * Continuous-in-Depth Neural Networks: [https://arxiv.org/pdf/2008.02389.pdf](https://arxiv.org/pdf/2008.02389.pdf)
 * Stateful ODE-Nets using Basis Function Expansions: [https://arxiv.org/pdf/2106.10820.pdf](https://arxiv.org/pdf/2106.10820.pdf)
 
+## License
 
+This implementation is released under the GPL 3, as per LICENSE.
