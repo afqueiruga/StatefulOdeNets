@@ -96,19 +96,8 @@ def run_an_experiment(dataset_name: Optional[str] = None,
                                           norm=norm,
                                           n_classes=n_classes,
                                           kernel_init=kernel_init)
-    elif which_model == 'ContinuousReLU':   
-        model = ContinuousNetReLU(alpha=alpha,
-                                          hidden=hidden,
-                                          n_step=n_step,
-                                          scheme=scheme,
-                                          epsilon=epsilon,
-                                          stitch_epsilon=epsilon / (n_step * 2**len(refine_epochs)),            
-                                          n_basis=n_basis,
-                                          basis=basis,
-                                          norm=norm,
-                                          n_classes=n_classes,
-                                          kernel_init=kernel_init)        
-    elif which_model == 'ContinuousSmall':   
+      
+    elif which_model == 'ContinuousNetSmall':   
         model = ContinuousImageClassifierSmall(alpha=alpha,
                                           hidden=hidden,
                                           n_step=n_step,
@@ -116,8 +105,9 @@ def run_an_experiment(dataset_name: Optional[str] = None,
                                           n_basis=n_basis,
                                           basis=basis,
                                           norm=norm,
-                                          kernel_init=kernel_init)    
-    elif which_model == 'ContinuousMNIST':   
+                                          kernel_init=kernel_init) 
+                                             
+    elif which_model == 'ContinuousNetMNIST':   
         model = ContinuousImageClassifierMNIST(alpha=alpha,
                                           hidden=hidden,
                                           n_step=n_step,
