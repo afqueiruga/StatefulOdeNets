@@ -55,7 +55,7 @@ class ShallowNet(nn.Module):
 class ResidualUnit(nn.Module):
     hidden_features: int
     norm: str = 'BatchNorm'
-    activation: Callable = nn.relu
+    activation: Callable = nn.gelu
     kernel_init: str = 'kaiming_out'
     training: bool = True
     use_bias: bool = False
@@ -78,7 +78,7 @@ class ResidualStitch(nn.Module):
     hidden_features: int
     output_features: int
     norm: str = 'BatchNorm'
-    activation: Callable = nn.relu
+    activation: Callable = nn.gelu
     kernel_init: str = 'kaiming_out'
     training: bool = True
     strides: Tuple[int] = (2, 2)

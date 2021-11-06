@@ -72,7 +72,7 @@ class ContinuousImageClassifier(nn.Module):
                     kernel_size=(3, 3),
                     kernel_init=INITS[self.kernel_init])(x)
         h = NORMS[self.norm](use_running_average=not self.training)(h)
-        h = nn.relu(h)
+        h = nn.gelu(h)
         # 3 stages of continuous segments:
         h = ResidualStitch(hidden_features=self.hidden * self.alpha,
                            output_features=self.hidden * self.alpha,

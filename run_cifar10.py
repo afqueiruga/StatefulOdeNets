@@ -21,7 +21,7 @@ parser.add_argument('--lr_decay_epoch', type=int, nargs='+', default=[80, 120, 1
 parser.add_argument('--refine_epochs', type=int, nargs='+', default=[], help='Refinement epochs.')
 parser.add_argument('--project_epochs', type=int, nargs='+', default=[], help='Project epochs.')
 parser.add_argument('--seed', type=int, default=1, help='seed')
-parser.add_argument('--save_dir', type=str, default="../runs_cifar10_b/", help='path to store the models at')
+parser.add_argument('--save_dir', type=str, default="../stateful_cifar10/", help='path to store the models at')
 parser.add_argument('--which_model', type=str, default="ContinuousNet", help='which model')
 
 
