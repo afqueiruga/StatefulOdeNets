@@ -3,7 +3,7 @@ import flax.linen as nn
 import jax
 import jax.numpy as jnp
 
-from .residual_modules import ResidualUnit, ResidualStitch, NORMS, INITS
+from ..residual_modules import ResidualUnit, ResidualStitch, NORMS, INITS
 
 
 class ResNet(nn.Module):

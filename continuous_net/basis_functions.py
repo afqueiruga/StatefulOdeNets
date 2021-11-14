@@ -212,7 +212,7 @@ def projection_loss(params_A, params_B, basis_A, basis_B, degree=7, n_cell=10):
 
 def _function_project(source_params, source_basis, target_basis, n_basis):
     """Linear function projection is one step of Newton's method."""
-    print('tracing', source_params.shape)
+    #print('tracing', source_params.shape)
     target_params = jnp.zeros(n_basis)
     n_cell = max(len(source_params), n_basis)
     vG = jax.grad(projection_loss)(target_params,
